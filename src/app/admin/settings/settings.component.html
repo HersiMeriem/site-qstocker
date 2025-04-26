@@ -1,0 +1,209 @@
+<br><br>
+
+<div class="settings-container">
+  <h2>{{ 'Admin' | translate }}</h2>
+
+  <form [formGroup]="settingsForm" (ngSubmit)="saveSettings()" class="admin-settings-form">
+    <!-- Thème -->
+    <div class="form-group">
+      <label for="theme" class="form-label"></label>
+      <select id="theme" formControlName="theme" class="form-select">
+        <option *ngFor="let theme of themes" [value]="theme.value">{{ theme.label | translate }}</option>
+      </select>
+      <div class="form-hint">{{ 'Theme' | translate }}: <strong>{{ settingsForm.get('theme')?.value | translate }}</strong></div>
+    </div>
+  
+    <!-- Notifications -->
+    <div class="form-group">
+      <div class="form-check">
+        <input type="checkbox" id="notifications" formControlName="notifications" class="form-check-input">
+        <label for="notifications" class="form-check-label">{{ ' notifications' | translate }}</label>
+      </div>
+      <div class="form-hint">
+        {{ 'notificationsStatus' | translate }}: 
+        <strong [class.text-success]="settingsForm.get('notifications')?.value"
+                [class.text-danger]="!settingsForm.get('notifications')?.value">
+          {{ settingsForm.get('notifications')?.value ? ('enabled' | translate) : ('disabled' | translate) }}
+        </strong>
+      </div>
+    </div>
+  
+    <!-- Notifications par email -->
+    <div class="form-group" *ngIf="settingsForm.get('notifications')?.value">
+      <div class="form-check">
+        <input type="checkbox" id="emailNotifications" formControlName="emailNotifications" class="form-check-input">
+        <label for="emailNotifications" class="form-check-label">{{ ' emailNotifications' | translate }}</label>
+      </div>
+      <div class="form-hint">
+        {{ 'emailNotificationsStatus' | translate }}: 
+        <strong [class.text-success]="settingsForm.get('emailNotifications')?.value"
+                [class.text-danger]="!settingsForm.get('emailNotifications')?.value">
+          {{ settingsForm.get('emailNotifications')?.value ? ('enabled' | translate) : ('disabled' | translate) }}
+        </strong>
+      </div>
+    </div>
+  
+    <!-- Langue -->
+    <div class="form-group">
+      <label for="language" class="form-label">{{ 'language' | translate }}</label>
+      <select id="language" formControlName="language" class="form-select" (change)="onLanguageChange()">
+        <option *ngFor="let lang of languages" [value]="lang.value">{{ lang.label | translate }}</option>
+      </select>
+      <div class="form-hint">{{ 'currentLanguage' | translate }}: <strong>{{ settingsForm.get('language')?.value | translate }}</strong></div>
+    </div>
+  
+    <!-- Couleur d'accentuation -->
+    <div class="form-group">
+      <label for="accentColor" class="form-label">{{ 'accentColorLabel' | translate }}</label>
+      <div class="color-picker-container">
+        <input type="color" id="accentColor" formControlName="accentColor" class="form-color">
+        <span class="color-value">{{ settingsForm.get('accentColor')?.value }}</span>
+      </div>
+      <div class="form-hint">{{ 'currentAccentColor' | translate }}: 
+        <strong [style.color]="settingsForm.get('accentColor')?.value">
+          {{ settingsForm.get('accentColor')?.value }}
+        </strong>
+      </div>
+    </div>
+  
+    <!-- Heures silencieuses -->
+    <div class="form-group">
+      <label class="form-label">{{ 'silentHoursLabel' | translate }}</label>
+      <div formGroupName="silentHours" class="time-range-container">
+        <div class="time-input">
+          <label for="silentStart">{{ 'startTime' | translate }}</label>
+          <input type="time" id="silentStart" formControlName="start" class="form-time">
+        </div>
+        <div class="time-input">
+          <label for="silentEnd">{{ 'endTime' | translate }}</label>
+          <input type="time" id="silentEnd" formControlName="end" class="form-time">
+        </div>
+      </div>
+      <div class="form-hint">
+        {{ 'silentHoursRange' | translate }}: 
+        <strong>{{ settingsForm.get('silentHours.start')?.value }} - {{ settingsForm.get('silentHours.end')?.value }}</strong>
+      </div>
+    </div>
+  
+    <!-- Boutons d'action -->
+    <div class="form-actions">
+      <button type="submit" [disabled]="!settingsForm.valid || isLoading" class="btn btn-save">
+        <span *ngIf="isLoading" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+        {{ isLoading ? ('saving' | translate) : ('saveButton' | translate) }}
+      </button>
+      
+      <button type="button" (click)="exportSettings()" class="btn btn-export">
+        {{ 'exportSettings' | translate }}
+      </button>
+      
+      <button type="button" (click)="importSettings()" class="btn btn-import">
+        {{ 'importSettings' | translate }}
+      </button>
+    </div>
+  </form>
+
+  <div class="add-event">
+    <h3>{{ 'Add Event' | translate }}</h3>
+    <form (ngSubmit)="addEvent(eventTitle.value, eventDate.value)">
+      <div class="form-group">
+        <label for="eventTitle">{{ 'eventTitleLabel' | translate }}</label>
+        <input type="text" id="eventTitle" #eventTitle required placeholder="{{ 'eventTitlePlaceholder' | translate }}" />
+      </div>
+      <div class="form-group">
+        <label for="eventDate">{{ 'eventDateLabel' | translate }}</label>
+        <input type="date" id="eventDate" #eventDate required />
+      </div>
+      <button type="submit" class="btn btn-primary">{{ 'AddEvent' | translate }}</button>
+    </form>
+  </div>
+
+  <div class="activity-log">
+    <div class="activity-filters">
+      <label for="filterType"></label>
+      <select id="theme" formControlName="theme" class="form-control" (change)="filterActivities($event)" required>
+        <option value="all">{{ 'All' | translate }}</option>
+        <option value="settings">{{ 'Settings' | translate }}</option>
+        <option value="users">{{ 'Users' | translate }}</option>
+      </select>
+      <button (click)="exportActivityLog()" class="btn-export">
+        {{ 'export' | translate }}
+      </button>
+    </div>
+
+    <!-- Section des logs d'activité - Visible pour tous sauf 'users' -->
+    <div *ngIf="filterType !== 'users'">
+      <h3>{{ 'activityLogTitle' | translate }}</h3>
+      <ul class="activity-list">
+        <li *ngFor="let log of paginatedLogs" 
+            (click)="showActivityDetails(log)"
+            class="activity-item">
+          <strong>{{ log.timestamp | date:'medium' }}</strong> - 
+          {{ log.action }} ({{ log.user }})
+          <span class="log-badge badge-{{log.type}}">
+            {{ log.type | translate }}
+          </span>
+        </li>
+      </ul>
+
+      <div class="pagination-controls">
+        <button (click)="previousPage()" 
+                [disabled]="currentPage === 1"
+                class="pagination-button">
+          ‹ {{ 'previousPageButton' | translate }}
+        </button>
+        
+        <span class="page-indicator">
+          {{ currentPage }} / {{ totalPages }}
+        </span>
+        
+        <button (click)="nextPage()" 
+                [disabled]="currentPage === totalPages"
+                class="pagination-button">
+          {{ 'nextPageButton' | translate }} ›
+        </button>
+      </div>
+    </div>
+
+    <!-- Section de gestion des utilisateurs - Visible pour 'all' et 'users' -->
+    <div *ngIf="filterType === 'all' || filterType === 'users'" class="user-management-section">
+      <h3>{{ 'Uilisateurs' | translate }}</h3>
+      
+      <div class="user-filters">
+        <input [(ngModel)]="userSearchQuery" 
+               (input)="filterUsers()"
+               placeholder="{{ 'searchUsers' | translate }}"
+               class="user-search">
+      </div>
+
+      <table class="users-table">
+        <thead>
+          <tr>
+            <th>{{ 'email' | translate }}</th>
+            <th>{{ 'status' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let user of users">
+            <td>{{ user.email }}</td>
+            <td [class]="'status-' + (user.status || 'pending')">
+              {{ user.status || 'pending' | translate }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div *ngIf="selectedActivity" class="activity-details">
+    <h3>{{ 'activityDetailsTitle' | translate }}</h3>
+    <div class="activity-info">
+      <p><strong>{{ 'timestampLabel' | translate }}:</strong> {{ selectedActivity.timestamp | date:'medium' }}</p>
+      <p><strong>{{ 'actionLabel' | translate }}:</strong> {{ selectedActivity.action }}</p>
+      <p><strong>{{ 'userLabel' | translate }}:</strong> {{ selectedActivity.user }}</p>
+      <p><strong>{{ 'typeLabel' | translate }}:</strong> {{ selectedActivity.type | translate }}</p>
+      <p><strong>{{ 'detailsLabel' | translate }}:</strong> {{ selectedActivity.details }}</p>
+    </div>
+    <button (click)="selectedActivity = null" class="btn-close">
+    </button>
+  </div>
+</div>

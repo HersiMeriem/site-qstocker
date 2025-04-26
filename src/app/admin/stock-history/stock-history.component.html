@@ -1,0 +1,66 @@
+<section>
+  <div class="stock-history-container" id="stock">
+    <h2 class="stock-history-title">📦 Historique des Stocks</h2>
+
+    <div class="mb-4">
+      <input 
+        type="text" 
+        [(ngModel)]="searchTerm" 
+        (input)="filterStock()" 
+        placeholder="🔍 Rechercher par nom ou ID produit..." 
+        class="form-control"
+      >
+    </div>
+
+    <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show">
+      {{errorMessage}}
+      <button type="button" class="btn-close" (click)="errorMessage = null"></button>
+    </div>
+
+    <div *ngIf="loading" class="text-center my-5">
+      <div class="spinner-border text-success" style="width: 3rem; height: 3rem;" role="status">
+        <span class="visually-hidden">Chargement...</span>
+      </div>
+      <p class="mt-2">Chargement du stock...</p>
+    </div>
+
+    <div class="table-responsive" *ngIf="!loading && combinedData.length > 0">
+      <table class="stock-table">
+        <thead>
+          <tr>
+            <th>QR Code</th>
+            <th>Image</th>
+            <th>ID Produit</th>
+            <th>Nom</th>
+            <th>Quantité</th>
+            <th>Prix Unitaire HT</th>
+            <th>Prix de Vente</th>
+            <th>Valeur Totale</th>
+            <th>Dernière Mise à Jour</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let record of filteredData" class="c1">
+            <td>
+              <img *ngIf="record.qrCode" [src]="record.qrCode" alt="QR Code" style="width: 50px;">
+            </td>
+            <td>
+              <img *ngIf="record.imageUrl" [src]="record.imageUrl" alt="Produit" style="width: 50px; height: 50px; object-fit: cover;">
+            </td>
+            <td>{{ record.idProduit }}</td>
+            <td>{{ record.nomProduit }}</td>
+            <td>
+              <span class="badge bg-primary rounded-pill">
+                {{ record.quantite }}
+              </span>
+            </td>
+            <td>{{ record.prixUnitaireHT !== null ? (record.prixUnitaireHT | number:'1.3-3') : '-' }} DT</td>
+            <td>{{ record.prixDeVente !== null ? (record.prixDeVente | number:'1.3-3') : '-' }} DT</td>
+            <td>{{ record.valeurTotale !== null ? (record.valeurTotale | number:'1.3-3') : '-' }} DT</td>
+            <td>{{ record.dateMiseAJour | date:'dd/MM/yyyy HH:mm' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>

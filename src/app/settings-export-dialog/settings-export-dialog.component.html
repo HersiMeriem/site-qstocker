@@ -1,0 +1,28 @@
+<h2 mat-dialog-title>{{ 'SETTINGS.EXPORT_TITLE' | translate }}</h2>
+
+<mat-dialog-content>
+  <div class="export-options">
+    <mat-form-field appearance="outline">
+      <mat-label>{{ 'SETTINGS.EXPORT_FORMAT' | translate }}</mat-label>
+      <mat-select [(ngModel)]="exportOptions.format">
+        <mat-option value="json">JSON</mat-option>
+        <mat-option value="csv">CSV</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-checkbox [(ngModel)]="exportOptions.includeBackupHistory">
+      {{ 'SETTINGS.INCLUDE_BACKUP_HISTORY' | translate }}
+    </mat-checkbox>
+
+    <mat-checkbox [(ngModel)]="exportOptions.includeAuditLogs">
+      {{ 'SETTINGS.INCLUDE_AUDIT_LOGS' | translate }}
+    </mat-checkbox>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">{{ 'COMMON.CANCEL' | translate }}</button>
+  <button mat-raised-button color="primary" (click)="onExport()">
+    {{ 'SETTINGS.EXPORT' | translate }}
+  </button>
+</mat-dialog-actions>

@@ -1,0 +1,12 @@
+{
+    "title": "Paramètres Admin",
+    "themeLabel": "Thème",
+    "notificationsLabel": "Activer les notifications",
+    "languageLabel": "Langue",
+    "emailNotificationsLabel": "Notifications par e-mail",
+    "logoUploadLabel": "Téléverser un logo",
+    "accentColorLabel": "Couleur d'accentuation",
+    "silentHoursLabel": "Heures silencieuses",
+    "saveButton": "Enregistrer les paramètres",
+    "activityLogTitle": "Journal des activités"
+  }

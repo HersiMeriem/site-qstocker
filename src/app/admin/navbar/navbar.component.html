@@ -1,0 +1,80 @@
+<nav class="navbar navbar-expand-lg qstock-navbar">
+  <div class="container-fluid">
+    <a class="navbar-brand logo-block" routerLink="/admin/statistics" routerLinkActive="active">
+      <div class="qr-icon-large">
+        <i class="fas fa-qrcode"></i>
+      </div>
+      <h1 class="brand-name">
+        <span class="q-letter">Q</span><span class="stocker-text">Stocker</span>
+      </h1>
+    </a>
+
+    <!-- Bouton de menu responsive -->
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMenu" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarMenu">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/admin/statistics">📈 Tableau</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/admin/products">🧴 Produits</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/admin/users">👥 Utilisateurs</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/admin/report">📑 Rapports</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/admin/analyse-financier">🧾 Analyse Financier</a>
+        </li>
+      </ul>
+
+      <ul class="navbar-nav ms-auto align-items-center">
+        <li class="nav-item me-3">
+          <div class="theme-toggle">
+            <button (click)="toggleTheme()" class="nav-link">
+              <span class="material-icons">{{ isDarkMode ? 'brightness_3' : 'wb_sunny' }}</span>
+            </button>
+          </div>
+        </li>
+
+        <li class="nav-item dropdown me-3">
+          <a class="nav-link dropdown-toggle notification-link" href="#" id="alertsDropdown" role="button" data-bs-toggle="dropdown">
+            <i class="fas fa-bell"></i>
+            <span class="badge bg-danger notification-badge">3+</span>
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end dropdown-notifications">
+            <li><h6 class="dropdown-header">Centre d'alertes</h6></li>
+            <li><a class="dropdown-item" href="#">Stock faible - Produit 1</a></li>
+            <li><a class="dropdown-item" href="#">Produit épuisé</a></li>
+            <li><a class="dropdown-item" href="#">Erreur lors de l'ajout</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item text-center view-all" href="#">Voir toutes les alertes</a></li>
+          </ul>
+        </li>
+
+
+<li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+              <img class="img-profile rounded-circle me-2" 
+                   [src]="profilePhoto$ | async" 
+                   alt="Profil" 
+                   width="30" 
+                   height="30">
+              <span class="fw-bold">Administrateur</span>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li><a class="dropdown-item" routerLink="/admin/settings"><i class="fas fa-cog me-2"></i> Paramètres</a></li>
+              <li><a class="dropdown-item" routerLink="/admin/profile"><i class="fas fa-user me-2"></i> Profil</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="#" (click)="logout()"><i class="fas fa-sign-out-alt me-2"></i> Déconnexion</a></li>
+            </ul>
+          </li>
+      </ul>
+    </div>
+  </div>
+</nav>

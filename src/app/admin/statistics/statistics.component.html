@@ -1,0 +1,76 @@
+<div class="main-container">
+  <section>
+    <div class="dashboard-container" [ngClass]="{'dark-mode': isDarkMode}">
+      <div class="theme-toggle">
+        <button (click)="toggleTheme()">
+          <span class="material-icons">{{ isDarkMode ? 'wb_sunny' : 'brightness_3' }}</span>
+        </button>
+      </div>
+  
+      <div class="search-bar">
+        <input type="text" placeholder="Rechercher un produit ou un utilisateur..." 
+               [(ngModel)]="searchQuery" (input)="onSearch()">
+      </div>
+  
+      <div class="stats-container">
+        <div class="stat-card">
+          <h3>Utilisateurs Totaux</h3>
+          <p>{{ stats.totalUsers }}</p>
+        </div>
+        <div class="stat-card">
+          <h3>Utilisateurs Actifs</h3>
+          <p>{{ stats.activeUsers }}</p>
+        </div>
+        <div class="stat-card">
+          <h3>Utilisateurs en Attente</h3>
+          <p>{{ stats.pendingUsers }}</p>
+        </div>
+        <div class="stat-card">
+          <h3>Produits Totaux</h3>
+          <p>{{ stats.totalProducts }}</p>
+        </div>
+        <div class="stat-card">
+          <h3>Produits en Rupture</h3>
+          <p>{{ stats.lowStockProducts }}</p>
+        </div>
+        <div class="stat-card">
+          <h3>Produits Vendus</h3>
+          <p>{{ stats.totalSoldProducts }}</p>
+        </div>
+      </div>
+  
+      <!-- Graphiques principaux -->
+      <div class="charts-container">
+        <div class="chart-card">
+          <h3>Ventes par Produit</h3>
+          <canvas id="salesChart"></canvas>
+        </div>
+        <div class="chart-card">
+          <h3>Répartition des Stocks</h3>
+          <canvas id="stockChart"></canvas>
+        </div>
+      </div>
+  
+      <!-- Section Calendrier + Top Parfums -->
+      <div class="calendar-perfume-container">
+        <div class="calendar-card">
+          <h3>Calendrier des Événements</h3>
+          <full-calendar [options]="calendarOptions"></full-calendar>
+        </div>
+        <div class="perfume-chart-card">
+          <h3>Top Parfums</h3>
+          <canvas id="topPerfumesChart"></canvas>
+        </div>
+      </div>
+  
+      <!-- Alertes -->
+      <div class="alerts-container">
+        <h3>Alertes en Temps Réel</h3>
+        <div class="alert-card" *ngFor="let alert of alerts">
+          <p>{{ alert.message }}</p>
+          <span class="alert-time">{{ alert.time }}</span>
+        </div>
+      </div>
+    </div>
+  </section>
+  </div>

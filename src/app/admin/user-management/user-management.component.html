@@ -1,0 +1,49 @@
+<div class="user-management">
+  <div class="management-header">
+    <h2>Gestion des Utilisateurs</h2>
+    <div class="search-area">
+      <input type="text" [(ngModel)]="searchQuery" placeholder="Rechercher un utilisateur..." (input)="applySearch()">
+      <button class="search-button">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <circle cx="11" cy="11" r="20"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="user-table-container">
+    <table class="user-table">
+      <thead>
+        <tr>
+          <th>Email</th>
+          <th>Statut</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let user of users | search: searchQuery">
+          <td>{{ user.email }}</td>
+          <td>
+            <span class="status-indicator {{ user.status }}">{{ user.status }}</span>
+          </td>
+          <td class="actions-cell">
+            <button class="action-btn approve" (click)="approveUser(user.uid)">
+              <span>✓</span> Valider
+            </button>
+            <button class="action-btn reject" (click)="rejectUser(user.uid)">
+              <span>✗</span> Rejeter
+            </button>
+            <button class="action-btn block" (click)="blockUser(user.uid)">
+              <span>⛔</span> Bloquer
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="table-footer">
+    <div class="user-count">Total: {{ users.length }} utilisateurs</div>
+  </div>
+</div>

@@ -1,0 +1,290 @@
+/* ----------- Styles généraux ----------- */
+body {
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  background-color: #ffffff;
+  color: #0A2647;
+  line-height: 1.6;
+}
+
+/* ----------- Navbar ----------- */
+.qstock-navbar {
+  background-color: #ffffff !important;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+  padding: 12px 24px;
+  z-index: 1000;
+  transition: box-shadow 0.3s ease;
+}
+
+.qstock-navbar.scrolled {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+/* Logo bloc */
+.logo-block {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  cursor: pointer;
+  color: inherit;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.logo-block:hover {
+  transform: scale(1.03);
+  opacity: 0.9;
+}
+
+/* Icone QR */
+.qr-icon-large {
+  font-size: 1.8rem;
+  color: #205295;
+  transition: color 0.3s ease, transform 0.3s ease;
+}
+
+/* Rotation de l'icône QR au survol du logo entier */
+.logo-block:hover .qr-icon-large {
+  transform: rotate(15deg) scale(1.1); /* Rotation et légère augmentation de taille */
+  color: #144272;
+}
+
+/* Nom du site */
+.brand-name {
+  font-size: 1.4rem;
+  font-weight: 700;
+  display: flex;
+  align-items: baseline;
+  letter-spacing: 1px;
+  transition: color 0.3s ease;
+}
+
+.q-letter {
+  color: #144272;
+  transition: color 0.3s ease;
+}
+
+.stocker-text {
+  color: #2C74B3;
+  margin-left: -4px;
+  transition: color 0.3s ease;
+}
+
+.logo-block:hover .q-letter {
+  color: #205295;
+}
+
+.logo-block:hover .stocker-text {
+  color: #144272;
+}
+
+/* ----------- Responsive Burger ----------- */
+.navbar-toggler {
+  border: none;
+  background-color: #0A2647;
+  transition: transform 0.3s ease;
+}
+
+.navbar-toggler:hover {
+  transform: scale(1.1);
+}
+
+.navbar-toggler-icon {
+  background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='rgba(255, 255, 255, 1)' stroke-width='2' stroke-linecap='round' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
+}
+
+/* ----------- Liens du menu ----------- */
+.nav-link {
+  color: #0A2647 !important;
+  font-weight: 500;
+  padding: 8px 12px;
+  transition: color 0.3s ease, border-color 0.3s ease, background-color 0.3s ease;
+  border-bottom: 2px solid transparent;
+  border-radius: 6px;
+}
+
+.nav-link:hover {
+  color: #144272 !important;
+  border-color: #144272;
+  background-color: #f2f8ff;
+}
+
+.nav-link.active {
+  color: #205295 !important;
+  border-color: #205295;
+  background-color: #e6f2ff;
+}
+/* Taille de police spécifique pour le lien "Stock" */
+.nav-link.stock-link {
+  font-size: 0.85rem; /* Réduction de la taille de police */
+}
+
+/* ----------- Notifications ----------- */
+.notification-link {
+  position: relative;
+  transition: transform 0.3s ease;
+}
+
+.notification-link:hover {
+  transform: scale(1.05);
+}
+
+.notification-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background-color: #DC3545;
+  color: white;
+  font-size: 0.7rem;
+  padding: 3px 6px;
+  border-radius: 50%;
+  font-weight: 600;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+  }
+}
+
+/* Dropdown notifications */
+.dropdown-notifications {
+  width: 320px;
+  padding: 12px;
+  background-color: #ffffff;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.dropdown-header {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #0A2647;
+  margin-bottom: 10px;
+}
+
+.dropdown-item {
+  font-size: 0.9rem;
+  color: #2C74B3;
+  padding: 10px 16px;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+  border-radius: 8px;
+}
+
+.dropdown-item:hover {
+  background-color: #f2f8ff;
+  color: #144272;
+  transform: translateX(4px);
+}
+
+.view-all {
+  font-size: 0.8rem;
+  text-align: center;
+  display: block;
+  color: #144272;
+  margin-top: 12px;
+  transition: color 0.3s ease;
+}
+
+.view-all:hover {
+  color: #205295;
+}
+
+/* ----------- Profil utilisateur ----------- */
+.profile-dropdown {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 8px 0; /* Ajout d'un padding subtil pour améliorer l'espacement */
+  transition: border-bottom 0.3s ease, opacity 0.3s ease;
+  border-bottom: 2px solid transparent; /* Ligne en bas (initialement invisible) */
+}
+
+.profile-dropdown:hover {
+  border-bottom: 2px solid #205295; /* Ligne bleue visible au survol */
+  opacity: 0.95; /* Légère transparence pour un effet subtil */
+}
+
+.profile-avatar {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Ombre légère pour un effet flottant */
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.profile-avatar:hover img {
+  transform: scale(1.1); /* Zoom léger sur l'image au survol */
+}
+
+.profile-name {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #0A2647;
+  margin-left: 12px;
+  transition: color 0.3s ease;
+}
+
+.profile-name:hover {
+  color: #205295; /* Changement de couleur au survol */
+}
+
+/* Menu profil */
+.profile-menu {
+  min-width: 240px; /* Largeur minimale du menu déroulant */
+  padding: 8px 0;
+  background-color: #ffffff;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.profile-menu .dropdown-item {
+  font-size: 0.9rem;
+  color: #2C74B3;
+  padding: 10px 16px;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+  border-radius: 0; /* Suppression des bordures arrondies individuelles */
+}
+
+.profile-menu .dropdown-item:hover {
+  background-color: #f2f8ff; /* Fond clair au survol */
+  color: #144272;
+  transform: translateX(4px); /* Décalage subtil au survol */
+}
+
+/* Séparateur dans le menu */
+.dropdown-divider {
+  margin: 6px 0;
+  border-color: #e5e5e5;
+}
+
+/* Déconnexion */
+.logout-item {
+  color: #DC3545;
+  font-weight: 500;
+  transition: color 0.3s ease, transform 0.3s ease;
+}
+
+.logout-item:hover {
+  color: #A5D8FF;
+  transform: translateX(-2px); /* Effet de décalage */
+}

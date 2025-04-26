@@ -1,0 +1,115 @@
+<div class="container mt-4">
+  <button class="back-button" (click)="retour()">
+    <span class="icon">↩</span> Retour
+  </button>
+  <h3 class="mb-4 text-primary">
+    <i class="fas fa-file-invoice me-2"></i>Facturation des Commandes
+  </h3>
+
+  <!-- Statistiques -->
+  <div class="card bg-light mb-4">
+    <div class="card-body">
+      <h5 class="card-title text-center">Statistiques de Paiement</h5>
+      <div class="d-flex justify-content-between">
+        <div class="text-center">
+          <div class="fs-4 text-success">{{ paidCount }}</div>
+          <small>Payées</small>
+        </div>
+        <div class="text-center">
+          <div class="fs-4 text-warning">{{ pendingCount }}</div>
+          <small>En attente</small>
+        </div>
+        <div class="text-center">
+          <div class="fs-4 text-danger">{{ overdueCount }}</div>
+          <small>En retard</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Barre de recherche -->
+  <div class="row mb-3">
+    <div class="col-md-4">
+        <input 
+            type="text" 
+            class="form-control" 
+            [(ngModel)]="searchTerm" 
+            (input)="applyFilter()" 
+            placeholder="Rechercher par ID, Facture, Produit..."
+        >
+    </div> 
+  </div>
+
+  <!-- Tableau -->
+  <div class="table-responsive">
+    <table class="table table-hover table-striped">
+      <thead class="table-light">
+        <tr>
+          <th>ID Commande</th>
+          <th>N° Facture</th>
+          <th>ID Produit</th>
+          <th>Nom Produit</th>
+          <th>Quantité</th>
+          <th>Prix Unitaire HT</th>
+          <th>Fournisseur</th>
+          <th>Total HT</th>
+          <th>Total TTC</th>
+          <th>Date Commande</th>
+          <th>Date Échéance</th>
+          <th>Statut Paiement</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr *ngFor="let commande of filteredCommandes" 
+          [class.table-danger]="commande.paymentStatus === 'En retard'">
+        <td class="fw-bold">{{ commande.id || 'N/A' }}</td>
+        <td class="fw-bold">{{ commande.invoiceNumber || 'N/A' }}</td>
+        <td>{{ getProductId(commande) }}</td>
+        <td>{{ getProductName(commande) }}</td>
+        <td>{{ getQuantity(commande) || 0 | number }}</td>
+        <td>{{ getUnitPrice(commande) | number:'1.3-3' }} DT</td>
+        <td>{{ commande.supplierName }}</td>
+        <td>{{ getTotalHT(commande) | number:'1.3-3' }} DT</td>
+        <td>{{ getTotalTTC(commande) | number:'1.3-3' }} DT</td>
+        <td>{{ commande.dateCommande | date:'dd/MM/yy' }}</td>
+        <td>{{ commande.dueDate | date:'dd/MM/yy' }}</td>
+        <td>
+          <span class="badge" [ngClass]="{
+            'bg-success': commande.paymentStatus === 'Payé',
+            'bg-warning': commande.paymentStatus === 'En attente',
+            'bg-danger': commande.paymentStatus === 'En retard'
+          }">
+            {{ commande.paymentStatus }}
+            <span *ngIf="commande.paymentStatus === 'En retard'" class="ms-2 small">
+              ({{ calculateDaysLate(commande.dueDate) }} jours)
+            </span>
+          </span>
+          </td>
+          <td class="text-end">
+            <div class="btn-group" role="group">
+              <button *ngIf="commande.paymentStatus !== 'Payé'"
+                      class="btn btn-sm btn-success"
+                      (click)="markAsPaid(commande)"
+                      title="Marquer comme payé">
+                <i class="fas fa-check-circle"></i>
+              </button>
+              
+              <button class="btn btn-sm btn-info"
+                      (click)="generateInvoice(commande)"
+                      title="Générer facture">
+                <i class="fas fa-file-invoice"></i>
+              </button>
+              
+              <button class="btn btn-sm btn-primary"
+                      (click)="sendReminder(commande)"
+                      title="Envoyer rappel">
+                <i class="fas fa-envelope"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

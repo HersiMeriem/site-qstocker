@@ -1,0 +1,96 @@
+/* Style général du body */
+body {
+  background-color: #f8f9fa; /* Couleur de fond pour le corps de la page */
+  font-family: 'Arial', sans-serif; /* Police générale */
+  margin: 0; /* Supprime les marges par défaut */
+  padding: 0; /* Supprime le padding par défaut */
+}
+
+/* Style général du conteneur */
+.container {
+  background-color: #FFFFFF; /* Fond blanc pour le conteneur */
+  border-radius: 0; /* Pas de coins arrondis pour coller au bord de la page */
+  padding: 30px; /* Padding interne */
+  box-shadow: none; /* Supprime l'ombre */
+  width: 100%; /* Prend toute la largeur de la page */
+  min-height: 100vh; /* Prend au moins la hauteur de la fenêtre */
+}
+
+/* Style du titre */
+h3.text-success {
+  color: #28a745 !important;
+  font-weight: 700;
+  font-size: 2rem; /* Augmente la taille */
+  border-bottom: 3px solid #28a745; /* Sous-ligne */
+  padding-bottom: 10px;
+}
+
+/* Style du bouton de rafraîchissement */
+.btn-outline-success.float-end {
+  border-color: #28a745;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn-outline-success.float-end:hover {
+  background-color: #28a745;
+  color: white;
+  transform: translateY(-2px); /* Effet de levée au survol */
+}
+
+/* Style de la barre de recherche */
+.form-control {
+  border-radius: 25px; /* Bords arrondis */
+  padding: 12px 20px; /* Espacement interne */
+  border: 1px solid #ced4da; /* Bordure */
+}
+
+/* Style des alertes */
+.alert {
+  border-radius: 8px; /* Coins arrondis pour les alertes */
+}
+
+/* Style du tableau */
+.table-responsive {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.table {
+  margin-bottom: 0; /* Ajuste pour éviter les marges */
+}
+
+/* Style des images */
+img[alt="QR Code"],
+img[alt="Produit"] {
+  background: white;
+  padding: 5px; /* Espace autour des images */
+  border-radius: 5px; /* Coins arrondis */
+  border: 1px solid #dee2e6; /* Bordure légère */
+}
+
+/* Style responsive */
+@media (max-width: 768px) {
+  .container {
+    padding: 15px; /* Réduire le padding sur les petits écrans */
+  }
+
+  h3.text-success {
+    font-size: 1.5rem; /* Ajuster la taille pour mobile */
+  }
+
+  .btn-sm {
+    width: 100%; /* Largeur 100% sur mobile */
+    margin-bottom: 5px; /* Espace entre les boutons */
+  }
+}
+
+/* Animation du spinner */
+.spinner-border.text-success {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

@@ -1,0 +1,228 @@
+<br> <br>
+<div class="form-container">
+  <h1 class="form-title">➕ Nouveau Produit</h1>
+  
+  <form [formGroup]="productForm" (ngSubmit)="addProduct()" class="product-form">
+    <!-- Message d'erreur global -->
+    <div *ngIf="errorMessage" class="error-banner">
+      <i class="fas fa-exclamation-triangle"></i>
+      {{ errorMessage }}
+    </div>
+
+    <div class="form-grid">
+      <!-- Colonne Gauche -->
+      <div class="form-column">
+        <!-- Section Identification -->
+        <div class="form-section">
+          <h2 class="section-title">Identification</h2>
+          
+          <div class="form-group">
+            <label>ID Produit</label>
+            <input type="text" 
+                   formControlName="id" 
+                   (input)="formatProductId()"
+                   placeholder="PRD-0001"
+                   [class.invalid]="productForm.get('id')?.invalid">
+            
+            <div *ngIf="productForm.get('id')?.errors" class="error-hint">
+              <div *ngIf="productForm.get('id')?.errors?.['required']">
+                Champ obligatoire
+              </div>
+              <div *ngIf="productForm.get('id')?.errors?.['pattern']">
+                Format : PRD suivi de 3 à 5 chiffres (ex: PRD-123)
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="name">Nom du Produit <span class="required">*</span></label>
+            <input type="text" id="name" formControlName="name" 
+                   (input)="generateQRCode(productForm.value.name)"
+                   placeholder="Nom " class="modern-input">
+            <div class="validation-hint" *ngIf="showValidation('name')">
+              {{ getValidationMessage('name') }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Section Caractéristiques -->
+        <div class="form-section">
+          <h2 class="section-title">Caractéristiques</h2>
+          
+          <div class="form-group">
+            <label>Type de Parfum <span class="required">*</span></label>
+            <select formControlName="type" class="modern-select" (change)="onTypeChange()">
+              <option value="" disabled selected>Sélectionner...</option>
+              <option value="Floral">Floral</option>
+              <option value="Sucré">Sucré</option>
+              <option value="Boisé">Boisé</option>
+              <option value="Oriental">Oriental</option>
+              <option value="other">Autre</option>
+            </select>
+            <div *ngIf="showCustomTypeField" class="form-group">
+              <input type="text" 
+                     formControlName="customType" 
+                     placeholder="Entrez le type "
+                     class="modern-input">
+              <div *ngIf="productForm.get('customType')?.invalid && 
+                         (productForm.get('customType')?.dirty || productForm.get('customType')?.touched)" 
+                   class="error-hint">
+                Ce champ est obligatoire
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Public Cible <span class="required">*</span></label>
+            <select formControlName="category" class="modern-select">
+              <option value="" disabled selected>Sélectionner...</option>
+              <option value="Homme">Homme</option>
+              <option value="Femme">Femme</option>
+              <option value="Unisexe">Unisexe</option>
+              <option value="Enfant-Fille">Enfant-Fille</option>
+              <option value="Enfant-Garçon">Enfant-Garçon</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Colonne Droite -->
+      <div class="form-column">
+        <!-- Section Stock -->
+        <div class="form-section">
+          <h2 class="section-title">Gestion de Stock</h2>
+          
+          <div class="form-group">
+            <label>Volume <span class="required">*</span></label>
+            <select formControlName="volume" class="modern-select" (change)="onVolumeChange()">
+              <option value="" disabled selected>Sélectionner...</option>
+              <option value="15ml">15ml</option>
+              <option value="30ml">30ml</option>
+              <option value="50ml">50ml</option>
+              <option value="100ml">100ml</option>
+              <option value="other">Autre</option>
+            </select>
+            <div *ngIf="showCustomVolumeField" class="form-group">
+              <input type="text" 
+                     formControlName="customVolume" 
+                     placeholder="Entrez le volume (ex: 75ml)"
+                     class="modern-input"
+                     (blur)="formatCustomVolume()">
+              <div *ngIf="productForm.get('customVolume')?.invalid && 
+                         (productForm.get('customVolume')?.dirty || productForm.get('customVolume')?.touched)" 
+                   class="error-hint">
+                <div *ngIf="productForm.get('customVolume')?.errors?.['required']">
+                  Ce champ est obligatoire
+                </div>
+                <div *ngIf="productForm.get('customVolume')?.errors?.['pattern']">
+                  Le volume doit être un nombre suivi de "ml" (ex: 75ml)
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Quantité en Stock <span class="required">*</span></label>
+            <input type="number" formControlName="stockQuantity" 
+                   min="0" class="modern-input" [readonly]="true">
+            <small *ngIf="currentStockQuantity > 0" class="stock-hint">
+              Quantité actuelle dans le stock: {{currentStockQuantity}}
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label>Statut <span class="required">*</span></label>
+            <select formControlName="status" class="modern-select">
+              <option value="active">Actif</option>
+              <option value="inactive">Inactif</option>
+              <option value="promotion">Promotion</option>
+            </select>
+          </div>
+          <!--  LES DÉTAILS DE PROMOTION -->
+<div class="form-group" *ngIf="productForm.get('status')?.value === 'promotion'">
+  <label>Détails de la promotion</label>
+  <div class="promotion-fields">
+    <input type="number" 
+           formControlName="discountPercentage" 
+           min="1" max="100"
+           placeholder="Pourcentage de réduction"
+           class="modern-input">
+    <input type="date" 
+           formControlName="promotionStart" 
+           class="modern-input"
+           placeholder="Début promotion">
+    <input type="date" 
+           formControlName="promotionEnd" 
+           class="modern-input"
+           placeholder="Fin promotion">
+  </div>
+</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section Médias -->
+    <div class="media-section">
+      <div class="media-group">
+        <label class="media-label">
+          <span class="label-text">Image du Produit <span class="required">*</span></span>
+          <input type="file" id="image" (change)="onFileSelected($event)" 
+                 accept="image/*" hidden>
+          <div class="upload-box" [class.active]="imagePreview">
+            <div *ngIf="!imagePreview" class="upload-placeholder">
+              <i class="fas fa-cloud-upload-alt"></i>
+              <p>Glisser-déposer ou cliquer pour uploader</p>
+            </div>
+            <img *ngIf="imagePreview" [src]="imagePreview" 
+                 alt="Aperçu" class="image-preview">
+          </div>
+          <div class="validation-hint" *ngIf="showFileError">
+            Veuillez sélectionner une image valide
+          </div>
+        </label>
+      </div>
+
+      <div class="media-group">
+        <label class="media-label">
+          <span class="label-text">QR Code Généré</span>
+          <div class="qr-container" [class.generated]="qrCodeImage">
+            <div *ngIf="!qrCodeImage" class="qr-placeholder">
+              <i class="fas fa-qrcode"></i>
+              <p>Le QR Code apparaîtra automatiquement</p>
+            </div>
+            <img *ngIf="qrCodeImage" [src]="qrCodeImage" 
+                 alt="QR Code" class="qr-preview">
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <!-- Section Description -->
+    <div class="form-section">
+      <h2 class="section-title">Description</h2>
+      <textarea formControlName="info" 
+                placeholder="Décrire le produit en détail..."
+                class="modern-textarea"></textarea>
+      <div class="validation-hint" *ngIf="showValidation('info')">
+        {{ getValidationMessage('info') }}
+      </div>
+      <small class="char-counter">
+        {{ productForm.get('info')?.value?.length || 0 }} caractères
+      </small>
+    </div>
+
+    <!-- Boutons d'Action -->
+    <div class="form-actions">
+      <button type="button" (click)="resetForm()" class="cancel-btn">
+        <i class="fas fa-times-circle"></i> Annuler
+      </button>
+      
+      <button type="submit" [disabled]="isLoading" class="submit-btn">
+        <span *ngIf="!isLoading"><i class="fas fa-plus-circle"></i> Ajouter le Produit</span>
+        <span *ngIf="isLoading" class="loading-indicator">
+          <i class="fas fa-spinner fa-spin"></i> Création en cours...
+        </span>
+      </button>
+    </div>
+  </form>
+</div>

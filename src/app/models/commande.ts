@@ -1,0 +1,32 @@
+export interface Commande {
+  key: string;
+  supplierAddress: string;
+  items: { productId: string; productName: string; quantity: number; unitPrice: number; }[];
+dueDate: string|undefined;
+paymentStatus: any;
+  client: any;
+    idCommande: string;
+    dateCommande: string;
+    supplierName: string;
+    supplierEmail: string;
+    productName: string;
+    productId?: string;
+    quantite: number;
+    prixUnitaire: number;
+    totalHT: number;
+    totalTTC: number;
+    shortId: string;
+    dateLivraison?: Date;
+    montant: number;
+    latitude?: number;
+    longitude?: number;
+    id: string;
+    firebaseId: string;       
+    customIdCommande: string; 
+    idProduit: string;
+    invoiceNumber?: string;
+    deliveryDate: string;
+    status: 'En attente' | 'En cours' | 'Livré' | 'Annulé' | 'Retard';
+    quantity?: number;
+    unitPrice?: number;
+  }

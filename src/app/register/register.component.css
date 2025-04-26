@@ -1,0 +1,243 @@
+/* ===== GLOBAL ===== */
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 150px;
+  color: #2d3748;
+}
+
+/* ===== MAIN CONTAINER ===== */
+/* ===== MAIN CONTAINER ===== */
+.main-container {
+  display: flex;
+  background-color: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+.main-container:hover {
+  transform: translateY(-3px);
+}
+
+/* ===== IMAGE SECTION ===== */
+.image-container {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+}
+
+.register-image {
+  width: 400px;
+  max-width: 900px;
+  height: 400px;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.1));
+}
+
+/* ===== FORM SECTION ===== */
+.register-container {
+  flex: 1;
+  padding: 3rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: #ffffff;
+}
+
+.form-container {
+  max-width: 350px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+h2 {
+  color: #2d3748;
+  font-size: 2rem;
+  text-align: center;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+
+.subtitle {
+  color: #718096;
+  text-align: center;
+  margin-bottom: 2rem;
+  font-size: 0.95rem;
+}
+
+/* ===== INPUTS ===== */
+.input-container {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
+.input-container i {
+  position: absolute;
+  top: 50%;
+  left: 16px;
+  transform: translateY(-50%);
+  color: #805ad5;
+  font-size: 1rem;
+}
+
+input {
+  width: 100%;
+  padding: 14px 14px 14px 44px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  background-color: #ffffff;
+  color: #2d3748;
+  transition: all 0.2s ease-in-out;
+  font-family: 'Inter', sans-serif;
+}
+
+input::placeholder {
+  color: #a0aec0;
+  opacity: 1;
+}
+
+input:focus {
+  outline: none;
+  border-color: #805ad5;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(128, 90, 213, 0.2);
+}
+
+/* ===== BUTTONS ===== */
+button {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin: 1.5rem 0;
+  transition: all 0.3s ease;
+  font-family: 'Inter', sans-serif;
+}
+
+.register-btn {
+  background: linear-gradient(to right, #805ad5, #6b46c1);
+  color: white;
+  box-shadow: 0 4px 12px rgba(107, 70, 193, 0.25);
+}
+
+.register-btn:hover {
+  background: linear-gradient(to right, #6b46c1, #553c9a);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(107, 70, 193, 0.3);
+}
+
+.register-btn:active {
+  transform: translateY(0);
+}
+
+.register-btn:disabled {
+  background: #e2e8f0;
+  color: #a0aec0;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ===== SEPARATOR ===== */
+.separator {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 1.5rem 0;
+  color: #a0aec0;
+  font-size: 0.9rem;
+}
+
+.separator::before,
+.separator::after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.separator::before {
+  margin-right: 1rem;
+}
+
+.separator::after {
+  margin-left: 1rem;
+}
+
+/* ===== LINKS ===== */
+.login-link {
+  margin-top: 1rem;
+  color: #718096;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.login-link a {
+  color: #6b46c1;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.3s ease;
+  text-decoration: none;
+}
+
+.login-link a:hover {
+  color: #553c9a;
+  text-decoration: underline;
+}
+
+/* ===== SPINNER ===== */
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(107, 70, 193, 0.2);
+  border-top: 3px solid #6b46c1;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 1rem auto;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .main-container {
+    flex-direction: column;
+    width: 95%;
+    margin: 1rem 0;
+  }
+
+  .image-container {
+    padding: 1.5rem;
+    height: 180px;
+  }
+
+  .register-image {
+    max-width: 250px;
+  }
+
+  .register-container {
+    padding: 2rem 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .form-container {
+    max-width: 100%;
+  }
+}

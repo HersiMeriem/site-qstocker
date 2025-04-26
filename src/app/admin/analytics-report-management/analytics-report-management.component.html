@@ -1,0 +1,162 @@
+<div class="report-container">
+
+  <div class="notification-container" *ngIf="notification$ | async as notification">
+    <div class="notification" [ngClass]="notification.type">
+      {{ notification.message }}
+    </div>
+  </div>
+
+  <section class="report-controls card">
+    <header class="report-header">
+      <h1><i class="fas fa-chart-pie"></i> Gestion des Rapports Analytiques</h1>
+      <p>Générez et visualisez des rapports détaillés sur votre activité</p>
+    </header>
+    <div class="report-generator">
+      <h2><i class="fas fa-magic"></i> Créer un Nouveau Rapport</h2>
+
+      <form #reportForm>
+        <div class="form-group">
+          <label for="reportType"><i class="fas fa-filter"></i> Type de Rapport</label>
+          <select id="reportType" [(ngModel)]="reportCriteria.type" name="type" class="form-control" required>
+            <option value="sales">📈 Analyse des Ventes</option>
+            <option value="inventory">📦 Gestion des Stocks</option>
+            <option value="users">👥 Utilisateurs</option>
+          </select>
+          <span class="error" *ngIf="errors['type']">{{ errors['type'] }}</span>
+        </div>
+
+        <div class="form-group">
+          <label for="reportName"><i class="fas fa-tag"></i> Nom du Rapport (optionnel)</label>
+          <input type="text" id="reportName" [(ngModel)]="reportCriteria.name" name="name" class="form-control" placeholder="Ex: Rapport Ventes Q1">
+        </div>
+
+        <div class="date-range">
+          <div class="form-group">
+            <label for="startDate"><i class="fas fa-calendar-alt"></i> Date de Début</label>
+            <input type="date" id="startDate" [(ngModel)]="reportCriteria.startDate" name="startDate" class="form-control" required>
+            <span class="error" *ngIf="errors['startDate']">{{ errors['startDate'] }}</span>
+          </div>
+
+          <div class="form-group">
+            <label for="endDate"><i class="fas fa-calendar-alt"></i> Date de Fin</label>
+            <input type="date" id="endDate" [(ngModel)]="reportCriteria.endDate" name="endDate" class="form-control" required>
+            <span class="error" *ngIf="errors['endDate']">{{ errors['endDate'] }}</span>
+          </div>
+        </div>
+
+        <span class="error" *ngIf="errors['dateRange']">{{ errors['dateRange'] }}</span>
+
+        <button class="generate-btn" (click)="generateReport()" [disabled]="isLoading">
+          <i class="fas fa-rocket"></i>
+          {{ isLoading ? 'Génération en cours...' : 'Générer le Rapport' }}
+          <span class="progress-bar" *ngIf="isLoading" [style.width.%]="generationProgress"></span>
+        </button>
+      </form>
+    </div>
+  </section>
+
+  <section class="report-list card" *ngIf="reports.length > 0">
+    <div class="list-header">
+      <h2><i class="fas fa-file-alt"></i> Rapports Générés</h2>
+      <div class="list-controls">
+        <select [(ngModel)]="filterType" (ngModelChange)="applyFilters()" class="form-control filter-type">
+          <option value="all">Tous</option>
+          <option value="sales">Ventes</option>
+          <option value="inventory">Stocks</option>
+          <option value="users">Utilisateurs</option>
+        </select>
+        <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="onSearchChange($event)" placeholder="Rechercher..." class="search-input">
+      </div>
+    </div>
+
+    <div class="report-items">
+      <div *ngFor="let report of filteredReports" class="report-item">
+        <div class="report-info">
+          <h3>{{ report.name }}</h3>
+          <p class="report-meta">
+            <i class="fas fa-calendar"></i> {{ report.generatedDate | date:'mediumDate' }}
+            <span class="report-type">{{ report.type | titlecase }}</span>
+          </p>
+        </div>
+        <div class="report-actions">
+          <button class="action-btn view" (click)="previewReport(report)" title="Voir le rapport">
+            <i class="fas fa-eye"></i> Voir
+          </button>
+          <button class="action-btn download" (click)="exportToPDF(report)" title="Exporter en PDF">
+            <i class="fas fa-download"></i> PDF
+          </button>
+          <button class="action-btn download" (click)="exportToExcel(report)" title="Exporter en Excel">
+            <i class="fas fa-file-excel"></i> Excel
+          </button>
+          <button class="action-btn download" (click)="exportToCSV(report)" title="Exporter en CSV">
+            <i class="fas fa-file-csv"></i> CSV
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="report-visualization card" *ngIf="selectedReport">
+    <div class="visualization-header">
+      <h2>{{ selectedReport.name }}</h2>
+      <div class="visualization-tabs">
+        <button [class.active]="activeTab === 'chart'" (click)="activeTab = 'chart'; renderChart(selectedReport)">
+          <i class="fas fa-chart-bar"></i> Graphique
+        </button>
+        <button [class.active]="activeTab === 'table'" (click)="activeTab = 'table'">
+          <i class="fas fa-table"></i> Tableau
+        </button>
+      </div>
+    </div>
+
+    <div class="tab-content">
+      <div *ngIf="activeTab === 'chart'" class="chart-container">
+        <canvas #reportChart></canvas>
+        <div class="chart-controls" *ngIf="selectedReport">
+          <label for="chartType">Type de graphique:</label>
+          <select id="chartType" [(ngModel)]="currentChartType" (ngModelChange)="renderChart(selectedReport)">
+            <option value="bar">Barres</option>
+            <option value="line">Ligne</option>
+            <option value="pie" *ngIf="selectedReport.type === 'users' || selectedReport.type === 'inventory'">Camembert</option>
+            <option value="doughnut" *ngIf="selectedReport.type === 'users' || selectedReport.type === 'inventory'">Anneau</option>
+          </select>
+        </div>
+      </div>
+
+      <div *ngIf="activeTab === 'table'" class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th *ngFor="let header of tableHeaders">{{ header | titlecase }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of tableData">
+              <td *ngFor="let cell of row">{{ cell }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="report-actions" *ngIf="selectedReport">
+      <button class="action-btn delete" (click)="deleteReport(selectedReport)" title="Supprimer le rapport">
+        <i class="fas fa-trash"></i> Supprimer
+      </button>
+    </div>
+  </section>
+
+  <div class="kpi-container" *ngIf="kpiData">
+    <div class="kpi-card" [class.warning]="kpiData.warning">
+      <h4>{{kpiData.title}}</h4>
+      <div class="kpi-value">{{kpiData.mainValue}}</div>
+      <div class="kpi-label">{{kpiData.mainLabel}}</div>
+      <div class="kpi-grid">
+        <div class="kpi-mini" *ngFor="let item of kpiData.items" [class.warning]="item.warning">
+          <div class="mini-value">{{item.value}}</div>
+          <div class="mini-label">{{item.label}}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

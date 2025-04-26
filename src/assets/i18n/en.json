@@ -1,0 +1,12 @@
+{
+    "title": "Admin Settings",
+    "themeLabel": "Theme",
+    "notificationsLabel": "Enable Notifications",
+    "languageLabel": "Language",
+    "emailNotificationsLabel": "Email Notifications",
+    "logoUploadLabel": "Upload Logo",
+    "accentColorLabel": "Accent Color",
+    "silentHoursLabel": "Silent Hours",
+    "saveButton": "Save Settings",
+    "activityLogTitle": "Activity Log"
+  }

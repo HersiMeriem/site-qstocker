@@ -1,0 +1,217 @@
+/* Style global */
+body {
+  font-family: 'Arial', sans-serif;
+  background-color: #f7f9fc;
+  color: #333;
+  margin: 0;
+  padding: 20px;
+}
+
+/* Conteneur du formulaire */
+.form-container {
+  max-width: 800px;
+  margin: 0 auto;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+}
+
+/* Titre du formulaire */
+.form-title {
+  text-align: center;
+  font-size: 24px;
+  margin-bottom: 20px;
+  color: #4A90E2;
+}
+
+/* Section du formulaire */
+.form-section {
+  margin-bottom: 20px;
+}
+
+/* Titre de section */
+.section-title {
+  font-size: 18px;
+  margin-bottom: 10px;
+  border-bottom: 2px solid #4A90E2;
+  padding-bottom: 5px;
+}
+
+/* Grille du formulaire */
+.form-grid {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+/* Colonne du formulaire */
+.form-column {
+  width: 48%;
+}
+
+/* Groupe de formulaires */
+.form-group {
+  margin-bottom: 15px;
+}
+
+/* Étiquettes */
+label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+/* Entrées modernes */
+.modern-input,
+.modern-select,
+.modern-textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  transition: border-color 0.3s;
+}
+
+/* Entrées focalisées */
+.modern-input:focus,
+.modern-select:focus,
+.modern-textarea:focus {
+  border-color: #4A90E2;
+  outline: none;
+}
+
+/* Indicateur de validation */
+.validation-hint {
+  color: red;
+  font-size: 12px;
+}
+
+/* Banner d'erreur */
+.error-banner {
+  background-color: #ffcccc;
+  color: #c00;
+  padding: 10px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+/* Icones dans la banner d'erreur */
+.error-banner i {
+  margin-right: 10px;
+}
+
+/* Section des médias */
+.media-section {
+  display: flex;
+  justify-content: space-between;
+}
+
+/* Groupe des médias */
+.media-group {
+  flex: 1;
+  margin-right: 10px;
+}
+
+/* Boîte de téléchargement */
+.upload-box {
+  border: dashed 2px #4A90E2;
+  border-radius: 5px;
+  text-align: center;
+  padding: 20px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.upload-box.active {
+  background-color: #e7f3ff;
+}
+
+/* Prévisualisation de l'image */
+.image-preview,
+.qr-preview {
+  margin-top: 10px;
+  max-width: 100%;
+  border-radius: 5px;
+}
+
+/* Boutons */
+.form-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+.submit-btn,
+.cancel-btn {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s;
+}
+
+.submit-btn {
+  background-color: #4A90E2;
+  color: white;
+}
+
+.cancel-btn {
+  background-color: #f44336;
+  color: white;
+}
+
+.submit-btn:disabled {
+  background-color: #c0c0c0;
+  cursor: not-allowed;
+}
+
+/* Animation de chargement */
+.loading-indicator {
+  margin-left: 5px;
+}
+
+/* Médias Responsifs */
+@media (max-width: 768px) {
+  .form-grid {
+      flex-direction: column;
+  }
+
+  .form-column {
+      width: 100%;
+      margin-bottom: 20px;
+  }
+  .stock-hint {
+    display: block;
+    color: #666;
+    font-size: 0.8rem;
+    margin-top: 5px;
+  }
+  
+  input[readonly] {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+  }
+}
+
+.discount-badge {
+  background: #ff4757;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8em;
+  margin-left: 8px;
+}
+
+.price {
+  color: #2ed573;
+  font-weight: bold;
+}
+
+del {
+  color: #a4b0be;
+  margin-right: 8px;
+}

@@ -1,0 +1,15 @@
+<!-- Ajoutez à la fin de votre template -->
+<div *ngIf="showConfirmation" class="confirmation-overlay">
+    <div class="confirmation-dialog">
+      <h3>{{confirmationTitle}}</h3>
+      <p>{{confirmationMessage}}</p>
+      <div class="dialog-actions">
+        <button (click)="onConfirmationCancel()" class="btn btn-secondary">
+          {{confirmationCancelText || 'Annuler'}}
+        </button>
+        <button (click)="onConfirmationConfirm()" class="btn btn-danger">
+          {{confirmationConfirmText || 'Confirmer'}}
+        </button>
+      </div>
+    </div>
+  </div>

@@ -1,0 +1,27 @@
+/* promotion-dialog.component.css */
+.mat-dialog-content {
+    padding: 20px;
+  }
+  
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0 -15px;
+  }
+  
+  .col-12, .col-6 {
+    padding: 0 15px;
+    margin-bottom: 15px;
+  }
+  
+  .col-12 {
+    width: 100%;
+  }
+  
+  .col-6 {
+    width: 50%;
+  }
+  
+  .mat-form-field {
+    width: 100%;
+  }

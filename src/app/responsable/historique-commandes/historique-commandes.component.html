@@ -1,0 +1,131 @@
+
+<div class="container mt-4">
+  <button class="back-button" (click)="retour()">
+    <span class="icon">↩</span> Retour
+  </button> <br> 
+  <button mat-raised-button color="primary" class="supplier-btn" routerLink="/responsable/facturation-commande">
+    <mat-icon>receipt_long</mat-icon> Facturation des Commandes
+</button> <br> <br>
+  <h3 class="mb-4 text-primary">
+    <i class="fas fa-history me-2"></i>Historique des Commandes
+  </h3>   
+    <!-- Barre de recherche -->
+    <div class="row mb-4">
+      <div class="col-md-6">
+        <div class="input-group">
+          <span class="input-group-text"><i class="fas fa-search"></i></span>
+          <input type="text" class="form-control" 
+                 [(ngModel)]="searchTerm" 
+                 (input)="filterCommandes()"
+                 placeholder="Rechercher par nom produit, ID commande, ID produit ou fournisseur">
+          <button class="btn btn-outline-secondary" type="button" (click)="clearSearch()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+      </div>
+    </div> 
+  <div *ngIf="loading" class="text-center my-5">
+    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+      <span class="visually-hidden">Chargement...</span>
+    </div>
+    <p class="mt-2">Chargement des commandes...</p>
+  </div>
+
+  <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show">
+    {{errorMessage}}
+    <button type="button" class="btn-close" (click)="errorMessage = null"></button>
+  </div>
+
+  <div *ngIf="!loading && commandes.length === 0" class="alert alert-warning">
+    <i class="fas fa-exclamation-triangle me-2"></i>Aucune commande enregistrée
+  </div>
+
+  <div class="table-responsive" *ngIf="!loading && commandes.length > 0">
+    <table class="table table-hover table-striped">
+      <thead class="table-light">
+        <tr>
+          <th>ID Commande</th>
+          <th>N° Facture</th>
+          <th>ID Produit</th>
+          <th>Nom Produit</th>
+          <th>Quantité</th>
+          <th>Prix Unitaire</th>
+          <th>Total HT</th>
+          <th>Date Commande</th>
+          <th>Date Livraison</th>
+          <th>Fournisseur</th>
+          <th>Statut</th>
+          <th>Date Réception</th>
+          <th class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let commande of filteredCommandes" 
+        [class.table-warning]="commande.status === 'Retard' || commande.joursRetard > 0">
+          <td class="fw-bold">{{ commande.id || 'N/A' }}</td>
+          <td>{{ commande.invoiceNumber || 'À générer' }}</td>
+          <td>{{ commande.productId || 'N/A' }}</td>
+          <td>{{ commande.productName || 'N/A' }}</td>
+          <td>{{ commande.quantity | number }}</td>
+          <td>{{ commande.unitPrice | number:'1.3-3' }} DT</td>
+          <td>{{ commande.totalHT | number:'1.3-3' }} DT</td>
+          <td>{{ commande.dateCommande | date:'dd/MM/yy' }}</td>
+          <td>{{ commande.deliveryDate | date:'dd/MM/yy' }}</td>
+          <td>{{ commande.supplierName || 'N/A' }}</td>
+          <td>
+            <span class="badge" [ngClass]="{
+              'bg-danger': commande.status === 'Annulée',
+              'bg-primary': commande.status === 'En attente',
+              'bg-warning': commande.status === 'Retard' || commande.joursRetard > 0,
+              'bg-success': commande.status === 'Bien Reçu'
+            }">
+              {{ commande.status }}
+              <span *ngIf="commande.joursRetard > 0" class="ms-2 small">
+                ({{ commande.joursRetard }} jour{{ commande.joursRetard > 1 ? 's' : '' }})
+              </span>
+            </span>
+          </td>
+          <td>
+            {{ commande.status === 'Bien Reçu' ? (commande.dateBienRecu | date:'dd/MM/yy') : '-' }}
+          </td>
+          <td class="text-end">
+            <div class="btn-group" role="group">
+              <!-- Bouton Bien Reçu -->
+              <button *ngIf="commande.status === 'En attente' || commande.status === 'Retard'" 
+                      class="btn btn-sm btn-success"
+                      (click)="updateStatus(commande, 'Bien Reçu')"
+                      [disabled]="loading"
+                      title="Marquer comme reçu">
+                <i class="fas fa-check-circle"></i>
+              </button>
+              
+              <!-- Bouton Annuler -->
+              <button *ngIf="commande.status !== 'Annulée' && commande.status !== 'Bien Reçu'"
+                      class="btn btn-sm btn-warning ms-1"
+                      (click)="updateStatus(commande, 'Annulée')"
+                      [disabled]="loading"
+                      title="Annuler la commande">
+                <i class="fas fa-times-circle"></i>
+              </button>
+              
+              <!-- Bouton Supprimer -->
+              <button class="btn btn-sm btn-danger ms-1"
+                      (click)="supprimerCommande(commande)"
+                      [disabled]="loading"
+                      title="Supprimer">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+              
+              <!-- Bouton PDF -->
+              <button class="btn btn-sm btn-info ms-1"
+                      (click)="imprimerPDF(commande)"
+                      title="Générer PDF">
+                <i class="fas fa-file-pdf"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

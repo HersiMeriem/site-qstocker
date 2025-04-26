@@ -1,0 +1,105 @@
+<div class="main-container">
+<section>
+  <header class="list-header">
+    <div class="header-content">
+      <h1 class="title">📋 Liste des Produits</h1>
+      
+      <!-- Nouveaux boutons alignés à droite -->
+      <div class="header-actions">
+        <button class="btn btn-secondary" (click)="goToStock()">
+          <i class="fas fa-boxes"></i> Stock
+        </button>
+        
+        <button class="btn btn-primary" (click)="goToSales()">
+          <i class="fas fa-chart-line"></i> Ventes
+        </button>
+      </div>
+    </div>    
+    <div class="controls">
+      <div class="search-box">
+        <input type="text" 
+               [(ngModel)]="searchQuery" 
+               (input)="applySearch()"
+               placeholder="Rechercher par nom, ID, type ou catégorie..."
+               class="search-input">
+        <i class="fas fa-search search-icon"></i>
+      </div>
+  
+      <div class="filters">
+        <select [(ngModel)]="selectedCategory" (change)="filterByCategory()" class="form-select">
+          <option value="">Toutes catégories</option>
+          <option *ngFor="let cat of getUniqueCategories()" [value]="cat">{{cat}}</option>
+        </select>
+  
+        <select [(ngModel)]="selectedType" (change)="filterByType()" class="form-select">
+          <option value="">Tous types</option>
+          <option *ngFor="let type of getUniqueTypes()" [value]="type">{{type}}</option>
+        </select>
+      </div>
+    </div>
+  </header>
+
+  <br>
+
+  <!-- Grille de produits -->
+  <div class="product-grid">
+    <div *ngFor="let product of filteredProducts" class="product-card">
+      
+      <!-- Image du produit -->
+      <div class="product-image-container">
+        <img 
+          [src]="product.imageUrl || product.imageBase64 || 'assets/default-image.jpg'" 
+          alt="Image du produit" 
+          class="product-image">
+      </div>
+
+      <!-- Informations du produit -->
+      <div class="product-info">
+        <h3 class="product-name">{{ product.nomProduit || product.name }}</h3>
+        <div class="badge-group">
+          <span class="type-badge">{{ product.type }}</span>
+          <span class="category-badge">{{ product.category }}</span>
+        </div>
+
+
+        <div class="product-meta">
+          <div class="meta-item">
+            <i class="fas fa-tag"></i>
+            <span>{{ (product.prixDeVente || product.price) | number:'1.2-2' }} DT</span>
+          </div>
+          
+          <div class="meta-item">
+            <i class="fas fa-box"></i>
+            <span>{{ product.quantite || product.stockQuantity || 0 }} en stock</span>
+          </div>
+          
+          <div class="meta-item">
+            <i class="fas fa-info-circle"></i>
+            <span class="status-badge" [ngClass]="'status-' + (product.status || 'active')">
+              {{ getStatusLabel(product.status) }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- QR Code du produit -->
+      <div *ngIf="product.qrCode" class="qr-code-container">
+        <h4>QR Code :</h4>
+        <img [src]="product.qrCode" alt="QR Code du Produit" class="qr-code">
+        <p class="product-id">REF-{{ product.id | slice:0:8 }}</p>
+      </div>
+
+      <!-- Actions du produit -->
+      <div class="product-actions">
+        <button (click)="viewDetails(product)" class="btn btn-details">
+          <i class="fas fa-eye"></i> Détails
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="!loading && filteredProducts.length === 0" class="empty-state">
+    <i class="fas fa-box-open"></i>
+    <p>Aucun produit trouvé</p>
+  </div>
+</section></div>

@@ -1,0 +1,46 @@
+<!-- promotion-dialog.component.html -->
+<form [formGroup]="promoForm" (ngSubmit)="savePromotion()">
+    <h2 mat-dialog-title>🛎️ Gestion de Promotion</h2>
+    <mat-dialog-content>
+      <div class="row">
+        <div class="col-12">
+          <mat-form-field appearance="fill">
+            <mat-label>Pourcentage de réduction</mat-label>
+            <input matInput type="number" formControlName="discount" min="1" max="100">
+          </mat-form-field>
+        </div>
+  
+        <div class="col-6">
+          <mat-form-field>
+            <mat-label>Date de début</mat-label>
+            <input matInput [matDatepicker]="startPicker" formControlName="startDate">
+            <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+            <mat-datepicker #startPicker></mat-datepicker>
+          </mat-form-field>
+        </div>
+  
+        <div class="col-6">
+          <mat-form-field>
+            <mat-label>Date de fin</mat-label>
+            <input matInput [matDatepicker]="endPicker" formControlName="endDate">
+            <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+            <mat-datepicker #endPicker></mat-datepicker>
+          </mat-form-field>
+        </div>
+  
+        <div class="col-12">
+          <mat-form-field>
+            <mat-label>Statut après promotion</mat-label>
+            <mat-select formControlName="postPromoStatus">
+              <mat-option value="active">Actif</mat-option>
+              <mat-option value="inactive">Inactif</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </div>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+      <button mat-button mat-dialog-close>Annuler</button>
+      <button mat-raised-button color="primary" type="submit">Enregistrer</button>
+    </mat-dialog-actions>
+  </form>

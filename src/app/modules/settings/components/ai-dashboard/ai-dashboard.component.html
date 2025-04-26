@@ -1,0 +1,56 @@
+<div class="ai-dashboard">
+    <mat-card>
+      <mat-card-header>
+        <mat-icon>insights</mat-icon>
+        <mat-card-title>Tableau de Bord IA</mat-card-title>
+      </mat-card-header>
+  
+      <mat-card-content>
+        <div class="controls">
+          <mat-button-toggle-group [(value)]="viewMode">
+            <mat-button-toggle value="chart">
+              <mat-icon>bar_chart</mat-icon> Graphique
+            </mat-button-toggle>
+            <mat-button-toggle value="table">
+              <mat-icon>table_rows</mat-icon> Tableau
+            </mat-button-toggle>
+          </mat-button-toggle-group>
+        </div>
+  
+        <div *ngIf="isLoading" class="loading-state">
+          <mat-spinner diameter="50"></mat-spinner>
+          <p>Analyse des données en cours...</p>
+        </div>
+  
+        <div *ngIf="!isLoading && predictions.length > 0">
+          <div *ngIf="viewMode === 'chart'" class="chart-container">
+            <!-- Intégration du graphique -->
+            <canvas #forecastChart></canvas>
+          </div>
+  
+          <div *ngIf="viewMode === 'table'" class="table-container">
+            <table mat-table [dataSource]="predictions" class="mat-elevation-z8">
+              <!-- Colonnes du tableau -->
+              <ng-container matColumnDef="name">
+                <th mat-header-cell *matHeaderCellDef>Produit</th>
+                <td mat-cell *matCellDef="let item">{{item.name}}</td>
+              </ng-container>
+  
+              <ng-container matColumnDef="currentStock">
+                <th mat-header-cell *matHeaderCellDef>Stock Actuel</th>
+                <td mat-cell *matCellDef="let item">{{item.currentStock}}</td>
+              </ng-container>
+  
+              <tr mat-header-row *matHeaderRowDef="['name', 'currentStock']"></tr>
+              <tr mat-row *matRowDef="let row; columns: ['name', 'currentStock'];"></tr>
+            </table>
+          </div>
+        </div>
+  
+        <div *ngIf="!isLoading && predictions.length === 0" class="empty-state">
+          <mat-icon>info</mat-icon>
+          <p>Aucune donnée disponible pour l'analyse</p>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>

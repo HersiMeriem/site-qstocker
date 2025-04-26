@@ -1,0 +1,86 @@
+<div class="product-details-container">
+    <!-- État de chargement -->
+    <div *ngIf="loading" class="loading-state">
+      <div class="spinner"></div>
+      <p>Chargement en cours...</p>
+    </div>
+  
+    <!-- Message d'erreur -->
+    <div *ngIf="error" class="error-message">
+      <i class="fas fa-exclamation-triangle"></i>
+      <p>{{error}}</p>
+      <button class="back-button" (click)="goBack()">
+        <i class="fas fa-arrow-left"></i> Retour
+      </button>
+    </div>
+  
+    <!-- Carte des détails du produit -->
+    <div *ngIf="product && !loading" class="product-card">
+      <div class="card-header">
+        <button class="back-button" (click)="goBack()">
+          <i class="fas fa-arrow-left"></i>
+        </button>
+        <h2>Détails du Produit</h2>
+        <span class="product-ref">REF-{{product.id | slice:0:8}}</span>
+      </div>
+  
+      <div class="card-body">
+        <div class="product-media">
+          <div class="main-image">
+            <img [src]="product.imageUrl || product.imageBase64 || 'assets/default-product.png'" 
+                 alt="Image du produit">
+          </div>
+          
+          <div class="qr-code-container" *ngIf="product.qrCode">
+            <h4><i class="fas fa-qrcode"></i> Code QR</h4>
+            <img [src]="product.qrCode" alt="QR Code">
+            <p>Scanner pour plus d'infos</p>
+          </div>
+        </div>
+  
+        <div class="product-info">
+            <div class="product-title">
+                <h1>{{product.nomProduit || product.name}}</h1>
+                <div class="badges">
+                  <span class="type-badge">{{product.type}}</span>
+                  <span class="category-badge">{{product.category}}</span>
+                  <span class="status-badge" [ngClass]="'status-' + (product.status || 'active')">
+                    {{getStatusLabel(product.status)}}
+                  </span>
+                </div>
+              </div>
+  
+          <div class="stock-info">
+            <div class="stock-quantity" [class.low-stock]="realStockQuantity !== null && realStockQuantity < 5">
+              <i class="fas fa-boxes"></i>
+              <span *ngIf="stockLoading">Chargement...</span>
+              <span *ngIf="!stockLoading">
+                {{realStockQuantity !== null ? realStockQuantity + ' en stock' : 'Stock indisponible'}}
+              </span>
+            </div>
+  
+            <div class="price-info">
+              <i class="fas fa-tag"></i>
+              <span>{{(product.unitPrice || product.prixDeVente || 0) | number:'1.2-2'}} DT</span>
+            </div>
+          </div>
+  
+          <div class="description-section">
+            <h3><i class="fas fa-align-left"></i> Description</h3>
+            <p>{{product.description || 'Aucune description disponible'}}</p>
+          </div>
+  
+          <div class="meta-info">
+            <div class="meta-item">
+              <i class="fas fa-calendar-plus"></i>
+              <span>Créé le: {{(product.createdAt || product.dateCreation) | date:'dd/MM/yyyy'}}</span>
+            </div>
+            <div class="meta-item">
+              <i class="fas fa-calendar-check"></i>
+              <span>Modifié le: {{(product.updatedAt || product.dateMiseAJour) | date:'dd/MM/yyyy'}}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>

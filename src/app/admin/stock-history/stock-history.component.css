@@ -1,0 +1,286 @@
+/* Style général minimaliste */
+.stock-history-container {
+  width: 95%;
+  max-width: 1500px;
+  margin: 50px auto;
+  padding: 40px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 5px 25px rgba(0, 0, 0, 0.05);
+}
+
+/* Titre épuré */
+.stock-history-title {
+  font-size: 32px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 35px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #eee;
+  letter-spacing: 0.5px;
+}
+.form-control{
+  width: 500px;
+}
+/* Tableau clair et lisible */
+.stock-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 25px;
+  font-size: 16px;
+}
+
+.stock-table thead {
+  border-bottom: 2px solid #eee;
+}
+
+.stock-table th {
+  padding: 18px 20px;
+  text-align: left;
+  font-weight: 500;
+  color: #555;
+  background: #f9f9f9;
+  position: sticky;
+  top: 0;
+}
+
+.stock-table td {
+  padding: 16px 20px;
+  border-bottom: 1px solid #f5f5f5;
+  color: #333;
+}
+
+.stock-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Effets de survol discrets */
+.stock-table tr:hover td {
+  background: #fafafa;
+}
+
+/* Style des données importantes */
+.stock-table td:nth-child(3),
+.stock-table td:nth-child(4),
+.stock-table td:nth-child(5) {
+  font-weight: 500;
+  color: #222;
+}
+
+/* Style de la date */
+.stock-table td:last-child {
+  color: #666;
+  font-size: 15px;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .stock-history-container {
+      padding: 35px;
+  }
+}
+
+@media (max-width: 992px) {
+  .stock-table th,
+  .stock-table td {
+      padding: 14px 16px;
+      font-size: 15px;
+  }
+}
+
+@media (max-width: 768px) {
+  .stock-history-container {
+      width: 100%;
+      border-radius: 0;
+      padding: 30px 20px;
+      box-shadow: none;
+      border-top: 1px solid #eee;
+      border-bottom: 1px solid #eee;
+  }
+  
+  .stock-table-container {
+      overflow-x: auto;
+  }
+  
+  .stock-table {
+      min-width: 800px;
+  }
+}
+
+@media (max-width: 576px) {
+  .stock-history-title {
+      font-size: 26px;
+      margin-bottom: 25px;
+  }
+  
+  .stock-history-container {
+      padding: 25px 15px;
+  }
+}
+/* Option : Ajouter une couleur d'accent */
+.stock-history-title {
+  color: #2c3e50;
+  border-bottom: 1px solid #3498db;
+}
+
+.stock-table th {
+  background: #f0f7ff;
+  color: #2c3e50;
+}
+
+.stock-table tr:hover td {
+  background: #f5faff;
+}
+
+/* Style général minimaliste */
+.stock-history-container {
+  width: 95%;
+  max-width: 1500px;
+  margin: 50px auto;
+  padding: 40px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 5px 25px rgba(0, 0, 0, 0.05);
+}
+
+/* Titre épuré */
+.stock-history-title {
+  font-size: 32px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 35px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #eee;
+  letter-spacing: 0.5px;
+}
+
+/* Tableau clair et lisible */
+.stock-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 25px;
+  font-size: 16px;
+}
+
+.stock-table thead {
+  border-bottom: 2px solid #eee;
+}
+
+.stock-table th {
+  padding: 18px 20px;
+  text-align: left;
+  font-weight: 500;
+  color: #555;
+  background: #f9f9f9;
+  position: sticky;
+  top: 0;
+}
+
+.stock-table td {
+  padding: 16px 20px;
+  border-bottom: 1px solid #f5f5f5;
+  color: #333;
+  vertical-align: middle;
+}
+
+.stock-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Effets de survol discrets */
+.stock-table tr:hover td {
+  background: #fafafa;
+}
+
+/* Style des données importantes */
+.stock-table td:nth-child(5),
+.stock-table td:nth-child(6),
+.stock-table td:nth-child(7),
+.stock-table td:nth-child(8) {
+  font-weight: 500;
+  color: #222;
+}
+
+/* Style de la date */
+.stock-table td:last-child {
+  color: #666;
+  font-size: 15px;
+}
+
+/* Badge quantité */
+.badge {
+  font-size: 0.9em;
+  padding: 5px 10px;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .stock-history-container {
+      padding: 35px;
+  }
+}
+
+@media (max-width: 992px) {
+  .stock-table th,
+  .stock-table td {
+      padding: 14px 16px;
+      font-size: 15px;
+  }
+}
+
+@media (max-width: 768px) {
+  .stock-history-container {
+      width: 100%;
+      border-radius: 0;
+      padding: 30px 20px;
+      box-shadow: none;
+      border-top: 1px solid #eee;
+      border-bottom: 1px solid #eee;
+  }
+  
+  .stock-table-container {
+      overflow-x: auto;
+  }
+  
+  .stock-table {
+      min-width: 800px;
+  }
+}
+
+@media (max-width: 576px) {
+  .stock-history-title {
+      font-size: 26px;
+      margin-bottom: 25px;
+  }
+  
+  .stock-history-container {
+      padding: 25px 15px;
+  }
+}
+
+/* Option : Ajouter une couleur d'accent */
+.stock-history-title {
+  color: #2c3e50;
+  border-bottom: 1px solid #3498db;
+}
+
+.stock-table th {
+  background: #f0f7ff;
+  color: #2c3e50;
+}
+
+.stock-table tr:hover td {
+  background: #f5faff;
+}
+
+.form-control {
+  padding: 10px 15px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  font-size: 16px;
+}
+
+.alert {
+  border-radius: 8px;
+  padding: 15px 20px;
+}

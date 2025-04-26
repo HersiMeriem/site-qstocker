@@ -1,0 +1,143 @@
+<br> <br> 
+<div class="container mt-4">
+  <div *ngIf="loading" class="text-center">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Chargement...</span>
+    </div>
+    <p>Chargement des détails du produit...</p>
+  </div>
+
+  <div *ngIf="error" class="alert alert-danger">
+    {{ error }}
+    <button routerLink="/responsable/product-list" class="btn btn-link">
+      Retour à la liste
+    </button>
+  </div>
+
+  <div *ngIf="product && !loading" class="card shadow-sm">
+    <div class="card-header bg-primary text-white">
+      <div class="d-flex justify-content-between align-items-center">
+        <h2 class="mb-0">Détails du produit</h2>
+        <span class="badge bg-light text-dark">{{ product.id }}</span>
+      </div>
+    </div>
+    
+    <div class="card-body">
+      <div class="row">
+        <!-- Colonne gauche (Image + QR Code) -->
+        <div class="col-md-4">
+          <div class="product-image-container mb-4 p-3 border rounded bg-white">
+            <img [src]="product.imageUrl || 'assets/default-product.png'" 
+                 class="img-fluid rounded"
+                 alt="Image produit">
+          </div>
+
+          <!-- Section QR Code -->
+          <div class="qr-section p-3 bg-light rounded">
+            <h5 class="text-center mb-3">
+              <i class="fas fa-qrcode me-2"></i>QR Code du produit
+            </h5>
+            
+            <div *ngIf="qrCodeUrl" class="text-center">
+              <img [src]="qrCodeUrl" 
+                   alt="QR Code"
+                   class="img-thumbnail qr-image">
+              <p class="text-muted small mt-2">
+                Scannez ce code pour plus d'informations
+              </p>
+            </div>
+            
+            <div *ngIf="!qrCodeUrl" class="alert alert-warning text-center">
+              <i class="fas fa-exclamation-triangle me-2"></i>
+              QR Code non disponible
+            </div>
+          </div>
+        </div>
+        
+        <!-- Colonne droite (Détails) -->
+        <div class="col-md-8">
+          <h3 class="product-name">{{ product.name }}</h3>
+          
+          <div class="d-flex flex-wrap gap-2 mb-3">
+            <span class="badge bg-info">{{ product.type }}</span>
+            <span class="badge bg-secondary">{{ product.category }}</span>
+            <span class="badge bg-success" *ngIf="realStockQuantity !== null && realStockQuantity > 0">
+              <i class="fas fa-check-circle me-1"></i>
+              En stock
+            </span>
+            <span class="badge bg-danger" *ngIf="realStockQuantity !== null && realStockQuantity <= 0">
+              <i class="fas fa-times-circle me-1"></i>
+              Rupture
+            </span>
+            <span class="badge bg-warning text-dark" *ngIf="realStockQuantity === null">
+              <i class="fas fa-question-circle me-1"></i>
+              Stock inconnu
+            </span>
+          </div>
+          
+          <div class="product-price mb-3">
+            <h4 class="text-primary">
+              {{ product.unitPrice | number:'1.2-2' }} DT
+            </h4>
+            <p class="text-muted small mb-0">
+              <i class="fas fa-boxes me-1"></i>
+              <span *ngIf="stockLoading">
+                <span class="spinner-border spinner-border-sm text-secondary" role="status"></span>
+                Chargement du stock...
+              </span>
+              <span *ngIf="!stockLoading">
+                <span *ngIf="realStockQuantity !== null; else noStockData">
+                  {{ realStockQuantity }} unités disponibles
+                </span>
+                <ng-template #noStockData>
+                  Données de stock non disponibles
+                </ng-template>
+              </span>
+            </p>
+          </div>
+          
+          <div class="product-description mb-4">
+            <h5>
+              <i class="fas fa-align-left me-2"></i>
+              Description
+            </h5>
+            <p class="px-3">{{ product.description || 'Aucune description disponible' }}</p>
+          </div>
+          
+          <div class="product-meta">
+            <div class="row">
+              <div class="col-md-6">
+                <div class="d-flex align-items-center mb-2">
+                  <i class="fas fa-calendar-alt text-muted me-2"></i>
+                  <span class="small">Ajouté le: {{ product.createdAt | date:'dd/MM/yyyy' }}</span>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="d-flex align-items-center mb-2">
+                  <i class="fas fa-sync-alt text-muted me-2"></i>
+                  <span class="small">Dernière mise à jour: {{ product.updatedAt | date:'dd/MM/yyyy' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="card-footer bg-light">
+      <div class="d-flex justify-content-between">
+        <button routerLink="/responsable/product-list" class="btn btn-outline-secondary">
+          <i class="fas fa-arrow-left me-2"></i> Retour à la liste
+        </button>
+        <div>
+          <button [routerLink]="['/responsable/edit-product', product.id]" class="btn btn-primary me-2">
+            <i class="fas fa-edit me-2"></i> Modifier
+          </button>
+          <button (click)="deleteProduct(product.id)" class="btn btn-danger">
+            <i class="fas fa-trash me-2"></i> Supprimer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

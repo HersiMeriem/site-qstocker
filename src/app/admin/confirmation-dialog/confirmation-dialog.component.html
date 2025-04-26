@@ -1,0 +1,18 @@
+<div class="dialog-container">
+  <div class="dialog-header">
+    <h2>{{data.title || 'Confirmation'}}</h2>
+  </div>
+  
+  <div class="dialog-content">
+    <p>{{data.message}}</p>
+  </div>
+
+  <div class="dialog-actions">
+    <button class="cancel-btn" (click)="onCancel()">
+      {{data.cancelText || 'Non'}}
+    </button>
+    <button class="confirm-btn" (click)="onConfirm()">
+      {{data.confirmText || 'Oui'}}
+    </button>
+  </div>
+</div>

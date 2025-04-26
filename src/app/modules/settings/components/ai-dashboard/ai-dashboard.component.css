@@ -1,0 +1,53 @@
+.ai-dashboard {
+    padding: 20px;
+    
+    mat-card {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+  
+    .controls {
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: center;
+    }
+  
+    .loading-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px;
+      
+      mat-spinner {
+        margin-bottom: 20px;
+      }
+    }
+  
+    .chart-container {
+      height: 400px;
+      width: 100%;
+    }
+  
+    .table-container {
+      overflow-x: auto;
+      
+      table {
+        width: 100%;
+      }
+    }
+  
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px;
+      color: rgba(0, 0, 0, 0.54);
+      
+      mat-icon {
+        font-size: 48px;
+        height: 48px;
+        width: 48px;
+        margin-bottom: 20px;
+      }
+    }
+  }

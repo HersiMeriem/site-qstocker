@@ -1,0 +1,176 @@
+/* 🌟 Conteneur principal des fournisseurs */
+.suppliers-container {
+    display: flex;
+    justify-content: center; /* Centrage */
+    align-items: flex-start;
+    background: #ffffff; /* Fond blanc propre */
+    padding: 30px;
+    gap: 24px;
+    flex-wrap: wrap;
+    width: 90%;
+    max-width: 1200px;
+    margin: 40px auto;
+}
+
+/* 📋 Section gauche (Liste des fournisseurs) */
+.left-section {
+    flex: 1;
+    min-width: 65%;
+}
+
+/* 🏷 Titre principal */
+h2 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #2C3E50;
+    font-size: 26px;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+/* Ajout d'une icône au titre */
+h2::before {
+    content: "📦";
+    font-size: 28px;
+}
+
+/* ➕ Bouton Ajouter */
+.add-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: linear-gradient(135deg, #0074D9, #0056b3);
+    color: white;
+    font-weight: bold;
+    padding: 14px 20px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+    font-size: 16px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Effet de vague sur le bouton */
+.add-button::after {
+    content: "";
+    position: absolute;
+    width: 150%;
+    height: 200%;
+    background: rgba(255, 255, 255, 0.2);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(25deg);
+    transition: all 0.4s;
+    opacity: 0;
+}
+
+.add-button:hover::after {
+    opacity: 1;
+    width: 200%;
+    height: 300%;
+}
+
+.add-button:hover {
+    background: linear-gradient(135deg, #0056b3, #004494);
+    transform: scale(1.05);
+}
+
+/* 🛠 Icônes d’action (modifier, supprimer) */
+.action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #ECEFF1;
+    cursor: pointer;
+    transition: transform 0.2s ease-in-out, background 0.3s;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.action-btn:hover {
+    transform: scale(1.15);
+    background: #CFD8DC;
+}
+
+/* 🏢 Section de droite (Autres infos ou options) */
+.right-section {
+    flex: 0.35;
+    min-width: 30%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s;
+}
+
+.right-section:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* 📱 Responsive Design */
+@media (max-width: 1024px) {
+    .suppliers-container {
+        flex-direction: column;
+        align-items: center;
+        padding: 20px;
+    }
+
+    .left-section, .right-section {
+        width: 100%;
+        min-width: unset;
+    }
+
+    .add-button {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+@media (max-width: 600px) {
+    .suppliers-container {
+        padding: 15px;
+    }
+
+    h2 {
+        font-size: 22px;
+    }
+
+    .add-button {
+        padding: 12px;
+        font-size: 14px;
+    }
+
+    .action-btn {
+        width: 36px;
+        height: 36px;
+    }
+}
+
+/* ======= Bouton Ajouter ======= */
+.add-button {
+    background-color: #28a745;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 25px;
+    font-size: 16px;
+    display: inline-flex;
+    align-items: center;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+    border: none;
+  }
+  
+  .add-button:hover {
+    background-color: #218838;
+    transform: translateY(-2px);
+  }

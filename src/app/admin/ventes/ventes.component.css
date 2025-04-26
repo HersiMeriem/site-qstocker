@@ -1,0 +1,239 @@
+/* Conteneur principal - Version alternative */
+.ventes-container {
+    padding: 2.5rem;
+    max-width: 1600px;
+    margin: 2rem auto;
+    background-color: #f9fafb;
+    border-radius: 12px;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* En-tête - Version alternative */
+.ventes-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.ventes-header h1 {
+    font-size: 1.75rem;
+    font-weight: bold;
+    color: #3c7dd2;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.ventes-header h1 i {
+    color: #3c7dd2;
+    font-size: 1.5rem;
+}
+
+/* Contrôles - Version alternative */
+.ventes-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+}
+
+/* Champ de recherche - Version alternative */
+.search-box {
+    position: relative;
+    min-width: 280px;
+}
+
+.search-box input {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 2.5rem;
+    border: 1px solid #c7c8cb;
+    border-radius: 8px;
+    background-color: white;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.search-box input:focus {
+    border-color: #818cf8;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2);
+}
+
+.search-box i {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #858991;
+    font-size: 1rem;
+}
+
+/* Select - Version alternative */
+select {
+    padding: 0.75rem 2.25rem 0.75rem 1rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background-color: white;
+    font-size: 0.95rem;
+    color: #494c51;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%236b7280' viewBox='0 0 20 20'%3E%3Cpath d='M5.23 7.21a.75.75 0 011.06.02L10 10.586l3.71-3.356a.75.75 0 111.02 1.1l-4.25 3.84a.75.75 0 01-1.02 0L5.25 8.27a.75.75 0 01-.02-1.06z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+select:focus {
+    border-color: #818cf8;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2);
+}
+
+/* Tableau - Version alternative */
+table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-top: 1.5rem;
+    font-size: 0.95rem;
+    background-color: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+thead {
+    background-color: #f3f4f6;
+}
+
+th {
+    padding: 1rem 1.25rem;
+    text-align: left;
+    font-weight: 600;
+    color: #040404;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+td {
+    padding: 0.875rem 1.25rem;
+    color: #3d3e3e;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+tr:last-child td {
+    border-bottom: none;
+}
+
+tr:hover td {
+    background-color: #f9fafb;
+}
+
+/* Boutons actions - Version alternative */
+button {
+    background-color: transparent;
+    border: none;
+    color: #4f46e5;
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+button:hover {
+    background-color: #eef2ff;
+    color: #4338ca;
+}
+
+/* État de chargement et erreur - Version alternative */
+.loading, .error {
+    padding: 2rem;
+    margin-top: 1.5rem;
+    text-align: center;
+    border-radius: 8px;
+    font-size: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.loading {
+    background-color: #f3f4f6;
+    color: #6b7280;
+}
+
+.loading i {
+    animation: spin 1s linear infinite;
+    font-size: 1.25rem;
+    color: #4f46e5;
+}
+
+.error {
+    background-color: #fee2e2;
+    color: #b91c1c;
+}
+
+.error i {
+    font-size: 1.25rem;
+    color: #b91c1c;
+}
+
+/* Animation */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Ligne vide (aucune donnée) */
+tr td[colspan] {
+    text-align: center;
+    padding: 2rem;
+    color: #9ca3af;
+    background-color: white;
+}
+
+/* Responsive - Version alternative */
+@media (max-width: 768px) {
+    .ventes-container {
+        padding: 1.5rem;
+    }
+    
+    .ventes-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .ventes-controls {
+        width: 100%;
+    }
+    
+    .search-box {
+        min-width: 100%;
+    }
+    
+    th, td {
+        padding: 0.75rem;
+        font-size: 0.9rem;
+    }
+    
+    /* Masquer certaines colonnes en mobile */
+    th:nth-child(4), td:nth-child(4), /* Client */
+    th:nth-child(6), td:nth-child(6) /* Paiement */ {
+        display: none;
+    }
+}

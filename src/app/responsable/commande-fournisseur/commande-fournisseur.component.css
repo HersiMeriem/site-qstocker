@@ -1,0 +1,47 @@
+.container {
+  max-width: 900px;
+  margin: auto;
+  padding: 20px;
+}
+
+mat-card {
+  margin: 20px 0;
+  padding: 15px;
+}
+
+.history-btn {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.history-btn mat-icon {
+  margin-right: 5px;
+}
+
+mat-form-field {
+  width: 100%;
+  margin-bottom: 10px;
+}
+.history-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 15px;
+  font-weight: bold;
+  border-radius: 8px;
+  background: linear-gradient(45deg, #5a67d8, #7f9cf5);
+  color: white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.history-btn:hover {
+  background: linear-gradient(45deg, #4c51bf, #6b8bfd);
+  transform: scale(1.05);
+}
+
+.history-btn mat-icon {
+  font-size: 20px;
+}

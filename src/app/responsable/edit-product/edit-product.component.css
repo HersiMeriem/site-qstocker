@@ -1,0 +1,360 @@
+/* Style global pour le conteneur du formulaire */
+.form-container {
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 20px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Titre principal du formulaire */
+.form-title {
+  text-align: center;
+  font-size: 32px;
+  color: #4A90E2;
+  margin-bottom: 20px;
+}
+
+/* Style de la grille du formulaire */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+/* Colonnes du formulaire */
+.form-column {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Sections du formulaire */
+.form-section {
+  margin-bottom: 20px;
+}
+
+/* Titres des sections */
+.section-title {
+  font-size: 24px;
+  color: #333;
+  margin-bottom: 10px;
+  border-bottom: 2px solid #4A90E2;
+  padding-bottom: 5px;
+}
+
+/* Styles des groupes de formulaire */
+.form-group {
+  margin-bottom: 15px;
+}
+
+/* Étiquettes des champs */
+label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+/* Styles pour les entrées modernes */
+.modern-input,
+.modern-select,
+.modern-textarea {
+  width: 100%;
+  padding: 10px;
+  border: 2px solid #4A90E2;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.modern-input:focus,
+.modern-select:focus,
+.modern-textarea:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+  outline: none;
+}
+
+/* Texte des erreurs */
+.error-banner {
+  background-color: #ffdddd;
+  color: #d8000c;
+  padding: 10px;
+  border: 1px solid #d8000c;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+}
+
+/* Indicateurs de validation */
+.validation-hint {
+  font-size: 12px;
+  color: #d8000c;
+  margin-top: 5px;
+}
+
+/* Section des médias pour upload d'images */
+.media-section {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+/* Styles pour les groupes médias */
+.media-group {
+  flex: 1;
+  margin-right: 10px;
+}
+
+.media-group:last-child {
+  margin-right: 0; /* Suppression de la marge pour le dernier élément */
+}
+
+/* Style de l'upload box */
+.upload-box {
+  border: 2px dashed #4A90E2;
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+  position: relative;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.upload-box.active {
+  background-color: #e7f3ff;
+}
+
+.upload-placeholder {
+  color: #4A90E2;
+}
+
+/* Prévisualisation de l'image */
+.image-preview {
+  max-width: 100%;
+  border-radius: 10px;
+  margin-top: 10px;
+}
+
+/* Styles QR Code */
+.qr-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 2px solid #4A90E2;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+/* Actions du formulaire */
+.form-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+/* Styles pour les boutons */
+.cancel-btn,
+.submit-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.cancel-btn {
+  background-color: #ff3333;
+  color: white;
+}
+
+.cancel-btn:hover {
+  background-color: #cc0000;
+}
+
+.submit-btn {
+  background-color: #4A90E2;
+  color: white;
+}
+.submit-btn:hover {
+  background-color: #007bff; /* Couleur de fond légèrement plus foncée au survol */
+}
+
+/* Animation de chargement */
+.loading-indicator {
+  display: flex;
+  align-items: center;
+}
+
+.loading-indicator i {
+  margin-right: 5px; /* Espacement entre l'icône et le texte */
+}
+
+/* Centrage des boutons dans les actions du formulaire */
+.form-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center; /* Alignement vertical des éléments */
+}
+
+/* Styles de responsive design pour petits écrans */
+@media (max-width: 600px) {
+  .form-container {
+    padding: 15px; /* Réduction du padding pour les petits écrans */
+  }
+
+  .form-title {
+    font-size: 28px; /* Réduction de la taille du titre */
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr; /* Passer à une seule colonne sur de petits écrans */
+  }
+
+  .media-section {
+    flex-direction: column; /* Aligner les groupes de médias verticalement */
+  }
+
+  .media-group {
+    margin-right: 0; /* Supprimer la marge droite dans les petits écrans */
+    margin-bottom: 20px; /* Ajouter un espacement entre les groupes */
+  }
+
+ /* edit-product.component.css */
+.form-actions {
+  position: sticky;
+  bottom: 0;
+  background: white;
+  padding: 1rem;
+  border-top: 1px solid #eee;
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
+.submit-btn {
+  background: #4CAF50;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  border: none;
+}
+
+.submit-btn:disabled {
+  background: #81C784;
+  cursor: not-allowed;
+}
+
+.cancel-btn {
+  background: #f44336;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  border: none;
+}
+/* Style pour le message de succès */
+.save-success-message {
+  background-color: #4caf50;
+  color: white;
+  padding: 15px 20px;
+  border-radius: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.save-success-message .message-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.save-success-message .fa-check-circle {
+  font-size: 20px;
+}
+
+.save-success-message .close-icon {
+  cursor: pointer;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.save-success-message .close-icon:hover {
+  opacity: 1;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Style pour le bouton Enregistrer */
+.submit-btn {
+  background-color: #4caf50;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.submit-btn:hover {
+  background-color: #3d8b40;
+}
+
+.submit-btn:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.submit-btn .loading-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+} 
+.error-banner {
+  background-color: #f8d7da;
+  color: #721c24;
+  padding: 12px 20px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  border: 1px solid #f5c6cb;
+}
+
+.error-banner i {
+  margin-right: 10px;
+  color: #dc3545;
+}
+
+
+}
+
+
+.discount-badge {
+  background: #ff4757;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8em;
+  margin-left: 8px;
+}
+
+.price {
+  color: #2ed573;
+  font-weight: bold;
+}
+
+del {
+  color: #a4b0be;
+  margin-right: 8px;
+}

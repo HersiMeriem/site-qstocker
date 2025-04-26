@@ -1,0 +1,47 @@
+.confirm-dialog-container {
+  padding: 16px;
+  min-width: 350px;
+  max-width: 500px;
+}
+
+.dialog-title {
+  color: #333;
+  font-weight: 500;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+}
+
+.message-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.warning-icon {
+  color: #ff9800;
+  font-size: 28px;
+  width: 28px;
+  height: 28px;
+}
+
+.message-text {
+  margin: 0;
+  color: #555;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.dialog-actions {
+  padding: 16px 0 0 0;
+  margin-top: 16px;
+  border-top: 1px solid #eee;
+}
+
+.cancel-btn {
+  margin-right: 8px;
+}
+
+.confirm-btn {
+  min-width: 80px;
+}

@@ -1,0 +1,75 @@
+.light-theme {
+  background-color: #ffffff;
+  color: #000000;
+}
+
+.dark-theme {
+  background-color: #121212;
+  color: #ffffff;
+}
+
+.blue-theme {
+  background-color: #e7f3ff;
+  color: #000000;
+}
+
+.green-theme {
+  background-color: #e8f8e8;
+  color: #000000;
+}
+
+.media-manager ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.calendar {
+  margin-top: 20px;
+}
+
+#heatmap {
+  width: 500px;
+  height: 500px;
+  margin-top: 20px;
+}
+/* Styles par défaut pour le mode clair */
+body {
+  background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+  color: #333;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+/* Styles pour le mode sombre */
+body.dark-mode {
+  background: linear-gradient(135deg, #2c3e50, #34495e);
+  color: #ffffff;
+}
+
+/* Bouton de changement de thème */
+.theme-toggle button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 24px;
+  color: #ffff00; /* Couleur par défaut (soleil en mode clair) */
+  transition: color 0.3s ease;
+}
+
+body.dark-mode .theme-toggle button {
+  color: #2c3e50; /* Couleur en mode sombre (lune) */
+}
+
+/* Style spécifique pour les icônes Material Icons */
+.material-icons {
+  font-size: 24px;
+  transition: color 0.3s ease;
+}
+
+.material-icons.wb_sunny {
+  color: #FFD700; /* Jaune pour le soleil */
+}
+
+.material-icons.brightness_3 {
+  color: #ffffff; /* Blanc pour la lune */
+}
+

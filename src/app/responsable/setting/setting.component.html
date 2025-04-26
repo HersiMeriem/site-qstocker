@@ -1,0 +1,357 @@
+<div class="settings-container" [class.dark-theme]="themeService.getCurrentTheme() === 'dark'">
+  <div class="loading-overlay" *ngIf="loading">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p>{{ 'COMMON.LOADING' | translate }}</p>
+  </div>
+  <!-- Main Content -->
+  <div *ngIf="!loading" class="content-wrapper">
+    <!-- Header -->
+    <header class="settings-header">
+      <h1>
+        <mat-icon>settings</mat-icon>
+        {{ 'SETTINGS.TITLE' | translate }}
+      </h1>
+      
+      <div class="header-actions">
+        <button mat-stroked-button (click)="exportSettings()">
+          <mat-icon>file_download</mat-icon>
+          {{ 'SETTINGS.EXPORT' | translate }}
+        </button>
+        
+        <button mat-stroked-button (click)="fileInput.click()">
+          <mat-icon>file_upload</mat-icon>
+          {{ 'SETTINGS.IMPORT' | translate }}
+          <input #fileInput type="file" hidden (change)="importSettings($event)" accept=".json">
+        </button>
+      </div>
+      
+      <p class="last-modified" *ngIf="currentSettings.lastModified">
+        {{ 'SETTINGS.LAST_MODIFIED' | translate }}: 
+        {{ currentSettings.lastModified.by }} - 
+        {{ currentSettings.lastModified.at | date:'medium' }}
+      </p>
+    </header>
+
+    <!-- Tabs Navigation -->
+    <nav class="settings-tabs">
+      <button 
+        *ngFor="let tab of tabs" 
+        class="tab"
+        [class.active]="(activeTab$ | async) === tab.id"
+        (click)="activeTab$.next(tab.id)"
+        [disabled]="tab.permission ? !userService.hasPermission(tab.permission) : false">
+        <mat-icon>{{ tab.icon }}</mat-icon>
+        {{ tab.label | translate }}
+      </button>
+    </nav>
+
+    <div class="tab-content-wrapper">
+    <!-- Tab Content -->
+    <main class="settings-content">
+      <!-- General Tab -->
+      <section *ngIf="(activeTab$ | async) === 'general'" class="tab-content">
+        <div class="settings-card" [formGroup]="generalForm">
+          <h2 class="card-title">
+            <mat-icon>inventory_2</mat-icon>
+            {{ 'GENERAL.TITLE' | translate }}
+          </h2>
+          
+          <div class="form-group">
+            <label for="lowStockThreshold">{{ 'GENERAL.LOW_STOCK_THRESHOLD' | translate }}</label>
+            <div class="input-with-unit">
+              <input 
+                type="number" 
+                id="lowStockThreshold" 
+                formControlName="lowStockThreshold"
+                min="1">
+              <span class="unit">{{ 'COMMON.UNITS' | translate }}</span>
+            </div>
+            <mat-error *ngIf="generalForm.get('lowStockThreshold')?.hasError('required')">
+              {{ 'VALIDATION.REQUIRED' | translate }}
+            </mat-error>
+          </div>
+
+          <div class="form-group">
+            <label for="criticalStockThreshold">{{ 'GENERAL.CRITICAL_STOCK_THRESHOLD' | translate }}</label>
+            <div class="input-with-unit">
+              <input 
+                type="number" 
+                id="criticalStockThreshold" 
+                formControlName="criticalStockThreshold"
+                min="0"
+                [max]="(generalForm.get('lowStockThreshold')?.value || 10) - 1">
+              <span class="unit">{{ 'COMMON.UNITS' | translate }}</span>
+            </div>
+            <mat-error *ngIf="generalForm.get('criticalStockThreshold')?.hasError('required')">
+              {{ 'VALIDATION.REQUIRED' | translate }}
+            </mat-error>
+          </div>
+
+          <div class="form-group">
+            <mat-slide-toggle formControlName="autoReorder">
+              {{ 'GENERAL.AUTO_REORDER' | translate }}
+            </mat-slide-toggle>
+            <p class="hint" *ngIf="generalForm.get('autoReorder')?.value">
+              {{ 'GENERAL.AUTO_REORDER_HELP' | translate }}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Notifications Tab -->
+      <section *ngIf="(activeTab$ | async) === 'notifications'" class="tab-content">
+        <div class="settings-card" [formGroup]="notificationsForm">
+          <h2 class="card-title">
+            <mat-icon>notifications</mat-icon>
+            {{ 'NOTIFICATIONS.TITLE' | translate }}
+          </h2>
+          
+          <div class="form-group">
+            <mat-slide-toggle formControlName="emailNotifications">
+              {{ 'NOTIFICATIONS.EMAIL_NOTIFICATIONS' | translate }}
+            </mat-slide-toggle>
+          </div>
+
+          <div class="form-group" *ngIf="notificationsForm.get('emailNotifications')?.value">
+            <label>{{ 'NOTIFICATIONS.EMAILS' | translate }}</label>
+            
+            <div formArrayName="notificationEmails" class="email-list">
+              <div *ngFor="let emailCtrl of notificationEmailControls; let i = index" class="email-item">
+                <input 
+                  type="email" 
+                  [formControl]="emailCtrl"
+                  placeholder="{{ 'NOTIFICATIONS.EMAIL_PLACEHOLDER' | translate }}">
+                <button 
+                  mat-icon-button 
+                  (click)="removeNotificationEmail(i)"
+                  *ngIf="notificationEmailsArray.controls.length > 1">
+                  <mat-icon>remove_circle</mat-icon>
+                </button>
+                
+                <mat-error *ngIf="emailCtrl.hasError('email')">
+                  {{ 'VALIDATION.INVALID_EMAIL' | translate }}
+                </mat-error>
+              </div>
+            </div>
+            
+            <button mat-stroked-button type="button" (click)="addNotificationEmail()">
+              <mat-icon>add</mat-icon>
+              {{ 'NOTIFICATIONS.ADD_EMAIL' | translate }}
+            </button>
+          </div>
+
+          <div class="form-group">
+            <label for="notificationFrequency">{{ 'NOTIFICATIONS.FREQUENCY' | translate }}</label>
+            <mat-form-field appearance="outline">
+              <mat-select id="notificationFrequency" formControlName="notificationFrequency">
+                <mat-option value="daily">{{ 'NOTIFICATIONS.DAILY' | translate }}</mat-option>
+                <mat-option value="weekly">{{ 'NOTIFICATIONS.WEEKLY' | translate }}</mat-option>
+                <mat-option value="monthly">{{ 'NOTIFICATIONS.MONTHLY' | translate }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+        </div>
+      </section>
+
+<!-- Remplacez la section Security par : -->
+<!-- Onglet IA -->
+<section *ngIf="(activeTab$ | async) === 'ai-settings'" class="tab-content">
+  <div class="settings-card" [formGroup]="aiSettingsForm">
+    <h2 class="card-title">
+      <mat-icon>insights</mat-icon>
+      {{ 'AI.TITLE' | translate }}
+    </h2>
+
+    <div class="form-group">
+      <mat-slide-toggle formControlName="aiEnabled">
+        {{ 'AI.ENABLE_AI' | translate }}
+      </mat-slide-toggle>
+    </div>
+
+    <div class="form-group" *ngIf="aiSettingsForm.get('aiEnabled')?.value">
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'AI.PREDICTION_DAYS' | translate }}</mat-label>
+        <input matInput type="number" formControlName="predictionDays">
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>{{ 'AI.MODEL_TYPE' | translate }}</mat-label>
+        <mat-select formControlName="modelType">
+          <mat-option value="linear">{{ 'AI.LINEAR_MODEL' | translate }}</mat-option>
+          <mat-option value="neural">{{ 'AI.NEURAL_NET' | translate }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <div class="form-group">
+      <mat-slide-toggle formControlName="chatbotEnabled">
+        {{ 'AI.ENABLE_CHATBOT' | translate }}
+      </mat-slide-toggle>
+      
+      <mat-form-field *ngIf="aiSettingsForm.get('chatbotEnabled')?.value" appearance="outline">
+        <mat-label>{{ 'AI.CHATBOT_LANGUAGE' | translate }}</mat-label>
+        <mat-select formControlName="chatbotLanguage">
+          <mat-option value="fr">Français</mat-option>
+          <mat-option value="en">English</mat-option>
+          <mat-option value="ar">العربية</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+  </div>
+</section>
+
+      <!-- Backup Tab -->
+      <section *ngIf="(activeTab$ | async) === 'backup'" class="tab-content">
+        <div class="settings-card" [formGroup]="backupForm">
+          <h2 class="card-title">
+            <mat-icon>backup</mat-icon>
+            {{ 'BACKUP.TITLE' | translate }}
+          </h2>
+          
+          <div class="backup-actions">
+            <button 
+              mat-raised-button 
+              color="primary" 
+              (click)="createBackup()" 
+              [disabled]="isMakingBackup">
+              <mat-icon>add</mat-icon>
+              {{ 'BACKUP.CREATE' | translate }}
+              <mat-spinner *ngIf="isMakingBackup" diameter="20"></mat-spinner>
+            </button>
+
+            <div class="form-group">
+              <label for="autoBackup">{{ 'BACKUP.AUTO_BACKUP' | translate }}</label>
+              <mat-form-field appearance="outline">
+                <mat-select id="autoBackup" formControlName="autoBackup">
+                  <mat-option value="disabled">{{ 'BACKUP.DISABLED' | translate }}</mat-option>
+                  <mat-option value="daily">{{ 'BACKUP.DAILY' | translate }}</mat-option>
+                  <mat-option value="weekly">{{ 'BACKUP.WEEKLY' | translate }}</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+
+            <div class="form-group">
+              <label for="backupRetention">{{ 'BACKUP.RETENTION' | translate }}</label>
+              <div class="input-with-unit">
+                <input 
+                  type="number" 
+                  id="backupRetention" 
+                  formControlName="backupRetention"
+                  min="1" 
+                  max="365">
+                <span class="unit">{{ 'BACKUP.DAYS' | translate }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="backup-history">
+            <h3>{{ 'BACKUP.HISTORY' | translate }}</h3>
+            
+            <div class="backup-list">
+              <div 
+                *ngFor="let backup of backups; trackBy: trackByBackupId"
+                class="backup-item"
+                [class.pending]="backup.status === 'pending'"
+                [class.success]="backup.status === 'success' || backup.status === 'restored'"
+                [class.error]="backup.status === 'error'"
+                [class.restoring]="backup.status === 'restoring'">
+                
+                <div class="backup-info">
+                  <div class="backup-header">
+                    <span class="backup-date">{{ backup.timestamp | date:'medium' }}</span>
+                    <span class="backup-type">{{ backup.type | translate }}</span>
+                    <span class="backup-status">{{ backup.status | translate }}</span>
+                  </div>
+                  
+                  <div class="backup-details">
+                    <span class="backup-size" *ngIf="backup.size > 0">
+                      {{ backup.size | number:'1.1-1' }} MB
+                    </span>
+                    <span class="backup-user">
+                      {{ 'COMMON.BY' | translate }} {{ backup.createdBy }}
+                    </span>
+                  </div>
+                </div>
+                
+                <div class="backup-actions">
+                  <button 
+                    mat-stroked-button 
+                    (click)="restoreBackup(backup.id)"
+                    [disabled]="backup.status !== 'success' || isRestoring">
+                    <mat-icon>restore</mat-icon>
+                    {{ 'BACKUP.RESTORE' | translate }}
+                  </button>
+                  
+                  <button 
+                    mat-icon-button 
+                    (click)="deleteBackup(backup.id)"
+                    [disabled]="backup.status === 'restoring'">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </div>
+              </div>
+              
+              <div class="empty-state" *ngIf="backups.length === 0">
+                <p>{{ 'BACKUP.NO_BACKUPS' | translate }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Advanced Tab -->
+      <section *ngIf="(activeTab$ | async) === 'advanced'" class="tab-content">
+        <div class="settings-card">
+          <h2 class="card-title">
+            <mat-icon>tune</mat-icon>
+            {{ 'ADVANCED.TITLE' | translate }}
+          </h2>
+          
+          <div class="form-group">
+            <label for="language">{{ 'ADVANCED.LANGUAGE' | translate }}</label>
+            <mat-form-field appearance="outline">
+              <mat-select 
+                id="language" 
+                [(value)]="currentSettings.language"
+                (selectionChange)="changeLanguage($event.value)">
+                <mat-option *ngFor="let lang of availableLanguages" [value]="lang">
+                  {{ translationService.getLanguageName(lang) }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+
+          <div class="audit-log" *ngIf="auditLogs.length > 0">
+            <h3>{{ 'ADVANCED.AUDIT_LOG' | translate }}</h3>
+            <div class="log-list">
+              <div *ngFor="let log of auditLogs" class="log-item">
+                <div class="log-header">
+                  <span class="log-action">{{ log.action }}</span>
+                  <span class="log-date">{{ log.timestamp | date:'medium' }}</span>
+                </div>
+                <div class="log-details">
+                  <span class="log-user">{{ log.user }}</span>
+                  <span class="log-message">{{ log.message }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="settings-footer" *ngIf="(activeTab$ | async) !== 'backup'">
+    <button mat-stroked-button (click)="resetSettings()" [disabled]="!hasUnsavedChanges">
+      {{ 'COMMON.CANCEL' | translate }}
+    </button>
+    <button mat-raised-button color="primary" (click)="saveSettings()" 
+            [disabled]="!hasUnsavedChanges || saving">
+      <span *ngIf="!saving">{{ 'COMMON.SAVE' | translate }}</span>
+      <span *ngIf="saving">{{ 'COMMON.SAVING' | translate }}</span>
+      <mat-spinner *ngIf="saving" diameter="20"></mat-spinner>
+    </button>
+  </footer>
+  </div>
+</div></div>

@@ -1,0 +1,489 @@
+/* Reset CSS */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  
+}
+
+/* Style général */
+body {
+  font-family: 'Roboto', sans-serif;
+  background-color: #f4f6f9;
+  color: #453468;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+.main-container {
+  padding: 40px;
+  max-width: 1800px;
+  margin: 0 auto;
+}
+
+/* Conteneur principal */
+.product-list-container {
+  width: calc(100% - 80px); /* Réduisez la largeur pour compenser le padding */
+  max-width: 1800px;
+  margin: 0 auto;
+  padding: 20px 0; /* Ajoutez un espace vertical supplémentaire */
+}
+
+/* En-tête amélioré */
+.list-header {
+  margin-bottom: 2.5rem;
+  padding: 1.5rem;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+  border: 1px solid #eaeaea;
+}
+
+.list-header .title {
+  color: #453468;
+  margin-bottom: 1.8rem;
+  font-size: 2rem;
+  font-weight: 700;
+  text-align: center;
+  position: relative;
+}
+
+.list-header .title::after {
+  content: '';
+  display: block;
+  width: 100px;
+  height: 4px;
+  background: #b2c9d6;
+  margin: 15px auto 0;
+  border-radius: 2px;
+}
+
+/* Contrôles de recherche et filtres */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.search-box {
+  position: relative;
+  flex-grow: 1;
+  min-width: 300px;
+  max-width: 600px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.85rem 1.2rem 0.85rem 3rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  background-color: #f8f8f8;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #453468;
+  box-shadow: 0 0 0 3px rgba(69, 52, 104, 0.2);
+  background-color: #ffffff;
+}
+
+.search-icon {
+  position: absolute;
+  left: 1.2rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #7f8c8d;
+  font-size: 1.1rem;
+}
+
+.filters {
+  display: flex;
+  gap: 1.2rem;
+  flex-wrap: wrap;
+}
+
+.form-select {
+  padding: 0.85rem 1.2rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 1rem;
+  background-color: #f8f8f8;
+  cursor: pointer;
+  min-width: 200px;
+  transition: all 0.3s ease;
+}
+
+.form-select:focus {
+  outline: none;
+  border-color: #453468;
+  box-shadow: 0 0 0 3px rgba(69, 52, 104, 0.2);
+  background-color: #ffffff;
+}
+
+section {
+  padding: 2.5rem;
+  background-color: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.08);
+  width: 100%;
+}
+
+/* Grille de produits */
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+/* Carte de produit */
+.product-card {
+  background-color: #ffffff;
+  border: 1px solid #f1f1f1;
+  border-radius: 15px;
+  padding: 1.5rem;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.product-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
+}
+
+/* Image du produit */
+.product-image-container {
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  background-color: #f5f7fa;
+  position: relative;
+}
+
+.product-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.product-card:hover .product-image {
+  transform: scale(1.08);
+}
+
+/* Informations du produit */
+.product-info {
+  text-align: center;
+  margin-bottom: 1.2rem;
+}
+
+.product-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #453468;
+  margin-bottom: 0.8rem;
+  line-height: 1.4;
+}
+
+.badge-group {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.type-badge, .category-badge {
+  padding: 0.3rem 0.8rem;
+  border-radius: 50px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.type-badge {
+  background-color: #e1f5fe;
+  color: #0288d1;
+}
+
+.category-badge {
+  background-color: #e8f5e9;
+  color: #388e3c;
+}
+
+.product-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  margin-top: 1rem;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.meta-item i {
+  color: #7f8c8d;
+}
+
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 50px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.status-active {
+  background-color: #e8f5e9;
+  color: #388e3c;
+}
+
+.status-inactive {
+  background-color: #ffebee;
+  color: #d32f2f;
+}
+
+.status-promotion {
+  background-color: #fff8e1;
+  color: #ff8f00;
+}
+
+/* QR Code */
+.qr-code-container {
+  text-align: center;
+  margin: 1.5rem 0;
+}
+
+.qr-code {
+  width: 120px;
+  height: 120px;
+  border: 1px solid #f1f1f1;
+  border-radius: 8px;
+  margin: 0 auto;
+  padding: 5px;
+  background: white;
+  transition: all 0.3s ease;
+}
+
+.qr-code:hover {
+  transform: scale(1.05);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.product-id {
+  font-size: 0.8rem;
+  color: #7f8c8d;
+  margin-top: 0.5rem;
+  font-family: monospace;
+}
+
+/* Boutons d'action */
+.product-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.btn {
+  padding: 0.8rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: center;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.btn-details {
+  background-color: #453468;
+  color: white;
+}
+
+.btn-details:hover {
+  background-color: #5d4a7d;
+  transform: translateY(-2px);
+}
+
+/* États */
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: #7f8c8d;
+}
+
+.empty-state i {
+  font-size: 3rem;
+  margin-bottom: 1.5rem;
+  color: #bdc3c7;
+}
+
+.empty-state p {
+  font-size: 1.2rem;
+  margin-bottom: 1.5rem;
+}
+@media (max-width: 1200px) {
+  .main-container {
+    padding: 30px;
+  }
+}
+
+@media (max-width: 900px) {
+  .main-container {
+    padding: 20px;
+  }
+  
+  section {
+    padding: 2rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .main-container {
+    padding: 15px;
+  }
+  
+  section {
+    padding: 1.5rem;
+  }
+}
+/* Responsive Design */
+@media (max-width: 1600px) {
+  .product-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 1200px) {
+  .product-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .list-header .title {
+    font-size: 1.8rem;
+  }
+}
+
+@media (max-width: 900px) {
+  section {
+    padding: 2rem;
+  }
+  
+  .product-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+  
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .search-box {
+    min-width: 100%;
+  }
+  
+  .filters {
+    width: 100%;
+  }
+  
+  .form-select {
+    width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  section {
+    padding: 1.5rem;
+  }
+  
+  .product-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .list-header .title {
+    font-size: 1.6rem;
+  }
+  
+  .product-image-container {
+    height: 180px;
+  }
+}
+/* Ajoutez ces styles à votre fichier CSS existant */
+
+/* Style pour le contenu du header */
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.8rem;
+}
+
+/* Style pour les actions du header */
+.header-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+/* Styles pour les nouveaux boutons */
+.btn-primary {
+  background-color: #453468;
+  color: white;
+  margin-left: 30px;
+  padding-left: 30px;
+  padding-right: 30px;
+  border: 2px solid #453468;
+}
+
+.btn-primary:hover {
+  background-color: #5d4a7d;
+  transform: translateY(-2px);
+}
+
+.btn-secondary {
+  background-color: #f4f6f9;
+  color: #453468;
+  margin-left: 30px;
+  padding-left: 30px;
+  padding-right: 30px;
+  border: 2px solid #453468;
+}
+
+.btn-secondary:hover {
+  background-color: #e0e0e0;
+  transform: translateY(-2px);
+}
+
+/* Adaptation responsive */
+@media (max-width: 900px) {
+  .header-content {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1.5rem;
+  }
+  
+  .header-actions {
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 600px) {
+  .header-actions {
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+}

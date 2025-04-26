@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inscription</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+  <div class="main-container">
+    <div class="register-container">
+      <div class="form-container">
+        <h2>Rejoignez-nous</h2>
+        <p class="subtitle">Créez votre compte en quelques secondes</p>
+        
+        <div class="input-container">
+          <i class="fas fa-user"></i>
+          <input type="text" [(ngModel)]="Name" placeholder="Nom" required>
+        </div>
+        
+        <div class="input-container">
+          <i class="fas fa-envelope"></i>
+          <input type="email" [(ngModel)]="email" placeholder="Adresse email" required>
+        </div>
+        
+        <div class="input-container">
+          <i class="fas fa-lock"></i>
+          <input type="password" [(ngModel)]="password" placeholder="Mot de passe" required>
+        </div>
+
+        <div *ngIf="loading" class="spinner"></div>
+
+        <button class="register-btn" (click)="register()" [disabled]="loading">
+          <span *ngIf="!loading">S'inscrire maintenant</span>
+          <span *ngIf="loading">Création en cours...</span>
+        </button>
+
+        <div class="separator">
+          <span>ou</span>
+        </div>
+
+        <p class="login-link">
+<!-- Ligne à modifier -->
+Vous avez déjà un compte ? <a (click)="goToLogin.emit()">Se connecter</a>        </p>
+      </div>
+    </div>
+    
+    <div class="image-container">
+      <img src="assets/images/register.png" alt="Illustration d'inscription" class="register-image">
+    </div>
+  </div>
+</body>
+</html>

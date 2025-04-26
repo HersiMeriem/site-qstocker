@@ -1,0 +1,108 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary qstock-navbar">
+  <div class="container-fluid">
+    <!-- Logo fusionné : QR + QStocker en un seul bloc interactif -->
+    <a class="navbar-brand logo-block" routerLink="/responsable/dashboard" routerLinkActive="active">
+      <div class="qr-icon-large">
+        <i class="fas fa-qrcode"></i>
+      </div>
+      <h1 class="brand-name">
+        <span class="q-letter">Q</span><span class="stocker-text">Stocker</span>
+      </h1>
+    </a>
+
+    <!-- Bouton de menu responsive -->
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMenu" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <!-- Menu principal -->
+    <div class="collapse navbar-collapse" id="navbarMenu">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item">
+          <a class="nav-link stock-link" routerLink="/responsable/dashboard" routerLinkActive="active">
+            <i class="fas fa-chart-line me-2"></i> Tableau de bord
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link stock-link" routerLink="/responsable/commande-fournisseur" routerLinkActive="active">
+            <i class="fas fa-truck me-2"></i> Commandes
+          </a>
+        </li>
+        <li class="nav-item">
+         <a class="nav-link stock-link" routerLink="/responsable/product-list" routerLinkActive="active">
+            <i class="fas fa-boxes me-2"></i> Produits
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link stock-link" routerLink="/responsable/stock" routerLinkActive="active">
+            <i class="fas fa-warehouse me-2"></i> Stock
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link stock-link" routerLink="/responsable/sales" routerLinkActive="active">
+            <i class="fas fa-cash-register me-2"></i> Ventes
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link stock-link" routerLink="/responsable/financial-dashboard" routerLinkActive="active">
+            <i class="fas fa-file-invoice me-2"></i> Analyse financière
+          </a>
+        </li>
+      </ul>
+
+      <!-- Notifications & Profil -->
+      <ul class="navbar-nav ms-auto">
+        <!-- Notifications -->
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle notification-link" href="#" id="alertsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fas fa-bell"></i>
+            <span class="badge bg-danger notification-badge">3</span>
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end dropdown-notifications" aria-labelledby="alertsDropdown">
+            <li><h6 class="dropdown-header">Centre d'alertes</h6></li>
+            <li><a class="dropdown-item" href="#">
+              <i class="fas fa-exclamation-circle text-warning me-2"></i>
+              Stock faible - Produit X
+            </a></li>
+            <li><a class="dropdown-item" href="#">
+              <i class="fas fa-times-circle text-danger me-2"></i>
+              Produit épuisé
+            </a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item text-center view-all" href="#">
+              <i class="fas fa-arrow-right me-2"></i>Voir toutes
+            </a></li>
+          </ul>
+        </li>
+
+  <!-- Profil Responsable -->
+<li class="nav-item dropdown profile-dropdown">
+  <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+    <div class="profile-avatar">
+      <img src="assets/images/administrateur.png" alt="Profil">
+    </div>
+    <span class="profile-name ms-2">Responsable</span>
+  </a>
+  <ul class="dropdown-menu dropdown-menu-end profile-menu" aria-labelledby="userDropdown">
+    <li>
+      <a class="dropdown-item" routerLink="/responsable/setting">
+        <i class="fas fa-cog me-2"></i>Paramètres
+      </a>
+    </li>
+    <li>
+      <a class="dropdown-item" routerLink="/responsable/profil">
+        <i class="fas fa-user me-2"></i>Profil
+      </a>
+    </li>
+    <li><hr class="dropdown-divider"></li>
+    <li>
+      <a class="dropdown-item logout-item" href="#" (click)="logout()">
+        <i class="fas fa-sign-out-alt me-2"></i>Déconnexion
+      </a>
+    </li>
+  </ul>
+</li>
+      </ul>
+    </div>
+  </div>
+</nav>

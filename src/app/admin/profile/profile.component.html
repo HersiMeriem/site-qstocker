@@ -1,0 +1,278 @@
+<br><br>
+
+<div class="profile-container">
+  <!-- Navigation par onglets -->
+  <nav class="profile-tabs">
+    <button [class.active]="activeTab === 'profile'" (click)="setActiveTab('profile')">
+      <i class="fas fa-user"></i> Profil
+    </button>
+    <button [class.active]="activeTab === 'security'" (click)="setActiveTab('security')">
+      <i class="fas fa-lock"></i> Sécurité
+    </button>
+    <button [class.active]="activeTab === 'activity'" (click)="setActiveTab('activity')">
+      <i class="fas fa-history"></i> Activité
+    </button>
+    <button [class.active]="activeTab === 'notifications'" (click)="setActiveTab('notifications')">
+      <i class="fas fa-bell"></i> Notifications
+    </button>
+    <button [class.active]="activeTab === 'dataCheck'" (click)="setActiveTab('dataCheck')">
+      <i class="fas fa-database"></i> Cohérence des données
+    </button>
+  </nav>
+
+  <!-- Messages d'état -->
+  <div *ngIf="errorMessage" class="alert alert-danger" (click)="clearMessages()">
+    {{ errorMessage }}
+  </div>
+  <div *ngIf="successMessage" class="alert alert-success" (click)="clearMessages()">
+    {{ successMessage }}
+  </div>
+
+  <!-- Onglet Profil -->
+  <div *ngIf="activeTab === 'profile'" class="tab-content">
+    <div class="profile-header">
+      <div class="profile-picture-container">
+        <img [src]="adminProfile.photoUrl || 'assets/default-profile.png'" 
+             alt="Photo de profil" 
+             class="profile-picture">
+        <div class="profile-picture-actions">
+          <input type="file" 
+                 id="profilePhoto" 
+                 (change)="handleFileInput($event)" 
+                 accept="image/*" 
+                 style="display: none;">
+          <label for="profilePhoto" class="btn btn-secondary">
+            <i class="fas fa-camera"></i> Changer
+          </label>
+          <button *ngIf="adminProfile.photoUrl" 
+                  (click)="removeProfilePhoto()" 
+                  class="btn btn-danger">
+            <i class="fas fa-trash"></i> Supprimer
+          </button>
+        </div>
+        <div *ngIf="uploadProgress !== null" class="upload-progress">
+          <div class="progress-bar">
+            <div class="progress" [style.width]="uploadProgress + '%'"></div>
+          </div>
+          <span>{{ uploadProgress }}%</span>
+        </div>
+      </div>
+
+      <button class="btn btn-export" (click)="exportUserData()">
+        <i class="fas fa-file-export"></i> Exporter mes données
+      </button>
+    </div>
+
+    <div class="profile-info">
+      <div class="profile-item">
+        <strong>Nom :</strong>
+        <span *ngIf="!editing">{{ adminProfile.name }}</span>
+        <input *ngIf="editing" [(ngModel)]="adminProfile.name" class="form-control">
+      </div>
+      <div class="profile-item">
+        <strong>Email :</strong>
+        <span *ngIf="!editing">{{ adminProfile.email }}</span>
+        <input *ngIf="editing" [(ngModel)]="adminProfile.email" type="email" class="form-control">
+      </div>
+      <div class="profile-item">
+        <strong>Rôle :</strong> {{ adminProfile.role }}
+      </div>
+      <div class="profile-item">
+        <strong>Date d'inscription :</strong> {{ adminProfile.createdAt }}
+      </div>
+    </div>
+
+    <div class="profile-actions">
+      <button *ngIf="!editing" (click)="toggleEdit()" class="btn btn-primary">
+        <i class="fas fa-edit"></i> Modifier le profil
+      </button>
+      <div *ngIf="editing" class="edit-actions">
+        <button (click)="saveProfile()" class="btn btn-success" [disabled]="isLoading">
+          <i class="fas fa-save"></i> {{ isLoading ? 'Enregistrement...' : 'Enregistrer' }}
+        </button>
+        <button (click)="toggleEdit()" class="btn btn-secondary">
+          <i class="fas fa-times"></i> Annuler
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Onglet Sécurité -->
+  <div *ngIf="activeTab === 'security'" class="tab-content">
+    <h3><i class="fas fa-lock"></i> Modification du mot de passe</h3>
+    
+    <form (ngSubmit)="changePassword()" class="password-form">
+      <div class="form-group">
+        <label for="oldPassword">Ancien mot de passe :</label>
+        <input type="password" id="oldPassword" [(ngModel)]="oldPassword" name="oldPassword" 
+               required class="form-control" placeholder="Ancien mot de passe">
+      </div>
+      
+      <div class="form-group">
+        <label for="newPassword">Nouveau mot de passe :</label>
+        <input type="password" id="newPassword" [(ngModel)]="newPassword" name="newPassword" 
+               required class="form-control" placeholder="Nouveau mot de passe"
+               (input)="checkPasswordStrength(newPassword)">
+        
+        <div class="password-strength">
+          <h5>Exigences de sécurité :</h5>
+          <ul>
+            <li [class.valid]="passwordStrength.length">Minimum 8 caractères</li>
+            <li [class.valid]="passwordStrength.uppercase">Au moins une majuscule</li>
+            <li [class.valid]="passwordStrength.lowercase">Au moins une minuscule</li>
+            <li [class.valid]="passwordStrength.number">Au moins un chiffre</li>
+            <li [class.valid]="passwordStrength.special">Au moins un caractère spécial</li>
+          </ul>
+        </div>
+      </div>
+      
+      <button type="submit" class="btn btn-primary" [disabled]="isLoading || !isPasswordStrong()">
+        <i class="fas fa-key"></i> {{ isLoading ? 'Chargement...' : 'Modifier le mot de passe' }}
+      </button>
+    </form>
+  </div>
+
+  <!-- Onglet Activité -->
+  <div *ngIf="activeTab === 'activity'" class="tab-content">
+    <h3><i class="fas fa-history"></i> Journal des activités</h3>
+    
+    <div class="activity-actions">
+      <button class="btn btn-danger" (click)="confirmClearAllActivities()" [disabled]="activityLog.length === 0">
+        <i class="fas fa-trash-alt"></i> Tout supprimer
+      </button>
+    </div>
+    
+    <div class="activity-log">
+      <div *ngFor="let log of activityLog; let i = index" class="log-entry">
+        <div class="log-icon">
+          <i [class]="'fas ' + getActivityIcon(log.action)"></i>
+        </div>
+        <div class="log-details">
+          <div class="log-action">{{ log.action }}</div>
+          <div class="log-timestamp">{{ log.timestamp | date:'medium' }}</div>
+          <div *ngIf="log.details" class="log-meta">{{ log.details }}</div>
+        </div>
+        <button class="btn btn-icon" (click)="deleteActivity(log.$key || i)">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      
+      <div *ngIf="activityLog.length === 0" class="no-activity">
+        Aucune activité récente à afficher
+      </div>
+    </div>
+    
+    <!-- Modal de confirmation -->
+    <div *ngIf="showClearConfirmation" class="confirmation-modal">
+      <div class="modal-content">
+        <h4>Confirmer la suppression</h4>
+        <p>Êtes-vous sûr de vouloir supprimer toutes les activités ? Cette action est irréversible.</p>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" (click)="showClearConfirmation = false">Annuler</button>
+          <button class="btn btn-danger" (click)="clearAllActivities()">Supprimer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Onglet Notifications -->
+  <div *ngIf="activeTab === 'notifications'" class="tab-content">
+    <h3><i class="fas fa-bell"></i> Préférences de notification</h3>
+    
+    <div class="notification-preferences">
+      <div class="preference-item">
+        <label class="switch">
+          <input type="checkbox" [(ngModel)]="notifications.email">
+          <span class="slider round"></span>
+        </label>
+        <span class="preference-label">Notifications par email</span>
+      </div>
+      
+      <div class="preference-item">
+        <label class="switch">
+          <input type="checkbox" [(ngModel)]="notifications.push">
+          <span class="slider round"></span>
+        </label>
+        <span class="preference-label">Notifications push</span>
+      </div>
+      
+      <div class="preference-item">
+        <label class="switch">
+          <input type="checkbox" [(ngModel)]="notifications.sms">
+          <span class="slider round"></span>
+        </label>
+        <span class="preference-label">Notifications SMS</span>
+      </div>
+    </div>
+    
+    <button (click)="saveNotifications()" class="btn btn-primary" [disabled]="isLoading">
+      <i class="fas fa-save"></i> Enregistrer les préférences
+    </button>
+  </div>
+
+  <!-- Onglet Vérification Cohérence -->
+  <div *ngIf="activeTab === 'dataCheck'" class="tab-content">
+    <h3><i class="fas fa-database"></i> Vérification de Cohérence</h3>
+    
+    <div class="data-check-actions">
+      <button class="btn btn-primary" (click)="runAllChecks()" [disabled]="isRunningChecks">
+        <i class="fas fa-play"></i> Lancer toutes les vérifications
+      </button>
+      <button class="btn btn-secondary" (click)="scheduleAutoChecks()">
+        <i class="fas fa-calendar-alt"></i> Planifier
+      </button>
+    </div>
+
+    <div class="check-results">
+      <div *ngFor="let check of dataChecks" class="check-card" [class.error]="check.status === 'error'">
+        <div class="check-header">
+          <i class="status-icon" [ngClass]="{
+            'valid-icon': check.status === 'valid',
+            'error-icon': check.status === 'error'
+          }"></i>
+          <h3>{{check.name}}</h3>
+          <span class="last-run">
+            {{check.lastRun ? (check.lastRun | date:'medium') : 'Jamais exécuté'}}          </span>
+        </div>
+      
+        <div class="check-description">
+          {{check.description}}
+        </div>
+      
+        <div *ngIf="check.isRunning" class="progress-bar">
+          <progress [value]="check.progress" max="100"></progress>
+          <span>{{check.progress}}%</span>
+        </div>
+      
+        <div *ngIf="check.result" class="check-result">
+          <div *ngIf="check.result.issues.length === 0" class="no-issues">
+            <i class="fas fa-check-circle"></i> Aucun problème détecté
+          </div>
+      
+          <div *ngIf="check.result.issues.length > 0" class="issues-found">
+            <div class="issues-count">
+              <i class="fas fa-exclamation-triangle"></i>
+              Problèmes détectés ({{check.result.issues.length}})
+            </div>
+            
+            <ul>
+              <li *ngFor="let issue of check.result.issues">
+                {{issue}}
+              </li>
+            </ul>
+          </div>
+        
+          <div class="check-footer">
+            <button class="btn btn-sm" (click)="runSingleCheck(check.id)" 
+                    [disabled]="check.isRunning || isRunningChecks">
+              <i class="fas fa-sync-alt"></i> Re-vérifier
+            </button>
+            <button *ngIf="check.result && check.result.issues && check.result.issues.length > 0" ...>                    (click)="attemptAutoFix(check.id)" [disabled]="check.isRunning">
+              <i class="fas fa-magic"></i> Corriger
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

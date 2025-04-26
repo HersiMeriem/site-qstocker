@@ -1,0 +1,103 @@
+<div class="container">
+  <button mat-raised-button color="accent" class="history-btn" routerLink="/responsable/historique-commandes">
+    <mat-icon>history</mat-icon> Voir l'historique des commandes
+  </button>
+  <button mat-raised-button color="primary" class="supplier-btn" routerLink="/responsable/suppliers">
+    <mat-icon>storefront</mat-icon> Voir les fournisseurs
+  </button>
+
+  <mat-card class="order-card">
+    <h3>Créer une Commande Fournisseur</h3>
+    <form (submit)="sendOrder()">
+      <mat-form-field appearance="outline">
+        <mat-label>ID Commande</mat-label>
+        <input matInput [value]="newOrder.id" readonly />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Sélectionner un produit</mat-label>
+        <mat-select [(ngModel)]="selectedProduct" name="product" required (selectionChange)="onProductSelected()">
+          <mat-option *ngFor="let product of filteredProducts" [value]="product">
+            {{ product.name }} (REF-{{ product.id }})
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>ID Produit</mat-label>
+        <input matInput [value]="formattedProductId" readonly />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Nom Produit</mat-label>
+        <input matInput [value]="selectedProduct?.name || ''" readonly />
+      </mat-form-field>
+      <mat-form-field appearance="outline">
+          <mat-label>Volume du parfum</mat-label>
+          <input matInput [value]="selectedProduct?.volume || ''" readonly />
+        </mat-form-field>
+        
+      <mat-form-field *ngIf="newOrder.parfumSize === 'autre'" appearance="outline">
+        <mat-label>Autre taille</mat-label>
+        <input matInput [(ngModel)]="newOrder.customParfumSize" name="customParfumSize" placeholder="Ex: 50ml" />
+      </mat-form-field>
+
+      <!-- Prix unitaire (plus obligatoire) -->
+      <mat-form-field appearance="outline">
+        <mat-label>Prix Unitaire HT</mat-label>
+        <input matInput type="number" [(ngModel)]="newOrder.unitPrice" name="unitPrice"
+          min="0.01" step="0.01" (ngModelChange)="calculateTotals()" />
+        <span matSuffix>DT</span>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Quantité</mat-label>
+        <input matInput type="number" [(ngModel)]="newOrder.quantity" name="quantity"
+          required min="1" (ngModelChange)="calculateTotals()" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Date de Livraison</mat-label>
+        <input matInput [matDatepicker]="picker" [(ngModel)]="newOrder.deliveryDate" name="deliveryDate" required />
+        <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+        <mat-datepicker #picker></mat-datepicker>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Montant Total HT</mat-label>
+        <input matInput [value]="(newOrder.totalHT | number:'1.2-2') || '0'" readonly />
+        <span matSuffix>DT</span>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Montant Total TTC</mat-label>
+        <input matInput [value]="(newOrder.totalTTC | number:'1.2-2') || '0'" readonly />
+        <span matSuffix>DT</span>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Sélectionner un fournisseur</mat-label>
+        <mat-select [(ngModel)]="selectedSupplier" name="supplier" required>
+          <mat-option *ngFor="let supplier of suppliers" [value]="supplier">
+            {{ supplier.name }} - {{ supplier.email }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Nom Fournisseur</mat-label>
+        <input matInput [value]="selectedSupplier?.name || ''" readonly />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Email Fournisseur</mat-label>
+        <input matInput [value]="selectedSupplier?.email || ''" readonly />
+      </mat-form-field>
+
+      <button mat-raised-button color="primary" type="submit" class="submit-btn"
+        [disabled]="!selectedProduct || !selectedSupplier">
+        <mat-icon>send</mat-icon> Envoyer la commande
+      </button>
+    </form>
+  </mat-card>
+</div>

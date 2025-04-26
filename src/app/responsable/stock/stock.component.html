@@ -1,0 +1,118 @@
+<br> <br> 
+<div class="container mt-4">
+  <!-- Modal d'édition -->
+  <div class="modal fade" id="editStockModal" tabindex="-1" aria-labelledby="editStockModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <!-- ... (le contenu du modal reste inchangé) ... -->
+      </div>
+    </div>
+  </div>
+
+  <h3 class="mb-4 text-success">
+    <i class="fas fa-warehouse me-2"></i>Gestion du Stock 
+    <button class="btn btn-sm btn-outline-success float-end" (click)="loadStock()">
+      <i class="fas fa-sync"></i>
+    </button>
+  </h3>
+
+  <div class="mb-4">
+    <input 
+      type="text" 
+      [(ngModel)]="searchTerm" 
+      (input)="filterStock()" 
+      placeholder="🔍 Rechercher par nom ou ID produit..." 
+      class="form-control"
+    >
+  </div>
+
+  <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show">
+    {{errorMessage}}
+    <button type="button" class="btn-close" (click)="errorMessage = null"></button>
+  </div>
+
+  <div *ngIf="loading" class="text-center my-5">
+    <div class="spinner-border text-success" style="width: 3rem; height: 3rem;" role="status">
+      <span class="visually-hidden">Chargement...</span>
+    </div>
+    <p class="mt-2">Chargement du stock...</p>
+  </div>
+
+  <div *ngIf="!loading && stock.length === 0" class="alert alert-warning">
+    <i class="fas fa-exclamation-triangle me-2"></i>Aucun produit enregistré dans le stock
+  </div>
+
+  <div class="table-responsive" *ngIf="!loading && stock.length > 0">
+    <table class="table table-hover align-middle">
+      <thead class="table-success">
+        <tr>
+          <th>QR Code</th>
+          <th>Image</th>
+          <th>ID Produit</th>
+          <th>Nom</th>
+          <th>Quantité</th>
+          <th>Prix Unitaire HT</th>
+          <th>Prix de Vente</th> 
+          <th>Valeur Totale </th>
+          <th>Dernière Mise à Jour</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let produit of filteredStock">
+          <td>
+            <img *ngIf="produit.qrCode" [src]="produit.qrCode" alt="QR Code" style="width: 50px;">
+          </td>
+          <td>
+            <img *ngIf="produit.imageUrl" [src]="produit.imageUrl" alt="Produit" style="width: 50px; height: 50px; object-fit: cover;">
+          </td>
+          <td class="fw-bold">#{{ produit.idProduit | slice:0:8 }}</td>
+          <td>{{ produit.nomProduit }}</td>
+          <td>
+            <span class="badge bg-primary rounded-pill">
+              {{ produit.quantite }}
+            </span>
+          </td>
+          <td>
+            {{ produit.prixUnitaireHT | number:'1.3-3' }} DT
+            <br>
+            <small class="text-muted">PMP (Moyenne pondérée)</small>
+          </td>
+          <td>
+            <span *ngIf="!produit.editingPrice" (click)="startEditingPrice(produit)">
+              {{ produit.prixDeVente | number:'1.3-3' }} DT
+            </span>
+            <div *ngIf="produit.editingPrice" class="input-group input-group-sm">
+              <input type="number" 
+                     [(ngModel)]="produit.prixDeVente" 
+                     class="form-control" 
+                     step="0.001"
+                     min="0">
+              <button class="btn btn-success" (click)="savePrice(produit)">
+                <i class="fas fa-check"></i>
+              </button>
+              <button class="btn btn-danger" (click)="cancelEditingPrice(produit)">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          </td>
+          <td class="fw-bold text-success">
+            {{ calculateTotalValue(produit.prixUnitaireHT, produit.quantite) | number:'1.3-3' }} DT
+          </td>
+          <td>{{ produit.dateMiseAJour | date:'dd/MM/yy HH:mm' }}</td>
+          <td>
+            <button class="btn btn-sm btn-info" (click)="showPriceHistory(produit)" title="Historique des prix">
+              <i class="fas fa-chart-line"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary ms-1" (click)="quickEditQuantity(produit)" title="Modifier quantité">
+              <i class="fas fa-pen"></i>
+            </button>
+            <button class="btn btn-sm btn-danger ms-1" (click)="deleteProduct(produit.idProduit)" title="Supprimer">
+              <i class="fas fa-trash-alt"></i>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

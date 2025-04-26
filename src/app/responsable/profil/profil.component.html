@@ -1,0 +1,377 @@
+<!-- profil.component.html -->
+<div class="profile-container">
+  <!-- Navigation par onglets -->
+  <nav class="profile-tabs">
+    <button [class.active]="activeTab === 'profile'" (click)="setActiveTab('profile')">
+      <i class="fas fa-user"></i> Profil
+    </button>
+    <button [class.active]="activeTab === 'security'" (click)="setActiveTab('security')">
+      <i class="fas fa-lock"></i> Sécurité
+    </button>
+    <button [class.active]="activeTab === 'activity'" (click)="setActiveTab('activity')">
+      <i class="fas fa-history"></i> Activité
+    </button>
+    <button [class.active]="activeTab === 'messages'" (click)="setActiveTab('messages')">
+      <i class="fas fa-envelope"></i> Messagerie <span *ngIf="unreadCount > 0" class="badge">{{unreadCount}}</span>
+    </button>
+    <button [class.active]="activeTab === 'tasks'" (click)="setActiveTab('tasks')">
+      <i class="fas fa-tasks"></i> Mes Tâches
+    </button>
+  </nav>
+
+  <!-- Messages d'état -->
+  <div *ngIf="errorMessage" class="alert alert-danger" (click)="clearMessages()">
+    {{ errorMessage }}
+  </div>
+  <div *ngIf="successMessage" class="alert alert-success" (click)="clearMessages()">
+    {{ successMessage }}
+  </div>
+
+  <!-- Onglet Profil -->
+  <div *ngIf="activeTab === 'profile'" class="tab-content">
+    <div class="profile-header">
+      <div class="profile-picture-container">
+        <img [src]="managerProfile.photoUrl || 'assets/default-profile.png'" 
+             alt="Photo de profil" 
+             class="profile-picture">
+        <div class="profile-picture-actions">
+          <input type="file" 
+                 id="profilePhoto" 
+                 (change)="handleFileInput($event)" 
+                 accept="image/*" 
+                 style="display: none;">
+          <label for="profilePhoto" class="btn btn-secondary">
+            <i class="fas fa-camera"></i> Changer
+          </label>
+          <button *ngIf="managerProfile.photoUrl" 
+                  (click)="removeProfilePhoto()" 
+                  class="btn btn-danger">
+            <i class="fas fa-trash"></i> Supprimer
+          </button>
+        </div>
+        <div *ngIf="uploadProgress !== null" class="upload-progress">
+          <div class="progress-bar">
+            <div class="progress" [style.width]="uploadProgress + '%'"></div>
+          </div>
+          <span>{{ uploadProgress }}%</span>
+        </div>
+      </div>
+
+      <button class="btn btn-export" (click)="exportUserData()">
+        <i class="fas fa-file-export"></i> Exporter mes données
+      </button>
+    </div>
+
+    <div class="profile-info">
+      <div class="profile-item">
+        <strong>Nom :</strong>
+        <span *ngIf="!editing">{{ managerProfile.name }}</span>
+        <input *ngIf="editing" [(ngModel)]="managerProfile.name" class="form-control">
+      </div>
+      <div class="profile-item">
+        <strong>Email :</strong>
+        <span *ngIf="!editing">{{ managerProfile.email }}</span>
+        <input *ngIf="editing" [(ngModel)]="managerProfile.email" type="email" class="form-control">
+      </div>
+      <div class="profile-item">
+        <strong>Rôle :</strong> Responsable de Stock
+      </div>
+      <div class="profile-info">
+        <!-- ... autres champs ... -->
+        
+        <div class="profile-item">
+          <strong>Entrepôt assigné :</strong>
+          <span *ngIf="!editing">{{ managerProfile.warehouse }}</span>
+          <select *ngIf="editing" [(ngModel)]="managerProfile.warehouse" class="form-control">
+            <option *ngFor="let warehouse of warehouses" [value]="warehouse.id">
+              {{ warehouse.name }}
+            </option>
+          </select>
+        </div>
+        
+        <div class="profile-item">
+          <strong>Date d'embauche :</strong>
+          <span *ngIf="!editing">{{ managerProfile.hireDate | date:'dd/MM/yyyy' }}</span>
+          <input *ngIf="editing" type="date" [(ngModel)]="managerProfile.hireDate" class="form-control">
+        </div>
+        
+        <div class="profile-item">
+          <strong>Téléphone :</strong>
+          <span *ngIf="!editing">{{ managerProfile.phone }}</span>
+          <input *ngIf="editing" [(ngModel)]="managerProfile.phone" class="form-control" type="tel">
+        </div>
+        
+        <div class="profile-item">
+          <strong>Adresse :</strong>
+          <span *ngIf="!editing">{{ managerProfile.address }}</span>
+          <textarea *ngIf="editing" [(ngModel)]="managerProfile.address" class="form-control" rows="2"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="profile-actions">
+      <button *ngIf="!editing" (click)="toggleEdit()" class="btn btn-primary">
+        <i class="fas fa-edit"></i> Modifier le profil
+      </button>
+      <div *ngIf="editing" class="edit-actions">
+        <button (click)="saveProfile()" class="btn btn-success" [disabled]="isLoading">
+          <i class="fas fa-save"></i> {{ isLoading ? 'Enregistrement...' : 'Enregistrer' }}
+        </button>
+        <button (click)="toggleEdit()" class="btn btn-secondary">
+          <i class="fas fa-times"></i> Annuler
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Onglet Sécurité -->
+  <div *ngIf="activeTab === 'security'" class="tab-content">
+    <h3><i class="fas fa-lock"></i> Modification du mot de passe</h3>
+    
+    <form (ngSubmit)="changePassword()" class="password-form">
+      <div class="form-group">
+        <label for="oldPassword">Ancien mot de passe :</label>
+        <input type="password" id="oldPassword" [(ngModel)]="oldPassword" name="oldPassword" 
+               required class="form-control" placeholder="Ancien mot de passe">
+      </div>
+      
+      <div class="form-group">
+        <label for="newPassword">Nouveau mot de passe :</label>
+        <input type="password" id="newPassword" [(ngModel)]="newPassword" name="newPassword" 
+               required class="form-control" placeholder="Nouveau mot de passe"
+               (input)="checkPasswordStrength(newPassword)">
+        
+        <div class="password-strength">
+          <h5>Exigences de sécurité :</h5>
+          <ul>
+            <li [class.valid]="passwordStrength.length">Minimum 8 caractères</li>
+            <li [class.valid]="passwordStrength.uppercase">Au moins une majuscule</li>
+            <li [class.valid]="passwordStrength.lowercase">Au moins une minuscule</li>
+            <li [class.valid]="passwordStrength.number">Au moins un chiffre</li>
+            <li [class.valid]="passwordStrength.special">Au moins un caractère spécial</li>
+          </ul>
+        </div>
+      </div>
+      
+      <button type="submit" class="btn btn-primary" [disabled]="isLoading || !isPasswordStrong()">
+        <i class="fas fa-key"></i> {{ isLoading ? 'Chargement...' : 'Modifier le mot de passe' }}
+      </button>
+    </form>
+  </div>
+
+  <!-- Onglet Activité -->
+  <div *ngIf="activeTab === 'activity'" class="tab-content">
+    <h3><i class="fas fa-history"></i> Journal des activités</h3>
+    
+    <div class="activity-actions">
+      <button class="btn btn-danger" (click)="confirmClearAllActivities()" [disabled]="activityLog.length === 0">
+        <i class="fas fa-trash-alt"></i> Tout supprimer
+      </button>
+    </div>
+    
+    <div class="activity-log">
+      <div *ngFor="let log of activityLog; let i = index" class="log-entry">
+        <div class="log-icon">
+          <i [class]="'fas ' + getActivityIcon(log.action)"></i>
+        </div>
+        <div class="log-details">
+          <div class="log-action">{{ log.action }}</div>
+          <div class="log-timestamp">{{ log.timestamp | date:'medium' }}</div>
+          <div *ngIf="log.details" class="log-meta">{{ log.details }}</div>
+        </div>
+        <button class="btn btn-icon" (click)="deleteActivity(log.$key || i)">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      
+      <div *ngIf="activityLog.length === 0" class="no-activity">
+        Aucune activité récente à afficher
+      </div>
+    </div>
+    
+    <!-- Modal de confirmation -->
+    <div *ngIf="showClearConfirmation" class="confirmation-modal">
+      <div class="modal-content">
+        <h4>Confirmer la suppression</h4>
+        <p>Êtes-vous sûr de vouloir supprimer toutes les activités ? Cette action est irréversible.</p>
+        <div class="modal-actions">
+          <button class="btn btn-secondary" (click)="showClearConfirmation = false">Annuler</button>
+          <button class="btn btn-danger" (click)="clearAllActivities()">Supprimer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+<!-- Partie Messagerie Seulement -->
+<div *ngIf="activeTab === 'messages'" class="messaging-container">
+  <!-- Liste des conversations -->
+  <div class="conversation-list">
+    <!-- Formulaire nouvelle conversation -->
+    <div class="new-conversation">
+      <input [(ngModel)]="newConversationEmail" 
+             placeholder="Email du destinataire"
+             type="email"
+             class="form-control">
+      <button (click)="createNewConversation()" 
+              class="btn btn-primary">
+        <i class="fas fa-plus"></i> Nouvelle conversation
+      </button>
+    </div>
+
+    <!-- Liste des conversations existantes -->
+    <div *ngFor="let conv of conversations" 
+         class="conversation-item"
+         (click)="selectConversation(conv.id)"
+         [class.active]="activeConversation?.id === conv.id">
+      <div class="conversation-contact">{{ getOtherParticipant(conv) }}</div>
+      <div class="conversation-preview">
+        <small class="last-message">{{ conv.lastMessage | truncate:20 }}</small>
+        <time class="last-time">{{ conv.lastMessageTime | date:'shortTime' }}</time>
+      </div>
+    </div>
+  </div>
+
+  <!-- Zone de conversation active -->
+  <div class="message-area" *ngIf="activeConversation; else noConversation">
+    <!-- Messages -->
+<!-- Remplacer la section des messages par : -->
+<div class="messages-container">
+  <div *ngFor="let msg of messages" class="message"
+       [class.sent]="msg.senderEmail === currentUserEmail"
+       [class.received]="msg.senderEmail !== currentUserEmail"
+       [class.email-reply]="msg.isEmailReply">
+    
+    <div class="message-header">
+      <span class="sender">
+        {{msg.senderEmail === currentUserEmail ? 'Vous' : msg.senderEmail}}
+        <span *ngIf="msg.isEmailReply" class="email-badge">Email</span>
+      </span>
+      <span class="time">{{msg.timestamp | date:'shortTime'}}</span>
+    </div>
+    
+    <div class="message-content">{{msg.content}}</div>
+  </div>
+</div>
+
+    <!-- Zone d'écriture -->
+    <div class="message-input">
+      <textarea [(ngModel)]="newMessage" 
+                placeholder="Écrivez votre message..."
+                (keyup.enter)="sendMessage()"
+                class="form-control"></textarea>
+      <button (click)="sendMessage()" 
+              class="btn btn-primary"
+              [disabled]="!newMessage.trim() || !activeConversation">
+        <i class="fas fa-paper-plane"></i> Envoyer
+      </button>
+    </div>
+  </div>
+
+
+  <!-- Aucune conversation sélectionnée -->
+  <ng-template #noConversation>
+    <div class="no-conversation-selected">
+      <i class="fas fa-comments"></i>
+      <p>Sélectionnez une conversation ou créez-en une nouvelle</p>
+    </div>
+  </ng-template>
+</div>
+
+<!-- Onglet Tâches -->
+<div *ngIf="activeTab === 'tasks'" class="tab-content">
+  <div class="task-manager">
+    <h3><i class="fas fa-tasks"></i> Gestion des Tâches</h3>
+    
+    <div class="task-form">
+      <input [(ngModel)]="newTask" 
+             placeholder="Ajouter une nouvelle tâche..." 
+             (keyup.enter)="addTask()"
+             #taskInput
+             class="form-control">
+      <button (click)="addTask()" 
+              class="btn btn-primary"
+              [disabled]="!newTask.trim()">
+        <i class="fas fa-plus"></i> Ajouter
+      </button>
+    </div>
+    
+    <div class="task-filters">
+      <button (click)="filterTasks('all')" 
+              [class.active]="currentFilter === 'all'">
+        Toutes
+      </button>
+      <button (click)="filterTasks('active')" 
+              [class.active]="currentFilter === 'active'">
+        Actives
+      </button>
+      <button (click)="filterTasks('completed')" 
+              [class.active]="currentFilter === 'completed'">
+        Terminées
+      </button>
+    </div>
+    
+    <div class="task-list">
+      <div *ngFor="let task of filteredTasks" class="task-item">
+        <div class="task-content">
+          <input type="checkbox"
+                 [checked]="task.completed"
+                 (click)="toggleTask(task, $event)"
+                 class="task-checkbox">
+          <span [class.completed]="task.completed">{{task.title}}</span>
+        </div>
+        <div class="task-actions">
+          <button (click)="editTask(task)" class="btn btn-icon">
+            <i class="fas fa-edit"></i>
+          </button>
+          <button (click)="deleteTask(task.id)" class="btn btn-icon">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+      </div>
+      
+      <div *ngIf="tasks.length === 0" class="no-tasks">
+        <i class="fas fa-check-circle"></i>
+        <p>Aucune tâche pour le moment</p>
+      </div>
+      
+      <div *ngIf="tasks.length > 0" class="task-stats">
+        {{completedTasksCount}} sur {{tasks.length}} tâches terminées
+      </div>
+    </div>
+    
+    <!-- Modal d'édition -->
+    <div *ngIf="editingTask" class="task-edit-modal">
+      <div class="modal-content">
+        <h4>Modifier la tâche</h4>
+        <input [(ngModel)]="editingTask.title" 
+               class="form-control"
+               (keyup.enter)="saveTaskEdit()">
+        <div class="modal-actions">
+          <button (click)="cancelTaskEdit()" class="btn btn-secondary">
+            Annuler
+          </button>
+          <button (click)="saveTaskEdit()" class="btn btn-primary">
+            Enregistrer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Ajoutez ceci à la fin de votre template -->
+<div *ngIf="showDialog" class="custom-dialog-overlay">
+  <div class="custom-dialog">
+    <h3>{{dialogTitle}}</h3>
+    <div class="dialog-content">
+      {{dialogMessage}}
+    </div>
+    <div class="dialog-actions">
+      <button (click)="closeDialog(false)" class="cancel-btn">
+        {{dialogCancelText || 'Annuler'}}
+      </button>
+      <button (click)="closeDialog(true)" class="confirm-btn">
+        {{dialogConfirmText || 'Confirmer'}}
+      </button>
+    </div>
+  </div>
+</div>

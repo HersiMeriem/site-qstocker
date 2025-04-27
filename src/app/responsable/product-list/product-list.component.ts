@@ -8,8 +8,7 @@ import { takeUntil, map } from 'rxjs/operators';
 import { MatDialog } from '@angular/material/dialog';
 import { PromotionDialogComponent } from '../promotion-dialog/promotion-dialog.component';
 import { SelectionModel } from '@angular/cdk/collections';
-import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatDialogModule } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-product-list',
@@ -33,7 +32,8 @@ export class ProductListComponent implements OnInit, OnDestroy {
     private productService: ProductService,
     private router: Router,
     private stockService: StockService,
-    private dialog: MatDialog 
+    private dialog: MatDialog ,
+    private snackBar: MatSnackBar
   ) {}
 
   ngOnInit(): void {
@@ -200,18 +200,21 @@ private scheduleStatusUpdate(product: Product, promoData: any): void {
       this.productService.updateProduct(product.id, updatedProduct);
     }, delay);
   }}
+ 
   openPromotionDialog(): void {
-    // Vérifier si des produits sont sélectionnés
-    if (this.selection.selected.length === 0) {
-      alert('Veuillez sélectionner au moins un produit');
+    if (this.selection.isEmpty()) {
+      this.snackBar.open('Sélectionnez au moins un produit pour appliquer une promotion', 'Fermer', {
+        duration: 4000,
+        panelClass: 'error-snackbar'
+      });
       return;
     }
-
+  
     this.isPromotionDialogOpen = true;
     
     const dialogRef = this.dialog.open(PromotionDialogComponent, {
       width: '600px',
-      disableClose: true, // Empêche la fermeture en cliquant à l'extérieur
+      panelClass: 'modern-dialog',
       data: {
         products: this.selection.selected,
         defaultDiscount: 10,
@@ -233,7 +236,7 @@ private scheduleStatusUpdate(product: Product, promoData: any): void {
         this.applyPromotionToSelectedProducts(result);
       }
     });
-  }
+  } 
 
   private applyPromotionToSelectedProducts(promoData: {
     discount: number,
@@ -324,6 +327,8 @@ private scheduleStatusUpdate(product: Product, promoData: any): void {
     }
   }
 
-
+  get selectedCount(): number {
+    return this.selection.selected.length;
+  }
 
 }

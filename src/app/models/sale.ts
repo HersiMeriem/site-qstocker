@@ -5,6 +5,10 @@ export interface SaleItem {
   unitPrice: number;
   totalPrice: number;
   imageUrl?: string | null;
+  originalPrice?: number; 
+  
+  
+
 }
 
 export interface Sale {
@@ -38,10 +42,16 @@ export interface StockItem {
   qrCode?: string | null;
   imageUrl?: string | null;
   description?: string | null;
-  originalPrice: number;
   editingPrice?: boolean;
-  seuil?: number;
-  demandPrevue?: number;
-  status?: 'active' | 'inactive' | 'promotion';
+  originalPrice?: number;
+  status: 'active' | 'inactive' | 'promotion';
   discount?: number;
+  promotion?: Promotion | boolean; 
+  seuil?: number;
+}
+
+interface Promotion {
+  startDate: string; // ou Date
+  endDate: string;   // ou Date
+  discountPercentage: number;
 }

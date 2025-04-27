@@ -17,7 +17,7 @@ export interface StockItem {
   originalPrice?: number;
   status: 'active' | 'inactive' | 'promotion';
   discount?: number;
-  promotion?: Promotion | boolean; // Modifié ici
+  promotion?: Promotion | boolean; 
   seuil?: number;
 }
 

@@ -1,14 +1,19 @@
 /* Styles généraux */
-.sales-module {
-
+body {
   font-family: 'Segoe UI', sans-serif;
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(10, 38, 71, 0.1);
-  margin: 20px;
-  overflow: hidden;
+  background-color: #ffffff;
+  color: #333;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
 }
-
+.sales-module {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: #ffffff;
+}
 /* En-tête */
 .sales-header {
   background: linear-gradient(145deg, #001F3F 0%, #003366 50%, #0074D9 100%);

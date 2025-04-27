@@ -12,7 +12,11 @@ import { QRCodeModule } from 'angularx-qrcode';
 import { ZXingScannerComponent } from '@zxing/ngx-scanner';
 import { BarcodeFormat } from '@zxing/library';
 
-
+interface Promotion {
+  startDate: string;
+  endDate: string;
+  discountPercentage: number;
+}
  
 
 @Component({
@@ -353,29 +357,56 @@ private showScanError(message: string): void {
            this.selectedQuantity > 0 &&
            this.selectedQuantity <= (this.selectedProduct.quantite || 0);
   }
-
   addToCart(): void {
     if (!this.selectedProduct || !this.canAddToCart) return;
-
+  
+    const unitPrice = this.getCurrentPrice(this.selectedProduct);
+    const originalPrice = this.selectedProduct.prixDeVente;
+  
     const existingItem = this.currentSale.items.find(item => 
       item.productId === this.selectedProduct?.idProduit 
-    );    
+    );
+    
     if (existingItem) {
       existingItem.quantity += this.selectedQuantity;
-      existingItem.totalPrice = existingItem.quantity * existingItem.unitPrice;
+      existingItem.totalPrice = existingItem.quantity * unitPrice;
     } else {
       const newItem: SaleItem = {
         productId: this.selectedProduct.idProduit,
         name: this.selectedProduct.nomProduit,
         quantity: this.selectedQuantity,
-        unitPrice: this.selectedProduct.prixDeVente,
-        totalPrice: this.selectedQuantity * this.selectedProduct.prixDeVente,
+        unitPrice: unitPrice,
+        originalPrice: originalPrice, // Garder le prix original
+        totalPrice: this.selectedQuantity * unitPrice,
       };
       this.currentSale.items.push(newItem);
     }
-
+  
     this.updateCartTotals();
     this.clearSelection();
+  }
+  
+  // Méthode améliorée pour vérifier les promotions
+  isPromotionActive(product: StockItem): boolean {
+    if (!product?.promotion || typeof product.promotion === 'boolean') return false;
+    
+    const now = new Date();
+    const start = new Date(product.promotion.startDate);
+    const end = new Date(product.promotion.endDate);
+    
+    return now >= start && now <= end;
+  }
+
+
+  // Calcul du prix avec réduction
+  getCurrentPrice(product: StockItem): number {
+    if (!product) return 0;
+    
+    if (this.isPromotionActive(product)) {
+      const discount = (product.promotion as Promotion).discountPercentage / 100;
+      return product.prixDeVente * (1 - discount);
+    }
+    return product.prixDeVente;
   }
 
   removeItem(index: number): void {
@@ -507,212 +538,232 @@ private showScanError(message: string): void {
         resolve(canvas.toDataURL('image/png'));
       };
   
-      img.onerror = () => reject('Erreur lors du chargement de l\'image');
+      img.onerror = (error) => reject(`Erreur lors du chargement de l'image: ${error}`);
     });
   }
    
- 
- // Facturation
-private async printInvoice(sale: Sale): Promise<void> {
-  // Création du document PDF
-  const doc = new jsPDF({
-    orientation: 'portrait',
-    unit: 'mm',
-    format: 'a4'
-  });
-
-  // Couleurs
-  const primaryColor: [number, number, number] = [41, 128, 185];
-  const secondaryColor: [number, number, number] = [52, 152, 219];
-  const lightColor: [number, number, number] = [236, 240, 241];
-  const discountColor: [number, number, number] = [192, 57, 43];
-
-  // Métadonnées du document
-  doc.setProperties({
-    title: `Facture ${sale.invoiceNumber}`,
-    subject: `Vente du ${new Date(sale.date).toLocaleDateString('fr-FR')}`,
-    author: 'QStocker',
-    creator: 'QStocker POS System'
-  });
-
-  // ==================== EN-TÊTE ====================
-  try {
-    const logoBase64 = await this.loadImageBase64('assets/images/qstockerlogo.PNG');
-    doc.addImage({
-      imageData: logoBase64,
-      x: 20,
-      y: 12,
-      width: 40,
-      height: 20,
-      format: 'PNG'
+  private async printInvoice(sale: Sale): Promise<void> {
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
     });
-  } catch (error) {
-    console.error('Erreur logo:', error);
-    doc.setFontSize(18);
-    doc.setTextColor(...primaryColor);
-    doc.text('QStocker', 20, 23);
-  }
-
-  // Coordonnées entreprise
-  doc.setFontSize(10);
-  doc.setTextColor(0);
-  doc.text('Mahdia, Zone touristique', 130, 30);
-  doc.text('Tél: +216 70 123 456', 130, 35);
-  doc.text('Email: contact.qstocker@gmail.com', 130, 40);
-
-  // Titre principal
-  doc.setFontSize(28);
-  doc.setTextColor(...primaryColor);
-  doc.setFont('helvetica', 'bold');
-  doc.text('FACTURE', 105, 50, { align: 'center' });
-  doc.setDrawColor(...secondaryColor);
-  doc.setLineWidth(1);
-  doc.line(80, 53, 130, 53);
-
-  // Infos facture
-  doc.setFontSize(12);
-  doc.setTextColor(100);
-  doc.text(`N°: ${sale.invoiceNumber}`, 20, 65);
-  doc.text(`Date: ${new Date(sale.date).toLocaleDateString('fr-FR')}`, 20, 70);
-  doc.setDrawColor(...primaryColor);
-  doc.setLineWidth(0.5);
-  doc.line(20, 75, 190, 75);
-
-  // ==================== SECTION CLIENT ====================
-  doc.setFontSize(12);
-  doc.setTextColor(0);
-  doc.setFont('helvetica', 'bold');
-  doc.text('CLIENT', 20, 85);
-
-  autoTable(doc, {
-    startY: 90,
-    margin: { left: 20 },
-    head: [['Champ', 'Valeur']],
-    body: [
-      ['Nom', sale.customerName || 'Non spécifié'],
-      ['ID Client', sale.customerId || 'N/A'],
-      ['Date de vente', new Date(sale.date).toLocaleString('fr-FR')],
-      ['Méthode de paiement', this.getPaymentMethodLabel(sale.paymentMethod)]
-    ],
-    theme: 'grid',
-    styles: {
-      cellPadding: 4,
-      fontSize: 10,
-      lineColor: lightColor,
-    },
-    headStyles: {
-      fillColor: secondaryColor,
-      textColor: 255,
-      fontStyle: 'bold',
+  
+    // Configuration des styles
+    const styles = {
+      primaryColor: [41, 128, 185] as [number, number, number],
+      secondaryColor: [236, 240, 241] as [number, number, number],
+      font: 'helvetica',
+      headerHeight: 50,
+      margin: 20,
+      footerHeight: 20
+    };
+  
+    // ==================== EN-TÊTE ====================
+    try {
+      const logoBase64 = await this.loadImageBase64('assets/images/qstockerlogo.PNG');
+      doc.addImage({
+        imageData: logoBase64,
+        x: styles.margin,
+        y: 15,
+        width: 40,
+        height: 20,
+        format: 'PNG'
+      });
+    } catch (error) {
+      console.error('Erreur de chargement du logo:', error);
+      doc.setFontSize(16);
+      doc.setTextColor(...styles.primaryColor);
+      doc.setFont(styles.font, 'bold');
+      doc.text('QStocker', styles.margin, 25);
     }
-  });
-
-  // ==================== SECTION ARTICLES ====================
-  doc.setFontSize(12);
-  doc.setTextColor(0);
-  doc.setFont('helvetica', 'bold');
-  doc.text('DÉTAIL DE LA COMMANDE', 20, (doc as any).lastAutoTable.finalY + 10);
-
-  // Vérification et formatage des articles
-  const itemsBody = sale.items.map(item => [
-    item.name || 'Produit sans nom',
-    `${(item.unitPrice || 0).toFixed(2)} DT`,
-    (item.quantity || 0).toString(),
-    `${(item.totalPrice || 0).toFixed(2)} DT`
-  ]);
-
-  autoTable(doc, {
-    startY: (doc as any).lastAutoTable.finalY + 15,
-    head: [['Produit', 'Prix unitaire', 'Quantité', 'Total']],
-    body: itemsBody,
-    theme: 'striped',
-    styles: {
-      fontSize: 10,
-      cellPadding: 4,
-      lineColor: lightColor,
-    },
-    headStyles: {
-      fillColor: primaryColor,
-      textColor: 255,
-      fontStyle: 'bold',
-    },
-    alternateRowStyles: {
-      fillColor: [248, 248, 248]
-    },
-    columnStyles: {
-      0: { cellWidth: 70 },
-      1: { cellWidth: 30, halign: 'right' },
-      2: { cellWidth: 25, halign: 'center' },
-      3: { cellWidth: 35, halign: 'right' }
+  
+    // Coordonnées entreprise
+    doc.setFontSize(10);
+    doc.setTextColor(40);
+    doc.setFont(styles.font, 'normal');
+    const companyInfo = [
+      'Mahdia, Zone touristique',
+      'Tél: +216 70 123 456',
+      'Email: contact.qstocker@gmail.com',
+      'R.C. : 12345678A | TVA: 12345678'
+    ];
+    companyInfo.forEach((line, index) => {
+      doc.text(line, 130, 25 + (index * 5));
+    });
+  
+    // Ligne de séparation
+    doc.setDrawColor(...styles.primaryColor);
+    doc.setLineWidth(0.5);
+    doc.line(styles.margin, 45, doc.internal.pageSize.width - styles.margin, 45);
+  
+    // ==================== INFORMATIONS FACTURE ====================
+    doc.setFontSize(12);
+    doc.setTextColor(40);
+    doc.setFont(styles.font, 'bold');
+    doc.text(`Facture N°: ${sale.invoiceNumber}`, styles.margin, 55);
+    doc.setFont(styles.font, 'normal');
+    doc.text(`Date: ${new Date(sale.date).toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric'
+    })}`, styles.margin, 60);
+  
+    // ==================== SECTION CLIENT ====================
+    const clientStartY = 65;
+    autoTable(doc, {
+      startY: clientStartY,
+      margin: { left: styles.margin },
+      head: [[{ content: 'INFORMATIONS CLIENT', colSpan: 2, styles: { fillColor: styles.primaryColor } }]],
+      body: [
+        ['Nom', sale.customerName || 'Non spécifié'],
+        ['ID Client', sale.customerId || 'N/A'],
+        ['Date de vente', new Date(sale.date).toLocaleString('fr-FR')],
+        ['Méthode de paiement', this.getPaymentMethodLabel(sale.paymentMethod)]
+      ],
+      theme: 'plain',
+      styles: {
+        fontSize: 10,
+        cellPadding: 4,
+        lineColor: styles.primaryColor,
+        textColor: 40
+      },
+      headStyles: {
+        textColor: 255,
+        fontStyle: 'bold',
+        halign: 'center'
+      },
+      columnStyles: {
+        0: { cellWidth: 40, fontStyle: 'bold' },
+        1: { cellWidth: 60 }
+      }
+    });
+  
+    // ==================== SECTION ARTICLES ====================
+    const itemsStartY = (doc as any).lastAutoTable.finalY + 10;
+    autoTable(doc, {
+      startY: itemsStartY,
+      head: [
+        [
+          'Produit',
+          { content: 'Prix unitaire', styles: { halign: 'right' } },
+          { content: 'Quantité', styles: { halign: 'center' } },
+          { content: 'Total', styles: { halign: 'right' } }
+        ]
+      ],
+      body: sale.items.map(item => [
+        item.name || 'Produit non nommé',
+        { content: `${(item.unitPrice || 0).toFixed(2)} DT`, styles: { halign: 'right' } },
+        { content: (item.quantity || 0).toString(), styles: { halign: 'center' } },
+        { content: `${(item.totalPrice || 0).toFixed(2)} DT`, styles: { halign: 'right' } }
+      ]),
+      margin: { left: styles.margin, right: styles.margin },
+      styles: {
+        fontSize: 10,
+        cellPadding: 4,
+        textColor: 40
+      },
+      headStyles: {
+        fillColor: styles.primaryColor,
+        textColor: 255,
+        fontStyle: 'bold'
+      },
+      alternateRowStyles: {
+        fillColor: [245, 245, 245]
+      },
+      columnStyles: {
+        0: { cellWidth: 90 },
+        1: { cellWidth: 35 },
+        2: { cellWidth: 25 },
+        3: { cellWidth: 35 }
+      }
+    });
+  
+    // ==================== SECTION TOTAUX ====================
+    const totals = {
+      subTotal: sale.items.reduce((sum, item) => sum + (item.totalPrice || 0), 0),
+      discount: sale.discount || 0,
+      get discountAmount() { return this.subTotal * (this.discount / 100) },
+      get total() { return this.subTotal - this.discountAmount }
+    };
+  
+    const totalsStartY = (doc as any).lastAutoTable.finalY + 15;
+    const totalsWidth = 70;
+    const totalsX = doc.internal.pageSize.width - styles.margin - totalsWidth;
+  
+    // Encadré des totaux
+    doc.setDrawColor(...styles.primaryColor);
+    doc.setFillColor(...styles.secondaryColor);
+    doc.rect(totalsX - 5, totalsStartY - 5, totalsWidth + 10, totals.discount ? 45 : 30, 'FD');
+  
+    // Contenu des totaux
+    const formatCurrency = (value: number) => `${value.toFixed(2)} DT`;
+    let currentY = totalsStartY;
+  
+    doc.setFontSize(11);
+    doc.setTextColor(40);
+    doc.setFont(styles.font, 'bold');
+    doc.text('Sous-total:', totalsX, currentY);
+    doc.text(formatCurrency(totals.subTotal), totalsX + totalsWidth - 5, currentY, { align: 'right' });
+    currentY += 8;
+  
+    if (totals.discount) {
+      doc.text(`Remise (${totals.discount}%):`, totalsX, currentY);
+      doc.text(`-${formatCurrency(totals.discountAmount)}`, totalsX + totalsWidth - 5, currentY, { align: 'right' });
+      currentY += 8;
+      
+      doc.setDrawColor(200);
+      doc.setLineWidth(0.3);
+      doc.line(totalsX, currentY, totalsX + totalsWidth, currentY);
+      currentY += 5;
     }
-  });
-
-  // ==================== SECTION TOTAUX ====================
-  // Calculs robustes avec valeurs par défaut
-  const subTotal = sale.items.reduce((sum, item) => sum + (item.totalPrice || 0), 0);
-  const discount = sale.discount || 0;
-  const discountAmount = subTotal * (discount / 100);
-  const totalAmount = subTotal - discountAmount;
-
-  // Position Y pour la section des totaux
-  const totalsStartY = (doc as any).lastAutoTable.finalY + 15;
-
-  // Ajout d'un cadre pour les totaux
-  doc.setDrawColor(...lightColor);
-  doc.setFillColor(250, 250, 250);
-  doc.roundedRect(120, totalsStartY - 5, 80, discount > 0 ? 40 : 30, 3, 3, 'FD');
-
-  // Sous-total
-  doc.setFontSize(11);
-  doc.setTextColor(0);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Sous-total:', 125, totalsStartY + 5);
-  doc.text(`${subTotal.toFixed(2)} DT`, 185, totalsStartY + 5, { align: 'right' });
-
-  // Détails de la remise seulement si applicable
-  if (discount > 0) {
-    // Pourcentage de remise
-    doc.setTextColor(0);
-    doc.text('Remise appliquée:', 125, totalsStartY + 12);
-    doc.text(`${discount}%`, 185, totalsStartY + 12, { align: 'right' });
-
-    // Montant de la remise
-    doc.setTextColor(...discountColor);
-    doc.text('Montant remise:', 125, totalsStartY + 19);
-    doc.text(`-${discountAmount.toFixed(2)} DT`, 185, totalsStartY + 19, { align: 'right' });
+  
+    doc.setFontSize(12);
+    doc.setTextColor(...styles.primaryColor);
+    doc.text('Total à payer:', totalsX, currentY);
+    doc.text(formatCurrency(totals.total), totalsX + totalsWidth - 5, currentY, { align: 'right' });
+  
+    // ==================== PIED DE PAGE ====================
+    const footerContent = [
+      'Merci pour votre confiance !',
+      'Contact : contact.qstocker@gmail.com | Tél: +216 70 123 456'
+    ];
+  
+    doc.setFontSize(8);
+    doc.setTextColor(100);
+    footerContent.forEach((line, index) => {
+      doc.text(line, doc.internal.pageSize.width / 2, 290 + (index * 4), { align: 'center' });
+    });
+  
+    // ==================== GÉNÉRATION DU FICHIER ====================
+    const cleanName = (sale.customerName || 'client').replace(/[^a-zA-Z0-9_]/g, '_');
+    const fileName = `Facture_${sale.invoiceNumber}_${cleanName}.pdf`;
+    doc.save(fileName);
   }
-
-  // Ligne de séparation
-  doc.setDrawColor(...lightColor);
-  doc.line(125, totalsStartY + (discount > 0 ? 24 : 14), 185, totalsStartY + (discount > 0 ? 24 : 14));
-
-  // Total à payer
-  doc.setFontSize(12);
-  doc.setTextColor(...primaryColor);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Total à payer:', 125, totalsStartY + (discount > 0 ? 32 : 22));
-  doc.text(`${totalAmount.toFixed(2)} DT`, 185, totalsStartY + (discount > 0 ? 32 : 22), { align: 'right' });
-
-  // ==================== PIED DE PAGE ====================
-  const footerY = 280;
-  doc.setDrawColor(...primaryColor);
-  doc.setLineWidth(0.3);
-  doc.line(20, footerY, 190, footerY);
-
-  doc.setFontSize(8);
-  doc.setTextColor(100);
-  doc.text('Merci pour votre confiance !', 105, footerY + 5, { align: 'center' });
-  doc.text('Contact : contact.qstocker@gmail.com | Tél: +216 70 123 456', 105, footerY + 10, { align: 'center' });
-
-  // ==================== GÉNÉRATION DU FICHIER ====================
-  const fileName = `Facture_${sale.invoiceNumber}_${(sale.customerName || 'client').replace(/ /g, '_')}.pdf`;
-  doc.save(fileName);
-}
 
 printExistingInvoice(sale: Sale): void {
   this.printInvoice(sale);
 }
 
+getTotalProductDiscount(): number {
+  return this.currentSale.items.reduce((total, item) => {
+    if (item.unitPrice !== item.originalPrice) {
+      return total + ((item.originalPrice || 0) - item.unitPrice) * item.quantity;
+    }
+    return total;
+  }, 0);
+}
 
 
+
+updateCartPrices(): void {
+  this.currentSale.items.forEach(item => {
+    const product = this.availableProducts.find(p => p.idProduit === item.productId);
+    if (product) {
+      item.unitPrice = this.getCurrentPrice(product);
+      item.totalPrice = item.unitPrice * item.quantity;
+    }
+  });
+  this.updateCartTotals();
+}
 }

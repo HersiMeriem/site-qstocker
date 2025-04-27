@@ -1,47 +1,156 @@
+/* Arrière-plan général de la page */
+body {
+  background-color: #ffffff; /* Fond blanc total */
+  margin: 0;
+  font-family: 'Roboto', sans-serif;
+}
+
+/* Container centralisé */
 .container {
-  max-width: 900px;
+  max-width: 1100px;
   margin: auto;
-  padding: 20px;
+  padding: 40px 20px;
 }
 
-mat-card {
-  margin: 20px 0;
-  padding: 15px;
+/* Mat-card sans ombre ni cadre, mais bien structuré */
+mat-card.order-card {
+  background: #ffffff; /* Fond blanc solide */
+  border-radius: 16px; /* Léger arrondi pour douceur */
+  padding: 40px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); /* Mini ombre douce */
+  transition: box-shadow 0.4s ease;
 }
 
-.history-btn {
-  display: flex;
-  align-items: center;
-  margin-bottom: 15px;
+/* Petit effet au survol */
+mat-card.order-card:hover {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
 }
 
-.history-btn mat-icon {
-  margin-right: 5px;
+/* Titre principal */
+h3 {
+  margin-bottom: 30px;
+  font-size: 28px;
+  font-weight: 700;
+  color: #2a4365;
+  text-align: center;
+  letter-spacing: 0.5px;
 }
 
-mat-form-field {
-  width: 100%;
-  margin-bottom: 10px;
-}
-.history-btn {
-  display: flex;
+/* Boutons historiques et fournisseur */
+.history-btn,
+.supplier-btn {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 10px 15px;
-  font-weight: bold;
+  padding: 12px 22px;
+  font-weight: 600;
+  font-size: 15px;
   border-radius: 8px;
-  background: linear-gradient(45deg, #5a67d8, #7f9cf5);
+  background: linear-gradient(135deg, #5a67d8, #667eea);
   color: white;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 10px rgba(90, 103, 216, 0.3);
+  margin: 0 10px 25px 0;
   transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.history-btn:hover {
-  background: linear-gradient(45deg, #4c51bf, #6b8bfd);
-  transform: scale(1.05);
+.history-btn:hover,
+.supplier-btn:hover {
+  background: linear-gradient(135deg, #4c51bf, #5a67d8);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(76, 81, 191, 0.4);
 }
 
-.history-btn mat-icon {
+/* Icônes */
+mat-icon {
+  font-size: 22px;
+}
+
+/* Formulaire en 2 colonnes */
+form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 25px;
+}
+
+/* Champs du formulaire */
+mat-form-field {
+  width: 100%;
+  transition: transform 0.3s ease;
+}
+
+mat-form-field:hover {
+  transform: translateY(-2px);
+}
+
+/* Style des bordures des champs */
+mat-form-field.mat-form-field-appearance-outline {
+  --mat-outline-field-border-color: #cbd5e0;
+  --mat-outline-field-border-radius: 8px;
+  --mat-outline-field-hover-border-color: #667eea;
+}
+
+input[matInput],
+.mat-select-value {
+  font-size: 16px;
+  color: #2d3748;
+}
+
+/* Focus input */
+input[matInput]:focus,
+.mat-select-value:focus {
+  color: #4c51bf;
+}
+
+/* Bouton envoyer */
+.submit-btn {
+  grid-column: 1 / -1;
+  width: fit-content;
+  align-self: center;
+  justify-self: center;
+  padding: 14px 28px;
+  font-weight: bold;
+  font-size: 17px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #10b981, #34d399);
+  color: white;
+  box-shadow: 0 6px 15px rgba(56, 178, 172, 0.3);
+  transition: all 0.3s ease;
+  margin-top: 20px;
+}
+
+.submit-btn:hover {
+  background: linear-gradient(135deg, #319795, #48bb78);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 18px rgba(49, 151, 149, 0.4);
+}
+
+/* Titres de sous-sections */
+.section-title {
+  grid-column: 1 / -1;
   font-size: 20px;
+  font-weight: 600;
+  margin: 10px 0 5px;
+  color: #2a4365;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 5px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  form {
+    grid-template-columns: 1fr;
+  }
+
+  .history-btn,
+  .supplier-btn {
+    width: 100%;
+    margin-bottom: 15px;
+  }
+
+  .submit-btn {
+    width: 100%;
+  }
 }

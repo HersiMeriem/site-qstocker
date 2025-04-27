@@ -22,18 +22,20 @@
         <section class="product-selection">
             <!-- Section scan/selection -->
             <div class="scan-section card">
-                <button class="scan-btn" (click)="openScanner()" 
-          [disabled]="availableProducts.length === 0">
-    <i class="fas fa-qrcode"></i> 
-    {{ availableProducts.length ? 'Scanner' : 'Chargement...' }}
-  </button>
-   <br> <br> 
+                <button class="scan-btn" (click)="openScanner()" [disabled]="availableProducts.length === 0">
+                    <i class="fas fa-qrcode"></i> 
+                    {{ availableProducts.length ? 'Scanner' : 'Chargement...' }}
+                </button>
+                <br><br>
                 <select class="product-select" [(ngModel)]="selectedProductId" (change)="onProductSelect()">
                     <option value="">Sélectionner un produit...</option>
                     <option *ngFor="let product of availableProducts" 
                             [value]="product.idProduit" 
                             [disabled]="product.quantite <= 0">
-                        {{ product.nomProduit }} 
+                        {{ product.nomProduit }}
+                        <span *ngIf="product.status === 'promotion' && isPromotionActive(product)" class="badge bg-danger ms-1">
+                            PROMO -{{ product.promotion?.discountPercentage }}%
+                        </span>
                         <span [class]="product.quantite > 0 ? 'stock-ok' : 'stock-out'">
                             (Stock: {{ product.quantite }})
                         </span>
@@ -46,7 +48,6 @@
                 <div class="product-info">
                     <h3>{{ selectedProduct.nomProduit }}</h3>
                     <div class="product-visuals">
-                        
                         <div class="product-qrcode">
                             <qrcode [qrdata]="selectedProduct.idProduit" 
                                     [width]="120" 
@@ -65,7 +66,26 @@
                         </div>
                         <div class="meta-item">
                             <i class="fas fa-tag"></i>
-                            <span class="price">{{ selectedProduct.prixDeVente | number:'1.2-2' }} DT</span>
+                            <span class="price">
+                                <span *ngIf="isPromotionActive(selectedProduct)">
+                                    <del class="text-muted">{{ selectedProduct.prixDeVente | number:'1.2-2' }} DT</del>
+                                    <span class="text-success fw-bold">
+                                        {{ getCurrentPrice(selectedProduct) | number:'1.2-2' }} DT
+                                    </span>
+                                    <span class="badge bg-danger ms-1">
+                                        -{{ selectedProduct.promotion?.discountPercentage }}%
+                                    </span>
+                                </span>
+                                <span *ngIf="!isPromotionActive(selectedProduct)">
+                                    {{ selectedProduct.prixDeVente | number:'1.2-2' }} DT
+                                </span>
+                            </span>
+                        </div>
+                        <div class="meta-item" *ngIf="isPromotionActive(selectedProduct)">
+                            <i class="fas fa-clock"></i>
+                            <span class="text-warning">
+                                Promo valide jusqu'au {{ selectedProduct.promotion?.endDate | date:'dd/MM/yyyy' }}
+                            </span>
                         </div>
                     </div>
                     <div class="quantity-controls">
@@ -87,6 +107,7 @@
                     </button>
                 </div>
             </article>
+
         </section>
 
         <!-- Colonne droite : Panier -->
@@ -101,27 +122,45 @@
                 <article class="cart-item" *ngFor="let item of currentSale.items; let i = index">
                     <div class="item-info">
                         <div class="item-name">{{ item.name }}</div>
-                        <div class="item-price">{{ item.unitPrice | number:'1.2-2' }} DT x {{ item.quantity }}</div>
+                        <div class="item-price">
+                            <span *ngIf="item.unitPrice !== item.originalPrice">
+                                <del class="text-muted">{{ item.originalPrice | number:'1.2-2' }} DT</del>
+                                <span class="text-success fw-bold">{{ item.unitPrice | number:'1.2-2' }} DT</span>
+                                <span class="badge bg-danger ms-1">PROMO</span>
+                                x {{ item.quantity }}
+                            </span>
+                            <span *ngIf="item.unitPrice === item.originalPrice">
+                                {{ item.unitPrice | number:'1.2-2' }} DT x {{ item.quantity }}
+                            </span>
+                        </div>
                     </div>
-                    <div class="item-total">{{ item.totalPrice | number:'1.2-2' }} DT</div>
+                    <div class="item-total">
+                        <span *ngIf="item.unitPrice !== item.originalPrice" class="text-success fw-bold">
+                            {{ item.totalPrice | number:'1.2-2' }} DT
+                        </span>
+                        <span *ngIf="item.unitPrice === item.originalPrice">
+                            {{ item.totalPrice | number:'1.2-2' }} DT
+                        </span>
+                    </div>
                     <button class="remove-item" (click)="removeItem(i)" title="Supprimer">
                         <i class="fas fa-times"></i>
                     </button>
                 </article>
+
                 <div class="customer-fields">
                     <div class="summary-row">
-                      <label for="customer-name"><i class="fas fa-user"></i> Nom Client:</label>
-                      <input id="customer-name" 
-                             type="text" 
-                             [(ngModel)]="currentSale.customerName"
-                             placeholder="Entrez le nom du client"
-                             [disabled]="currentSale.items.length === 0">
+                        <label for="customer-name"><i class="fas fa-user"></i> Nom Client:</label>
+                        <input id="customer-name" 
+                               type="text" 
+                               [(ngModel)]="currentSale.customerName"
+                               placeholder="Entrez le nom du client"
+                               [disabled]="currentSale.items.length === 0">
                     </div>
                     <div class="summary-row">
-                      <label><i class="fas fa-id-card"></i> ID Client:</label>
-                      <div class="customer-id">
-                        {{ currentSale.customerId || 'Généré après validation' }}
-                      </div>
+                        <label><i class="fas fa-id-card"></i> ID Client:</label>
+                        <div class="customer-id">
+                            {{ currentSale.customerId || 'Généré après validation' }}
+                        </div>
                     </div>
                 </div>
                 <div class="empty-cart" *ngIf="currentSale.items.length === 0">
@@ -134,8 +173,14 @@
                     <span>Sous-total:</span>
                     <span>{{ currentSale.subTotal | number:'1.2-2' }} DT</span>
                 </div>
+                <div class="summary-row">
+                    <span>Réduction produits:</span>
+                    <span class="text-success">
+                        -{{ getTotalProductDiscount() | number:'1.2-2' }} DT
+                    </span>
+                </div>
                 <div class="summary-row discount">
-                    <label for="discount-input">Remise:</label>
+                    <label for="discount-input">Remise supplémentaire:</label>
                     <input id="discount-input"
                            type="number" 
                            [(ngModel)]="currentSale.discount" 
@@ -202,7 +247,7 @@
                 <table class="sales-table" *ngIf="!loadingHistory && !historyError">
                     <thead>
                         <tr>
-                            <th>#</th> <!-- Nouvelle colonne pour la numérotation -->
+                            <th>#</th>
                             <th>Date</th>
                             <th>N° Facture</th>
                             <th>Client</th>
@@ -210,12 +255,12 @@
                             <th>Total</th>
                             <th>Paiement</th>
                             <th>Articles</th>
-                            <th>Facture</th> <!-- Nouvelle colonne pour le PDF -->
+                            <th>Facture</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr *ngFor="let sale of filteredSalesHistory; let i = index">
-                            <td>{{ i + 1 }}</td> <!-- Numéro de ligne -->
+                            <td>{{ i + 1 }}</td>
                             <td>{{ sale.date | date:'dd/MM/yyyy HH:mm' }}</td>
                             <td>{{ sale.invoiceNumber }}</td>
                             <td>{{ sale.customerName }}</td>
@@ -229,7 +274,11 @@
                             </td>
                             <td>
                                 <div class="sale-items" *ngFor="let item of sale.items">
-                                    {{ item.name }} x{{ item.quantity }}
+                                    {{ item.name }} 
+                                    <span *ngIf="item.unitPrice !== item.originalPrice" class="text-success">
+                                        (PROMO)
+                                    </span>
+                                    x{{ item.quantity }}
                                 </div>
                             </td>
                             <td class="pdf-action">
@@ -249,90 +298,98 @@
         </section>
     </footer>
 
-
-<!-- Scanner et résultat du scan -->
-<div class="scanner-overlay" *ngIf="scannerEnabled">
-    <div *ngIf="!scannedProduct; else productView" class="scanner-container">
-      <zxing-scanner 
-        #scanner
-        [enable]="scannerEnabled"
-        [device]="currentCamera"
-        (camerasFound)="handleCamerasFound($event)"
-        (scanSuccess)="handleScanSuccess($event)"
-        [formats]="allowedFormats">
-      </zxing-scanner>
-      
-      <div class="scanner-guidance">
-        <div class="laser-line"></div>
-        <p>Positionnez le QR code dans le cadre</p>
-      </div>
-      
-      <button class="close-btn" (click)="closeScanner()">
-        <i class="fas fa-times"></i> Fermer
-      </button>
-    </div>
-<!--affichage produit scanne-->
-<ng-template #productView>
-    <div class="product-scan-result">
-      <div class="product-header">
-        <h3>Produit scanné</h3>
-        <button class="close-btn" (click)="closeScanner()">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-      
-      <div class="product-details">
-        <div class="qr-code-container">
-          <div class="qr-code-label">QR Code du produit</div>
-          <qrcode [qrdata]="scannedProduct.idProduit"
-                  [width]="120"
-                  [errorCorrectionLevel]="'M'"
-                  [cssClass]="'qrcode-image'"></qrcode>
-        </div>
-        <div class="product-info">
-          <div class="detail-row">
-            <span class="label">ID Produit:</span>
-            <span class="value">{{ scannedProduct.idProduit }}</span>
-          </div>
-          <div class="detail-row">
-            <span class="label">Nom:</span>
-            <span class="value">{{ scannedProduct.nomProduit }}</span>
-          </div>
-          <div class="detail-row">
-            <span class="label">Prix:</span>
-            <span class="value">{{ scannedProduct.prixDeVente | number:'1.2-2' }} DT</span>
-          </div>
-          <div class="detail-row">
-            <span class="label">Stock:</span>
-            <span class="value">{{ scannedProduct.quantite }}</span>
-          </div>
-          
-          <div class="quantity-control">
-            <label>Quantité:</label>
-            <div class="qty-selector">
-              <button (click)="decrementQuantity()" [disabled]="selectedQuantity <= 1">
-                <i class="fas fa-minus"></i>
-              </button>
-              <input type="number" [(ngModel)]="selectedQuantity" 
-                     min="1" [max]="scannedProduct.quantite">
-              <button (click)="incrementQuantity()" 
-                      [disabled]="selectedQuantity >= scannedProduct.quantite">
-                <i class="fas fa-plus"></i>
-              </button>
+    <!-- Scanner et résultat du scan -->
+    <div class="scanner-overlay" *ngIf="scannerEnabled">
+        <div *ngIf="!scannedProduct; else productView" class="scanner-container">
+            <zxing-scanner 
+                #scanner
+                [enable]="scannerEnabled"
+                [device]="currentCamera"
+                (camerasFound)="handleCamerasFound($event)"
+                (scanSuccess)="handleScanSuccess($event)"
+                [formats]="allowedFormats">
+            </zxing-scanner>
+            
+            <div class="scanner-guidance">
+                <div class="laser-line"></div>
+                <p>Positionnez le QR code dans le cadre</p>
             </div>
-          </div>
+            
+            <button class="close-btn" (click)="closeScanner()">
+                <i class="fas fa-times"></i> Fermer
+            </button>
         </div>
-      </div>
-      
-      <div class="action-buttons">
-        <button class="cancel-btn" (click)="closeScanner()">
-          <i class="fas fa-times"></i> Annuler
-        </button>
-        <button class="add-btn" (click)="addScannedToCart()">
-          <i class="fas fa-cart-plus"></i> Ajouter au panier
-        </button>
-      </div>
+        
+        <ng-template #productView>
+            <div class="product-scan-result">
+                <div class="product-header">
+                    <h3>Produit scanné</h3>
+                    <button class="close-btn" (click)="closeScanner()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="product-details">
+                    <div class="qr-code-container">
+                        <div class="qr-code-label">QR Code du produit</div>
+                        <qrcode [qrdata]="scannedProduct.idProduit"
+                                [width]="120"
+                                [errorCorrectionLevel]="'M'"
+                                [cssClass]="'qrcode-image'"></qrcode>
+                    </div>
+                    <div class="product-info">
+                        <div class="detail-row">
+                            <span class="label">ID Produit:</span>
+                            <span class="value">{{ scannedProduct.idProduit }}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="label">Nom:</span>
+                            <span class="value">{{ scannedProduct.nomProduit }}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="label">Prix:</span>
+                            <span class="value">
+                                <span *ngIf="isPromotionActive(scannedProduct)">
+                                    <del>{{ scannedProduct.prixDeVente | number:'1.2-2' }} DT</del>
+                                    {{ getCurrentPrice(scannedProduct) | number:'1.2-2' }} DT
+                                    <span class="badge bg-danger">-{{ scannedProduct.promotion?.discountPercentage }}%</span>
+                                </span>
+                                <span *ngIf="!isPromotionActive(scannedProduct)">
+                                    {{ scannedProduct.prixDeVente | number:'1.2-2' }} DT
+                                </span>
+                            </span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="label">Stock:</span>
+                            <span class="value">{{ scannedProduct.quantite }}</span>
+                        </div>
+                        
+                        <div class="quantity-control">
+                            <label>Quantité:</label>
+                            <div class="qty-selector">
+                                <button (click)="decrementQuantity()" [disabled]="selectedQuantity <= 1">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                <input type="number" [(ngModel)]="selectedQuantity" 
+                                       min="1" [max]="scannedProduct.quantite">
+                                <button (click)="incrementQuantity()" 
+                                        [disabled]="selectedQuantity >= scannedProduct.quantite">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="cancel-btn" (click)="closeScanner()">
+                        <i class="fas fa-times"></i> Annuler
+                    </button>
+                    <button class="add-btn" (click)="addScannedToCart()">
+                        <i class="fas fa-cart-plus"></i> Ajouter au panier
+                    </button>
+                </div>
+            </div>
+        </ng-template>
     </div>
-  </ng-template>
-  </div>
 </div>

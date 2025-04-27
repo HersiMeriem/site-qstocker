@@ -1,6 +1,8 @@
 <div class="form-container">
-  <h1 class="form-title">✏️ Modifier Produit</h1>
-  
+  <h1 class="form-title">Modifier Produit</h1>
+  <button routerLink="/responsable/product-list" class="btn btn-link">
+    Retour à la liste
+  </button>
   <div *ngIf="showSuccessMessage" class="success-message">
     <i class="fas fa-check-circle"></i> {{ successMessage }}
   </div>
@@ -118,23 +120,53 @@
               <option value="promotion">Promotion</option>
             </select>
           </div>
+
           <div class="form-group" *ngIf="productForm.get('status')?.value === 'promotion'">
             <label>Détails de la promotion</label>
             <div class="promotion-fields">
-              <input type="number" 
-                     formControlName="discountPercentage" 
-                     min="1" max="100"
-                     placeholder="Pourcentage de réduction"
-                     class="modern-input">
-              <input type="date" 
-                     formControlName="promotionStart" 
-                     class="modern-input"
-                     placeholder="Début promotion">
-              <input type="date" 
-                     formControlName="promotionEnd" 
-                     class="modern-input"
-                     placeholder="Fin promotion">
+              <div class="promo-field">
+                <label>Remise (%)</label>
+                <input type="number" 
+                       formControlName="discountPercentage" 
+                       min="1" max="100"
+                       placeholder="10"
+                       class="modern-input">
+                <div class="error-hint" *ngIf="productForm.get('discountPercentage')?.invalid && 
+                                           (productForm.get('discountPercentage')?.dirty || 
+                                            productForm.get('discountPercentage')?.touched)">
+                  Entre 1% et 100%
+                </div>
+              </div>
+
+              <div class="promo-field">
+                <label>Date début</label>
+                <input type="date" 
+                       formControlName="promotionStart" 
+                       class="modern-input"
+                       [min]="todayDate">
+                <div class="error-hint" *ngIf="productForm.get('promotionStart')?.invalid && 
+                                           (productForm.get('promotionStart')?.dirty || 
+                                            productForm.get('promotionStart')?.touched)">
+                  Date requise
+                </div>
+              </div>
+
+              <div class="promo-field">
+                <label>Date fin</label>
+                <input type="date" 
+                       formControlName="promotionEnd" 
+                       class="modern-input"
+                       [min]="productForm.get('promotionStart')?.value || todayDate">
+                <div class="error-hint" *ngIf="productForm.get('promotionEnd')?.invalid && 
+                                           (productForm.get('promotionEnd')?.dirty || 
+                                            productForm.get('promotionEnd')?.touched)">
+                  Doit être après la date de début
+                </div>
+              </div>
             </div>
+            <button type="button" (click)="removePromotion()" class="remove-promo-btn">
+              <i class="fas fa-times"></i> Supprimer la promotion
+            </button>
           </div>
         </div>
       </div>
@@ -206,6 +238,64 @@
     </div>
   </form>
 </div>
+
+<!-- Promotion Dialog Template -->
+<ng-template #promoDialog>
+  <h2 mat-dialog-title>🛎️ Gestion de Promotion</h2>
+  <mat-dialog-content>
+    <form [formGroup]="promoForm">
+      <div class="row">
+        <div class="col-12">
+          <mat-form-field appearance="fill">
+            <mat-label>Pourcentage de réduction</mat-label>
+            <input matInput type="number" formControlName="discount" min="1" max="100">
+            <mat-error *ngIf="promoForm.get('discount')?.invalid">
+              Doit être entre 1% et 100%
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="col-6">
+          <mat-form-field>
+            <mat-label>Date de début</mat-label>
+            <input matInput [matDatepicker]="startPicker" formControlName="startDate">
+            <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+            <mat-datepicker #startPicker></mat-datepicker>
+            <mat-error *ngIf="promoForm.get('startDate')?.invalid">
+              Date requise
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="col-6">
+          <mat-form-field>
+            <mat-label>Date de fin</mat-label>
+            <input matInput [matDatepicker]="endPicker" formControlName="endDate">
+            <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+            <mat-datepicker #endPicker></mat-datepicker>
+            <mat-error *ngIf="promoForm.get('endDate')?.invalid">
+              Doit être après la date de début
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="col-12">
+          <mat-form-field>
+            <mat-label>Statut après promotion</mat-label>
+            <mat-select formControlName="postPromoStatus">
+              <mat-option value="active">Actif</mat-option>
+              <mat-option value="inactive">Inactif</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </div>
+    </form>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button mat-button mat-dialog-close>Annuler</button>
+    <button mat-raised-button color="primary" (click)="savePromotion()">Enregistrer</button>
+  </mat-dialog-actions>
+</ng-template>
 
 <div *ngIf="showSaveSuccess" class="save-success-message">
   <div class="message-content">

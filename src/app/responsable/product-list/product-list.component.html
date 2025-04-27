@@ -38,13 +38,16 @@
       (change)="toggleAll()">
       Sélectionner tout
     </mat-checkbox>
-
+  
     <button 
+      mat-flat-button
       (click)="openPromotionDialog()" 
-      class="promo-btn"
-      [disabled]="selection.selected.length === 0 || isPromotionDialogOpen">
-      <i class="fas fa-tag"></i> 
-      Appliquer promotion ({{selection.selected.length}})
+      class="promo-fab"
+      [disabled]="selection.selected.length === 0 || isPromotionDialogOpen"
+      [class.promo-active]="selection.selected.length > 0">
+      <i class="fas fa-tag"></i>
+      <span class="promo-badge">{{selection.selected.length}}</span>
+      <span class="promo-label">Gérer les promotions</span>
     </button>
   </div>
 

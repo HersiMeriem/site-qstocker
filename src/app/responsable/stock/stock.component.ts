@@ -1,10 +1,10 @@
 import { Component, OnInit, ViewChild, OnDestroy } from '@angular/core';
 import { StockService } from '../../services/stock.service';
-import { StockItem } from '../../services/stock.service';
+import { StockItem, Promotion } from '../../services/stock.service';
 import { NgForm } from '@angular/forms';
 import { ProductService } from '../../services/product.service';
 import { Product } from '../../models/product';
-import { Subscription } from 'rxjs';
+import { Subscription, combineLatest } from 'rxjs'; 
 
 @Component({
   selector: 'app-stock',
@@ -42,18 +42,27 @@ export class StockComponent implements OnInit, OnDestroy {
 
   loadStock(): void {
     this.loading = true;
-    this.stockSubscription = this.stockService.getStock().subscribe({
-      next: (stock) => {
-        this.stock = stock.map(item => ({
-          ...item,
-          editingPrice: false,
-          originalPrice: item.prixDeVente || 0,
-          qrCode: item.qrCode || null,
-          imageUrl: item.imageUrl || null,
-          description: item.description || null,
-          seuil: item.seuil || 10
-        }));
+    combineLatest([
+      this.stockService.getStock(),
+      this.productService.getProducts()
+    ]).subscribe({
+      next: ([stock, products]) => {
+        this.stock = stock.map(item => {
+          const product = products.find(p => p.id === item.idProduit);
+          return {
+            ...item,
+            status: product?.status || item.status || 'active',
+            promotion: product?.promotion || item.promotion || undefined, // Changé de null à undefined
+            editingPrice: false,
+            originalPrice: item.prixDeVente || 0,
+            qrCode: item.qrCode || product?.qrCode || null,
+            imageUrl: item.imageUrl || product?.imageUrl || null,
+            description: item.description || product?.description || null,
+            seuil: item.seuil || 10
+          };
+        });
         this.filteredStock = [...this.stock];
+        this.checkExpiredPromotions();
         this.loading = false;
       },
       error: (err) => {
@@ -103,10 +112,6 @@ export class StockComponent implements OnInit, OnDestroy {
         (produit.nomProduit?.toLowerCase().includes(searchTermLower) || false)
       );
     });
-  }
-
-  calculateTotalValue(prixUnitaire: number, quantite: number): number {
-    return prixUnitaire * quantite;
   }
 
   saveChanges(): void {
@@ -209,24 +214,33 @@ export class StockComponent implements OnInit, OnDestroy {
     produit.prixDeVente = produit.originalPrice || 0;
   }
 
-  async savePrice(produit: StockItem): Promise<void> {
-    if ((produit.prixDeVente || 0) <= 0) {
-      this.errorMessage = 'Le prix de vente doit être positif';
-      return;
-    }
-
-    try {
-      await this.stockService.updateStock(produit.idProduit, {
-        prixDeVente: produit.prixDeVente,
-        dateMiseAJour: new Date().toISOString()
-      });
-      produit.editingPrice = false;
-      this.loadStock();
-    } catch (error: unknown) {
-      this.errorMessage = 'Erreur lors de la mise à jour du prix';
-      console.error(error);
-    }
+async savePrice(produit: StockItem): Promise<void> {
+  // Validation
+  if ((produit.prixDeVente || 0) <= 0) {
+    this.errorMessage = 'Le prix doit être positif';
+    return;
   }
+
+  try {
+    // Mise à jour de l'historique des prix
+    const priceUpdate = {
+      date: new Date().toISOString(),
+      prix: produit.prixDeVente,
+      quantiteAjoutee: 0 // Aucun changement de stock
+    };
+
+    await this.stockService.updateStock(produit.idProduit, {
+      prixDeVente: produit.prixDeVente,
+      dateMiseAJour: new Date().toISOString(),
+      historiquePrix: [...(produit.historiquePrix || []), priceUpdate]
+    });
+
+    produit.editingPrice = false;
+    this.loadStock(); // Recharge les données mises à jour
+  } catch (error) {
+    this.errorMessage = 'Erreur lors de la mise à jour';
+  }
+}
 
   private validateForm(): boolean {
     if ((this.selectedProduct.quantite || 0) < 0) {
@@ -266,7 +280,66 @@ export class StockComponent implements OnInit, OnDestroy {
       seuil: 10,
       qrCode: null,
       imageUrl: null,
-      description: null
+      description: null,
+      status: 'active' 
     };
   }
+
+  
+
+
+  //promo
+  isPromotionActive(product: StockItem): boolean {
+    if (!product.promotion || typeof product.promotion === 'boolean') return false;
+    
+    const now = new Date();
+    const start = new Date(product.promotion.startDate);
+    const end = new Date(product.promotion.endDate);
+    
+    // Vérification du fuseau horaire
+    return now >= start && now <= end;
+  }
+  
+
+  calculateDiscountedPrice(product: StockItem): number {
+    if (!this.isPromotionActive(product)) return product.prixDeVente;
+    
+    const discount = product.promotion?.discountPercentage || 0;
+    return product.prixDeVente * (1 - discount / 100);
+  }
+
+getStatusLabel(status: string): string {
+  const statusMap: {[key: string]: string} = {
+    'active': 'Actif',
+    'inactive': 'Inactif',
+    'promotion': 'Promo'
+  };
+  return statusMap[status] || status;
+}
+
+getStatusIcon(status: string): string {
+  const iconMap: {[key: string]: string} = {
+    'active': 'fas fa-check-circle',
+    'inactive': 'fas fa-times-circle',
+    'promotion': 'fas fa-tag'
+  };
+  return iconMap[status] || 'fas fa-info-circle';
+}
+
+calculateTotalValue(unitPrice: number, quantity: number): number {
+  return unitPrice * quantity;
+}
+
+private checkExpiredPromotions(): void {
+  this.stock.forEach(product => {
+    if (product.status === 'promotion' && product.promotion && !this.isPromotionActive(product)) {
+      this.stockService.updateStock(product.idProduit, {
+        status: 'active',
+        promotion: undefined // Changé de null à undefined
+      }).catch(err => console.error('Erreur mise à jour statut promo', err));
+    }
+  });
+}
+
+
 }

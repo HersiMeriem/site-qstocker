@@ -8,13 +8,13 @@ body {
 
 /* Style général du conteneur */
 .container {
-  background-color: #FFFFFF; /* Fond blanc pour le conteneur */
-  border-radius: 0; /* Pas de coins arrondis pour coller au bord de la page */
-  padding: 30px; /* Padding interne */
-  box-shadow: none; /* Supprime l'ombre */
-  width: 100%; /* Prend toute la largeur de la page */
-  min-height: 100vh; /* Prend au moins la hauteur de la fenêtre */
+  background-color: transparent; /* Fond transparent */
+  padding: 0; /* Pas de padding */
+  width: 100%; /* Prend toute la largeur */
+  max-width: 100%; /* Supprime toute limite de largeur */
+  margin: 0; /* Supprime les marges */
 }
+
 
 /* Style du titre */
 h3.text-success {
@@ -93,4 +93,73 @@ img[alt="Produit"] {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+
+
+.status-badge {
+  padding: 5px 10px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.status-badge i {
+  font-size: 0.6rem;
+}
+
+.status-active {
+  background-color: #e6f7e6;
+  color: #2e7d32;
+  border: 1px solid #2e7d32;
+}
+
+.status-inactive {
+  background-color: #ffebee;
+  color: #c62828;
+  border: 1px solid #c62828;
+}
+
+.status-promotion {
+  background-color: #fff3e0;
+  color: #e65100;
+  border: 1px solid #e65100;
+}
+
+/* Styles pour les prix */
+.promo-price-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.original-price {
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.discounted-price {
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+.expired-promo-container {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.expired-text {
+  font-size: 0.7rem;
+  color: #dc3545;
+  margin-left: 3px;
+}
+
+/* Style pour les seuils de stock */
+.bg-warning {
+  background-color: #ffc107 !important;
 }

@@ -1,82 +1,77 @@
 /* 🌟 Conteneur principal des fournisseurs */
 .suppliers-container {
     display: flex;
-    justify-content: center; /* Centrage */
+    justify-content: center; /* Centrage horizontal */
     align-items: flex-start;
-    background: #ffffff; /* Fond blanc propre */
-    padding: 30px;
-    gap: 24px;
+    background: #f9fafb; /* Fond légèrement gris clair */
+    padding: 40px;
+    gap: 32px;
     flex-wrap: wrap;
     width: 90%;
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 40px auto;
+    border-radius: 0; /* Suppression des bordures arrondies */
+    box-shadow: none; /* Suppression de l'ombre */
 }
 
 /* 📋 Section gauche (Liste des fournisseurs) */
 .left-section {
     flex: 1;
     min-width: 65%;
+    background: transparent; /* Fond transparent pour un look minimaliste */
+    padding: 32px;
+    border: none; /* Suppression des bordures */
+    box-shadow: none; /* Suppression de l'ombre */
 }
 
 /* 🏷 Titre principal */
 h2 {
     display: flex;
     align-items: center;
-    gap: 10px;
-    color: #2C3E50;
-    font-size: 26px;
-    font-weight: bold;
-    margin-bottom: 20px;
+    gap: 12px;
+    color: #1a202c; /* Bleu-gris profond */
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 24px;
+    letter-spacing: -0.5px;
 }
 
 /* Ajout d'une icône au titre */
 h2::before {
     content: "📦";
-    font-size: 28px;
+    font-size: 32px;
+    animation: pulse 2s infinite; /* Animation pulsante pour l'icône */
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
 }
 
 /* ➕ Bouton Ajouter */
 .add-button {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
-    background: linear-gradient(135deg, #0074D9, #0056b3);
+    background: linear-gradient(135deg, #0d6efd, #0b5ed7); /* Gradient bleu dynamique */
     color: white;
-    font-weight: bold;
-    padding: 14px 20px;
-    border-radius: 8px;
+    font-weight: 600;
+    padding: 14px 24px;
+    border-radius: 0; /* Suppression des bordures arrondies */
     border: none;
     cursor: pointer;
     transition: all 0.3s ease-in-out;
     font-size: 16px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-    position: relative;
-    overflow: hidden;
-}
-
-/* Effet de vague sur le bouton */
-.add-button::after {
-    content: "";
-    position: absolute;
-    width: 150%;
-    height: 200%;
-    background: rgba(255, 255, 255, 0.2);
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) rotate(25deg);
-    transition: all 0.4s;
-    opacity: 0;
-}
-
-.add-button:hover::after {
-    opacity: 1;
-    width: 200%;
-    height: 300%;
+    box-shadow: none; /* Suppression de l'ombre */
 }
 
 .add-button:hover {
-    background: linear-gradient(135deg, #0056b3, #004494);
+    background: linear-gradient(135deg, #0b5ed7, #084298);
     transform: scale(1.05);
 }
 
@@ -85,18 +80,19 @@ h2::before {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: #ECEFF1;
+    width: 44px;
+    height: 44px;
+    border-radius: 0; /* Suppression des bordures arrondies */
+    background: transparent; /* Fond transparent */
     cursor: pointer;
-    transition: transform 0.2s ease-in-out, background 0.3s;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease-in-out, color 0.3s;
+    box-shadow: none; /* Suppression de l'ombre */
+    color: #0d6efd; /* Couleur texte pour les icônes */
 }
 
 .action-btn:hover {
     transform: scale(1.15);
-    background: #CFD8DC;
+    color: #084298; /* Couleur plus foncée au survol */
 }
 
 /* 🏢 Section de droite (Autres infos ou options) */
@@ -104,18 +100,13 @@ h2::before {
     flex: 0.35;
     min-width: 30%;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
-    background: #ffffff;
+    background: transparent; /* Fond transparent */
     padding: 25px;
-    border-radius: 12px;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s;
-}
-
-.right-section:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    border: none; /* Suppression des bordures */
+    box-shadow: none; /* Suppression de l'ombre */
 }
 
 /* 📱 Responsive Design */
@@ -156,21 +147,3 @@ h2::before {
         height: 36px;
     }
 }
-
-/* ======= Bouton Ajouter ======= */
-.add-button {
-    background-color: #28a745;
-    color: white;
-    padding: 12px 20px;
-    border-radius: 25px;
-    font-size: 16px;
-    display: inline-flex;
-    align-items: center;
-    transition: background-color 0.3s ease, transform 0.3s ease;
-    border: none;
-  }
-  
-  .add-button:hover {
-    background-color: #218838;
-    transform: translateY(-2px);
-  }

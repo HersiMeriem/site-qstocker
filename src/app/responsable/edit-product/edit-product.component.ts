@@ -1,16 +1,16 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ProductService } from '../../services/product.service';
 import { QrCodeService } from '../../services/qr-code.service';
 import { Product } from '../../models/product';
-import { MatDialog } from '@angular/material/dialog';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
 import { StockService } from '../../services/stock.service';
 import { firstValueFrom, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { map } from 'rxjs/operators';
-
+import { DateAdapter } from '@angular/material/core';
 
 @Component({
   selector: 'app-edit-product',
@@ -18,7 +18,10 @@ import { map } from 'rxjs/operators';
   styleUrls: ['./edit-product.component.css']
 })
 export class EditProductComponent implements OnInit {
+  @ViewChild('promoDialog') promoDialog!: TemplateRef<any>;
+  
   productForm: FormGroup;
+  promoForm: FormGroup;
   productId: string = '';
   existingImage: string | undefined;
   existingQrCode: string | undefined;
@@ -31,10 +34,12 @@ export class EditProductComponent implements OnInit {
   showSuccessMessage = false;
   successMessage = '';
   showSaveSuccess = false;
-  saveMessage = '';
+  saveMessage = 'Produit mis à jour avec succès !';
   showCustomTypeField = false;
   showCustomVolumeField = false;
   currentStockQuantity = 0;
+  private dialogRef!: MatDialogRef<any>;
+  
   private readonly VOLUME_PATTERN = /^\d+ml$/i;
   private readonly NAME_MIN_LENGTH = 2;
   private readonly NAME_MAX_LENGTH = 50;
@@ -46,8 +51,11 @@ export class EditProductComponent implements OnInit {
     private productService: ProductService,
     private stockService: StockService,
     private qrCodeService: QrCodeService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private dateAdapter: DateAdapter<Date>
   ) {
+    this.dateAdapter.setLocale('fr-FR');
+    
     this.productForm = this.fb.group({
       id: [{ value: '', disabled: true }],
       name: ['', [
@@ -62,7 +70,18 @@ export class EditProductComponent implements OnInit {
       volume: ['50ml', Validators.required],
       customVolume: [''],
       stockQuantity: [0, [Validators.required, Validators.min(0)]],
-      status: ['active', Validators.required]
+      status: ['active' as const, Validators.required],
+      discountPercentage: [null],
+      promotionStart: [''],
+      promotionEnd: [''],
+      postPromoStatus: ['active']
+    });
+
+    this.promoForm = this.fb.group({
+      discount: [10, [Validators.required, Validators.min(1), Validators.max(100)]],
+      startDate: [new Date(), Validators.required],
+      endDate: [this.getDefaultEndDate(), Validators.required],
+      postPromoStatus: ['active', Validators.required]
     });
   }
 
@@ -72,28 +91,66 @@ export class EditProductComponent implements OnInit {
       this.productId = id;
       this.loadProductData();
       this.setupStockSync();
+      this.initializePromotionValidators();
     } else {
       this.errorMessage = 'ID produit non fourni';
     }
   }
 
+  get todayDate(): string {
+    return new Date().toISOString().split('T')[0];
+  }
+
+  private getDefaultEndDate(): Date {
+    const date = new Date();
+    date.setDate(date.getDate() + 7);
+    return date;
+  }
+
+  private initializePromotionValidators(): void {
+    this.productForm.get('status')?.valueChanges.subscribe(status => {
+      const promotionControls = ['discountPercentage', 'promotionStart', 'promotionEnd'];
+
+      if (status === 'promotion') {
+        promotionControls.forEach(control => {
+          this.productForm.get(control)?.setValidators(Validators.required);
+        });
+        this.productForm.get('discountPercentage')?.addValidators([
+          Validators.min(1), 
+          Validators.max(100)
+        ]);
+        
+        // Ouvrir le dialogue de promotion
+        this.openPromoDialog();
+      } else {
+        promotionControls.forEach(control => {
+          this.productForm.get(control)?.clearValidators();
+        });
+      }
+      
+      promotionControls.forEach(control => {
+        this.productForm.get(control)?.updateValueAndValidity();
+      });
+    });
+  }
+
   private setupStockSync(): void {
     this.productForm.get('id')?.valueChanges.subscribe(async (productId) => {
-      if (productId && this.productForm.get('id')?.valid) {
-        try {
-          const stockItem = await firstValueFrom(
-            this.stockService.getProduct(productId).pipe(
-              catchError(() => of(null))
-            )
-          );
-          this.currentStockQuantity = stockItem?.quantite || 0;
-          this.productForm.get('stockQuantity')?.setValue(this.currentStockQuantity);
-        } catch (error) {
-          console.error('Erreur lors de la récupération du stock:', error);
-          this.currentStockQuantity = 0;
-          this.productForm.get('stockQuantity')?.setValue(0);
+        if (productId && this.productForm.get('id')?.valid) {
+            try {
+                const stockItem = await firstValueFrom(
+                    this.stockService.getProduct(productId).pipe(
+                        catchError(() => of(null))
+                    )
+                );
+                this.currentStockQuantity = (stockItem as any)?.quantite || 0;
+                this.productForm.get('stockQuantity')?.setValue(this.currentStockQuantity);
+            } catch (error) {
+                console.error('Erreur lors de la récupération du stock:', error);
+                this.currentStockQuantity = 0;
+                this.productForm.get('stockQuantity')?.setValue(0);
+            }
         }
-      }
     });
   }
 
@@ -103,7 +160,7 @@ export class EditProductComponent implements OnInit {
       next: (product) => {
         if (!product) {
           this.errorMessage = `Produit avec ID ${this.productId} non trouvé`;
-          this.router.navigate(['/products']); // Redirection si produit non trouvé
+          this.router.navigate(['/products']);
           return;
         }
         this.populateForm(product);
@@ -113,7 +170,7 @@ export class EditProductComponent implements OnInit {
         console.error('Détails de l\'erreur:', error);
         this.errorMessage = `Erreur lors du chargement du produit ${this.productId}`;
         this.isLoading = false;
-        this.router.navigate(['/products']); // Redirection en cas d'erreur
+        this.router.navigate(['/products']);
       }
     });
   }
@@ -132,13 +189,26 @@ export class EditProductComponent implements OnInit {
       volume: isCustomVolume ? 'other' : product.volume,
       customVolume: isCustomVolume ? product.volume : '',
       stockQuantity: product.stockQuantity,
-      status: product.status
+      status: product.status,
+      postPromoStatus: product.postPromoStatus || 'active'
     });
+
+    if (product.promotion) {
+      this.productForm.patchValue({
+        discountPercentage: product.promotion.discountPercentage,
+        promotionStart: this.formatDateForInput(product.promotion.startDate),
+        promotionEnd: this.formatDateForInput(product.promotion.endDate)
+      });
+    }
 
     this.showCustomTypeField = isCustomType;
     this.showCustomVolumeField = isCustomVolume;
     this.existingImage = product.imageUrl;
     this.existingQrCode = product.qrCode;
+  }
+
+  private formatDateForInput(isoDate: string): string {
+    return isoDate ? isoDate.split('T')[0] : '';
   }
 
   onTypeChange(): void {
@@ -173,6 +243,48 @@ export class EditProductComponent implements OnInit {
         customVolumeControl.setValue(numbers + 'ml');
       }
     }
+  }
+
+  openPromoDialog(): void {
+    this.dialogRef = this.dialog.open(this.promoDialog, {
+      width: '500px'
+    });
+
+    // Si le produit a déjà une promotion, pré-remplir le formulaire
+    if (this.productForm.get('status')?.value === 'promotion') {
+      this.promoForm.patchValue({
+        discount: this.productForm.get('discountPercentage')?.value,
+        startDate: new Date(this.productForm.get('promotionStart')?.value),
+        endDate: new Date(this.productForm.get('promotionEnd')?.value),
+        postPromoStatus: this.productForm.get('postPromoStatus')?.value || 'active'
+      });
+    }
+  }
+
+  savePromotion(): void {
+    if (this.promoForm.invalid) {
+      this.promoForm.markAllAsTouched();
+      return;
+    }
+
+    const promoData = this.promoForm.value;
+    
+    // Mettre à jour le formulaire principal
+    this.productForm.patchValue({
+      status: 'promotion',
+      discountPercentage: promoData.discount,
+      promotionStart: promoData.startDate.toISOString().split('T')[0],
+      promotionEnd: promoData.endDate.toISOString().split('T')[0],
+      postPromoStatus: promoData.postPromoStatus
+    });
+
+    // Fermer le dialogue
+    this.dialogRef.close();
+    
+    // Afficher un message de succès
+    this.showSuccessMessage = true;
+    this.successMessage = 'Promotion enregistrée avec succès !';
+    setTimeout(() => this.showSuccessMessage = false, 3000);
   }
 
   async generateQRCode(productName: string): Promise<void> {
@@ -227,7 +339,7 @@ export class EditProductComponent implements OnInit {
       this.isLoading = true;
       const productData = this.prepareUpdateData();
   
-      // Vérification de l'existence avec gestion de type explicite
+      // Vérification de l'existence
       const productExists = await firstValueFrom(
         this.productService.getProductById(this.productId).pipe(
           map((p: Product | null) => !!p),
@@ -245,18 +357,18 @@ export class EditProductComponent implements OnInit {
       // Préparation des données pour le stock
       const stockData = {
         productId: this.productId,
-        productName: productData.name || '', // Conversion nomProduit -> productName
-        quantity: productData.stockQuantity || 0, // Conversion quantite -> quantity
-        unitPrice: this.calculateUnitPrice(productData), // Conversion prixUnitaireHT -> unitPrice
+        productName: productData.name || '',
+        quantity: productData.stockQuantity || 0,
+        unitPrice: this.calculateUnitPrice(productData),
         qrCode: productData.qrCode || null,
         imageUrl: productData.imageUrl || null,
         description: productData.description || null
       };
   
-      // Vérification du stock avec gestion de type
+      // Vérification du stock
       const stockExists = await firstValueFrom(
         this.stockService.getProduct(this.productId).pipe(
-          map((s: any) => !!s), // Utilisez une interface spécifique si disponible
+          map((s: any) => !!s),
           catchError(() => of(false))
         )
       );
@@ -267,31 +379,27 @@ export class EditProductComponent implements OnInit {
         await this.stockService.ajouterAuStock(stockData);
       }
   
+      // Affichage du message de succès
       this.showSaveSuccess = true;
       this.saveMessage = 'Produit mis à jour avec succès !';
       this.productForm.markAsPristine();
   
+      // Masquer le message après 3 secondes
       setTimeout(() => this.showSaveSuccess = false, 3000);
   
     } catch (error: unknown) {
       this.errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
       console.error('Erreur:', error);
-      await this.loadProductData(); // Tentative de récupération
+      await this.loadProductData();
     } finally {
       this.isLoading = false;
     }
   }
   
   private calculateUnitPrice(product: Partial<Product>): number {
-    // Implémentez votre logique de calcul ici
-    // Exemple basique :
     return product.volume?.includes('100ml') ? 50 : 30;
   }
   
-  private calculateSalePrice(product: Partial<Product>): number {
-    // Prix de vente = prix unitaire * marge (ex: 20%)
-    return this.calculateUnitPrice(product) * 1.2;
-  }
   private prepareUpdateData(): Partial<Product> {
     const formData = this.productForm.getRawValue();
     
@@ -306,7 +414,8 @@ export class EditProductComponent implements OnInit {
       volume: volume,
       stockQuantity: Number(formData.stockQuantity),
       status: formData.status,
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      postPromoStatus: formData.postPromoStatus
     };
 
     if (this.imageFile) {
@@ -317,7 +426,66 @@ export class EditProductComponent implements OnInit {
       updateData.qrCode = this.qrCodeImage;
     }
 
+    if (formData.status === 'promotion') {
+      updateData.promotion = {
+        discountPercentage: formData.discountPercentage,
+        startDate: new Date(formData.promotionStart).toISOString(),
+        endDate: new Date(formData.promotionEnd).toISOString()
+      };
+    } else {
+      updateData.promotion = null;
+    }
+
     return updateData;
+  }
+
+  async removePromotion(): Promise<void> {
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Confirmer la suppression',
+        message: 'Voulez-vous vraiment supprimer la promotion de ce produit ?',
+        cancelText: 'Annuler',
+        confirmText: 'Supprimer'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(async (result) => {
+      if (result) {
+        try {
+          this.isLoading = true;
+          
+          const updateData: Partial<Product> = {
+            status: 'active',
+            promotion: null,
+            postPromoStatus: null,
+            updatedAt: new Date().toISOString()
+          };
+
+          await this.productService.updateProduct(this.productId, updateData);
+          
+          this.productForm.patchValue({
+            status: 'active',
+            discountPercentage: null,
+            promotionStart: null,
+            promotionEnd: null,
+            postPromoStatus: null
+          }, { emitEvent: false });
+
+          await this.loadProductData();
+          
+          this.showSuccessMessage = true;
+          this.successMessage = 'Promotion supprimée avec succès !';
+          setTimeout(() => this.showSuccessMessage = false, 3000);
+
+        } catch (error) {
+          this.errorMessage = 'Erreur lors de la suppression de la promotion';
+          console.error(error);
+        } finally {
+          this.isLoading = false;
+        }
+      }
+    });
   }
 
   private getFormErrors(): string {
@@ -359,6 +527,18 @@ export class EditProductComponent implements OnInit {
     
     if (controls['stockQuantity']?.errors) {
       errors.push('- Quantité en stock invalide');
+    }
+
+    if (this.productForm.get('status')?.value === 'promotion') {
+      if (controls['discountPercentage']?.errors) {
+        errors.push('- Pourcentage de réduction invalide (1-100%)');
+      }
+      if (controls['promotionStart']?.errors) {
+        errors.push('- Date de début requise');
+      }
+      if (controls['promotionEnd']?.errors) {
+        errors.push('- Date de fin requise');
+      }
     }
 
     return 'Erreurs de validation :\n' + errors.join('\n');
@@ -410,30 +590,4 @@ export class EditProductComponent implements OnInit {
     
     return 'Valeur invalide';
   }
-
-
-private initializeForm(): void {
-  this.productForm = this.fb.group({
-    // ... autres contrôles
-    status: ['active', Validators.required],
-    discountPercentage: [null, [Validators.min(1), Validators.max(100)]],
-    promotionStart: [''],
-    promotionEnd: ['']
-  });
-
-  this.productForm.get('status')?.valueChanges.subscribe(status => {
-    if (status === 'promotion') {
-      this.productForm.get('discountPercentage')?.setValidators([Validators.required]);
-      this.productForm.get('promotionStart')?.setValidators([Validators.required]);
-      this.productForm.get('promotionEnd')?.setValidators([Validators.required]);
-    } else {
-      this.productForm.get('discountPercentage')?.clearValidators();
-      this.productForm.get('promotionStart')?.clearValidators();
-      this.productForm.get('promotionEnd')?.clearValidators();
-    }
-    this.productForm.get('discountPercentage')?.updateValueAndValidity();
-    this.productForm.get('promotionStart')?.updateValueAndValidity();
-    this.productForm.get('promotionEnd')?.updateValueAndValidity();
-  });
-}
 }

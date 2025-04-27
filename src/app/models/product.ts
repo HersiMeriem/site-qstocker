@@ -1,9 +1,4 @@
 export interface Product {
-price: string|number;
-quantite: any;
-prixDeVente: string|number;
-imageBase64: string;
-  nomProduit: any;
   id: string;
   name: string;
   type: string;
@@ -17,12 +12,11 @@ imageBase64: string;
   stockQuantity: number;
   manufactureDate: string;
   createdAt: string;
-  updatedAt?: string; 
+  updatedAt?: string;
   status: 'active' | 'inactive' | 'promotion';
-  discount?: number; // Remise directe (optionnelle)
-  promotion?: Promotion; // Détails de la promotion (optionnelle)
-  postPromoStatus?: 'active' | 'inactive'; 
-
+  discount?: number;
+  promotion?: Promotion | null; // Ajout de null comme type possible
+  postPromoStatus?: 'active' | 'inactive' | null;
 }
 
 interface Promotion {

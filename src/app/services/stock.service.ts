@@ -21,9 +21,17 @@ editingPrice: any;
     prix: number;
     quantiteAjoutee: number;
   }>;
-  qrCode?: string | null;  
+  qrCode?: string | null;
   imageUrl?: string | null;
   description?: string | null;
+  status: 'active' | 'inactive' | 'promotion'; 
+  promotion?: Promotion | null; 
+}
+
+export interface Promotion {
+  startDate: string;
+  endDate: string;
+  discountPercentage: number;
 }
 
 @Injectable({
@@ -138,10 +146,6 @@ export class StockService {
       }
     }
   
-    getStock(): Observable<StockItem[]> {
-      return this.db.list<StockItem>(this.stockPath).valueChanges();
-    }
-
   async updateStock(productId: string, updateData: Partial<StockItem>): Promise<void> {
     try {
       if (!productId) throw new Error('ID produit manquant');
@@ -217,23 +221,23 @@ export class StockService {
       const nouveauPMP = totalQuantite > 0 ? totalValeur / totalQuantite : 0;
   
       // Créez l'objet de données en remplaçant undefined par null
-      const updatedData: StockItem = {
-        ...currentData,
-        idProduit: commande.productId,
-        nomProduit: commande.productName || currentData.nomProduit || 'Nouveau produit',
-        quantite: totalQuantite,
-        prixUnitaireHT: nouveauPMP,
-        prixDeVente: commande.unitPrice * 1.2, // Prix de vente par défaut
-        dateMiseAJour: new Date().toISOString(),
-        historiquePrix: historique,
-        qrCode: commande.qrCode || null,
-        imageUrl: commande.imageUrl || null,
-        description: commande.description || null,
-        // Initialisation des nouvelles propriétés
-        editingPrice: false,
-        originalPrice: commande.unitPrice * 1.2,
-        seuil: (currentData as StockItem).seuil || 10 // Type assertion
-      };
+    const updatedData: StockItem = {
+  ...currentData,
+  idProduit: commande.productId,
+  nomProduit: commande.productName || currentData.nomProduit || 'Nouveau produit',
+  quantite: totalQuantite,
+  prixUnitaireHT: nouveauPMP,
+  prixDeVente: commande.unitPrice * 1.2,
+  dateMiseAJour: new Date().toISOString(),
+  historiquePrix: historique,
+  qrCode: commande.qrCode || null,
+  imageUrl: commande.imageUrl || null,
+  description: commande.description || null,
+  editingPrice: false,
+  originalPrice: commande.unitPrice * 1.2,
+  seuil: (currentData as StockItem).seuil || 10,
+  status: (currentData as StockItem).status || 'active' 
+};
   
       // Supprimez explicitement les propriétés undefined
       Object.keys(updatedData).forEach(key => {
@@ -307,5 +311,41 @@ export class StockService {
   getStockHistory(productId: string): Observable<StockItem[]> {
     return this.db.list<StockItem>(`${this.stockPath}/${productId}/historiquePrix`)
       .valueChanges();
+  }
+
+  getStock(): Observable<StockItem[]> {
+    return this.db.list<StockItem>(this.stockPath).valueChanges().pipe(
+      map(items => items.map(item => {
+        // Formater correctement les dates de promotion
+        if (item.promotion && typeof item.promotion !== 'boolean') {
+          return {
+            ...item,
+            promotion: {
+              ...item.promotion,
+              startDate: new Date(item.promotion.startDate).toISOString(),
+              endDate: new Date(item.promotion.endDate).toISOString()
+            }
+          };
+        }
+        return item;
+      })),
+      catchError(error => {
+        console.error('Error loading stock:', error);
+        return of([]);
+      })
+    );
+  }
+
+  getRealTimeStock(): Observable<StockItem[]> {
+    return this.db.list<StockItem>(this.stockPath).valueChanges().pipe(
+      map(items => items.map(item => ({
+        ...item,
+        promotion: item.promotion ? {
+          ...item.promotion,
+          startDate: new Date(item.promotion.startDate).toISOString(),
+          endDate: new Date(item.promotion.endDate).toISOString()
+        } : null
+      })))
+    );
   }
 }

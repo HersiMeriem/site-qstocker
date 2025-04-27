@@ -1,3 +1,4 @@
+
 /* ===== GLOBAL ===== */
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -8,9 +9,9 @@ body {
   align-items: center;
   min-height: 150px;
   color: #2d3748;
-}
+  
 
-/* ===== MAIN CONTAINER ===== */
+}
 /* ===== MAIN CONTAINER ===== */
 .main-container {
   display: flex;

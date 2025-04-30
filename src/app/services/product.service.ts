@@ -121,15 +121,14 @@ async productExists(productId: string): Promise<boolean> {
         if (!product) {
           throw new Error('Produit non trouvé');
         }
-        return { ...product, id }; // Important: inclure l'ID
-      }),
-      catchError(error => {
-        console.error('Erreur:', error);
-        return throwError(() => error);
+        return { 
+          ...product, 
+          id,
+          costPrice: product.costPrice || 0 // Valeur par défaut si non définie
+        };
       })
     );
   }
-
 
   async updateProduct(id: string, product: Partial<Product>): Promise<void> {
     try {
@@ -164,4 +163,7 @@ async productExists(productId: string): Promise<boolean> {
         locationScore: 0
       }
     });
-}}
+}
+
+
+}

@@ -92,3 +92,22 @@ del {
   color: #a4b0be;
   margin-right: 8px;
 }
+
+/* Ajoutez ces styles */
+.bg-purple {
+  background-color: #6f42c1;
+}
+
+.promotion-details {
+  border-left: 4px solid #6f42c1;
+}
+
+.promotion-details h5 {
+  color: #6f42c1;
+}
+
+/* Style pour les badges de statut */
+.badge .fas.fa-circle {
+  font-size: 0.6em;
+  vertical-align: middle;
+}

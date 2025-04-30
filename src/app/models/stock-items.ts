@@ -17,12 +17,12 @@ export interface StockItem {
   originalPrice?: number;
   status: 'active' | 'inactive' | 'promotion';
   discount?: number;
-  promotion?: Promotion | boolean; 
+  promotion?: Promotion; 
   seuil?: number;
 }
 
 interface Promotion {
-  startDate: string; // ou Date
-  endDate: string;   // ou Date
+  startDate: string; 
+  endDate: string;   
   discountPercentage: number;
 }

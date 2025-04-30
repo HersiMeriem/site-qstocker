@@ -11,6 +11,8 @@ import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth 
 import { QRCodeModule } from 'angularx-qrcode';
 import { ZXingScannerComponent } from '@zxing/ngx-scanner';
 import { BarcodeFormat } from '@zxing/library';
+import { v4 as uuidv4 } from 'uuid';
+
 
 interface Promotion {
   startDate: string;
@@ -121,13 +123,15 @@ private createNewCustomerId(): string {
       this.stockService.getStock().subscribe({
         next: (items) => {
           this.availableProducts = items;
-          console.log('Stock chargé:', items.map(i => i.idProduit));
+          this.checkPromotionsValidity();
           resolve();
         },
         error: (err) => reject(err)
       });
     });
   }
+
+
   private loadInitialData(): void {
     this.loadStock();
     this.loadCustomers();
@@ -245,7 +249,6 @@ public loadSalesHistory(): void {
       this.showScanError('Erreur de lecture du QR code');
     }
   }
-  
 
  generateProductQRCode(product: StockItem): string {
   return JSON.stringify({
@@ -344,91 +347,54 @@ private showScanError(message: string): void {
   }
   addScannedToCart(): void {
     if (this.scannedProduct) {
-      this.selectedProduct = this.scannedProduct;
-      this.selectedProductId = this.scannedProduct.idProduit;
-      this.addToCart();
-      this.closeScanner();
+        this.selectedProduct = this.scannedProduct;
+        this.selectedProductId = this.scannedProduct.idProduit;
+        
+        // Applique automatiquement le prix réduit via addToCart()
+        this.addToCart();
+        
+        this.closeScanner();
     }
-  }
-
+}
   // Gestion du panier
   get canAddToCart(): boolean {
     return !!this.selectedProduct && 
            this.selectedQuantity > 0 &&
            this.selectedQuantity <= (this.selectedProduct.quantite || 0);
   }
+
   addToCart(): void {
     if (!this.selectedProduct || !this.canAddToCart) return;
-  
+
+    // Utilisation des prix avec gestion des promotions
     const unitPrice = this.getCurrentPrice(this.selectedProduct);
     const originalPrice = this.selectedProduct.prixDeVente;
-  
+
+    // Vérifier si le produit est déjà dans le panier
     const existingItem = this.currentSale.items.find(item => 
-      item.productId === this.selectedProduct?.idProduit 
+        item.productId === this.selectedProduct?.idProduit && 
+        item.unitPrice === unitPrice
     );
-    
+
     if (existingItem) {
-      existingItem.quantity += this.selectedQuantity;
-      existingItem.totalPrice = existingItem.quantity * unitPrice;
+        existingItem.quantity += this.selectedQuantity;
+        existingItem.totalPrice = existingItem.quantity * unitPrice;
     } else {
-      const newItem: SaleItem = {
-        productId: this.selectedProduct.idProduit,
-        name: this.selectedProduct.nomProduit,
-        quantity: this.selectedQuantity,
-        unitPrice: unitPrice,
-        originalPrice: originalPrice, // Garder le prix original
-        totalPrice: this.selectedQuantity * unitPrice,
-      };
-      this.currentSale.items.push(newItem);
+        const newItem: SaleItem = {
+            productId: this.selectedProduct.idProduit,
+            name: this.selectedProduct.nomProduit,
+            quantity: this.selectedQuantity,
+            unitPrice: unitPrice,
+            originalPrice: originalPrice, // Ajout du prix original
+            totalPrice: this.selectedQuantity * unitPrice
+        };
+        this.currentSale.items.push(newItem);
     }
-  
+
     this.updateCartTotals();
     this.clearSelection();
-  }
-  
-  // Méthode améliorée pour vérifier les promotions
-  isPromotionActive(product: StockItem): boolean {
-    if (!product?.promotion || typeof product.promotion === 'boolean') return false;
-    
-    const now = new Date();
-    const start = new Date(product.promotion.startDate);
-    const end = new Date(product.promotion.endDate);
-    
-    return now >= start && now <= end;
-  }
-
-
-  // Calcul du prix avec réduction
-  getCurrentPrice(product: StockItem): number {
-    if (!product) return 0;
-    
-    if (this.isPromotionActive(product)) {
-      const discount = (product.promotion as Promotion).discountPercentage / 100;
-      return product.prixDeVente * (1 - discount);
-    }
-    return product.prixDeVente;
-  }
-
-  removeItem(index: number): void {
-    this.currentSale.items.splice(index, 1);
-    this.updateCartTotals();
-  }
-
-  updateCartTotals(): void {
-    this.currentSale.subTotal = this.currentSale.items.reduce((sum, item) => sum + item.totalPrice, 0);
-    this.updateDiscount();
-  }
-
-  updateDiscount(): void {
-    this.currentSale.discountAmount = this.currentSale.subTotal * (this.currentSale.discount / 100);
-    this.currentSale.totalAmount = this.currentSale.subTotal - this.currentSale.discountAmount;
-  }
-
-  private clearSelection(): void {
-    this.selectedProductId = '';
-    this.selectedProduct = null;
-    this.selectedQuantity = 1;
-  }
+}
+ 
 
   // Finalisation de la vente
   get canFinalize(): boolean {
@@ -440,8 +406,10 @@ private showScanError(message: string): void {
   async finalizeSale(): Promise<void> {
     if (!this.canFinalize) return;
   
-    this.currentSale.customerId = this.generateCustomerId(this.currentSale.customerName);
+    // Vérifie les promotions expirées
+    this.checkPromotionsBeforeSale();
   
+    this.currentSale.customerId = this.generateCustomerId(this.currentSale.customerName);
     try {
       const createdSale = await this.saleService.createSale(this.currentSale);
       this.salesHistory.unshift(createdSale); 
@@ -449,20 +417,20 @@ private showScanError(message: string): void {
       this.printInvoice(createdSale);
       this.resetSale();
       this.loadDailyStats();
+      
+      // Recharger les produits après la vente
+      await this.loadStock();
     } catch (error) {
       console.error('Erreur lors de la vente:', error);
-      
-      // Gestion type-safe de l'erreur
       let errorMessage = 'Erreur inconnue';
       if (error instanceof Error) {
         errorMessage = error.message;
       } else if (typeof error === 'string') {
         errorMessage = error;
       }
-      
       alert(`Échec de la vente : ${errorMessage}`);
     }
-  }
+}
 
   resetSale(): void {
     this.currentSale = {
@@ -745,6 +713,8 @@ printExistingInvoice(sale: Sale): void {
   this.printInvoice(sale);
 }
 
+
+
 getTotalProductDiscount(): number {
   return this.currentSale.items.reduce((total, item) => {
     if (item.unitPrice !== item.originalPrice) {
@@ -755,7 +725,7 @@ getTotalProductDiscount(): number {
 }
 
 
-
+ //promo
 updateCartPrices(): void {
   this.currentSale.items.forEach(item => {
     const product = this.availableProducts.find(p => p.idProduit === item.productId);
@@ -766,4 +736,126 @@ updateCartPrices(): void {
   });
   this.updateCartTotals();
 }
+
+getDiscountPercentage(item: SaleItem): number {
+  if (!item.originalPrice || item.unitPrice === item.originalPrice) return 0;
+  return Math.round(((item.originalPrice - item.unitPrice) / item.originalPrice) * 100);
+} 
+
+
+
+addPromoToCart(product: StockItem): void {
+  if (!product || product.quantite < 1) return;
+
+  this.selectedProduct = product;
+  this.selectedProductId = product.idProduit;
+  this.selectedQuantity = 1;
+  
+  if (this.canAddToCart) {
+    this.addToCart();
+  }
+}
+
+getTimeRemaining(endDate?: string): string {
+  if (!endDate) return 'Date invalide';
+  
+  const end = new Date(endDate);
+  const now = new Date();
+  const diff = end.getTime() - now.getTime();
+  
+  if (diff <= 0) return 'Expirée';
+  
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  
+  return `${hours}h ${minutes}m`;
+}
+
+private checkPromotionsValidity(): void {
+  const now = new Date();
+  
+  this.availableProducts.forEach(product => {
+    if (product.status === 'promotion' && product.promotion && typeof product.promotion !== 'boolean') {
+      const end = new Date(product.promotion.endDate);
+      if (now > end) {
+        product.status = 'active'; // Désactive les promotions expirées
+      }
+    }
+  });
+}
+
+get promotedProducts(): StockItem[] {
+  return this.availableProducts.filter(product => 
+    product.status === 'promotion' && 
+    this.isPromotionActive(product) &&
+    product.quantite > 0
+  ).sort((a, b) => 
+    (b.promotion?.discountPercentage || 0) - (a.promotion?.discountPercentage || 0)
+  );
+}
+
+private checkPromotionsBeforeSale(): void {
+  const now = new Date();
+  
+  this.currentSale.items.forEach(item => {
+    const product = this.availableProducts.find(p => p.idProduit === item.productId);
+    if (product && product.promotion && typeof product.promotion !== 'boolean') {
+      const endDate = new Date(product.promotion.endDate);
+      
+      // Si la promotion est expirée, rétablir le prix original
+      if (now > endDate) {
+        item.unitPrice = product.prixDeVente;
+        item.totalPrice = item.quantity * item.unitPrice;
+      }
+    }
+  });
+  
+  // Mettre à jour les totaux après vérification des promotions
+  this.updateCartTotals();
+}
+
+isPromotionActive(product: StockItem): boolean {
+  if (!product?.promotion) return false;
+  
+  const now = new Date();
+  const start = new Date(product.promotion.startDate);
+  const end = new Date(product.promotion.endDate);
+
+  // Ajuster le fuseau horaire
+  start.setHours(0, 0, 0, 0);
+  end.setHours(23, 59, 59, 999);
+  
+  return now >= start && now <= end;
+}
+
+// Calcul du prix avec réduction
+getCurrentPrice(product: any): number {
+  if (this.isPromotionActive(product) && product.promotion?.discountPercentage) {
+    return product.prixDeVente * (1 - product.promotion.discountPercentage / 100);
+  }
+  return product.prixDeVente;
+}
+
+
+removeItem(index: number): void {
+  this.currentSale.items.splice(index, 1);
+  this.updateCartTotals();
+}
+updateCartTotals(): void {
+  this.currentSale.subTotal = this.currentSale.items.reduce((sum, item) => sum + item.totalPrice, 0);
+  this.updateDiscount();
+}
+
+updateDiscount(): void {
+  this.currentSale.discountAmount = this.currentSale.subTotal * (this.currentSale.discount / 100);
+  this.currentSale.totalAmount = this.currentSale.subTotal - this.currentSale.discountAmount;
+}
+
+private clearSelection(): void {
+  this.selectedProductId = '';
+  this.selectedProduct = null;
+  this.selectedQuantity = 1;
+} 
+
+
 }

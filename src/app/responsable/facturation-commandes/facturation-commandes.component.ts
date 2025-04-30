@@ -299,10 +299,6 @@ getImageBase64(imagePath: string): Observable<string> {
   );
 }
 
-  sendReminder(commande: Commande): void {
-    console.log('Envoi rappel pour commande:', commande.id);
-  }
-
   retour() {
     this.router.navigate(['/responsable/historique-commandes']);
   }

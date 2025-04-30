@@ -70,7 +70,7 @@ export class ProductListComponent implements OnInit, OnDestroy {
           return {
             ...product,
             stockQuantity: stockItem ? stockItem.quantite : 0,
-            unitPrice: stockItem ? stockItem.prixUnitaireHT : 0 // Ajout du prix unitaire
+            unitPrice: stockItem ? stockItem.prixDeVente : 0 // Changé de prixUnitaireHT à prixDeVente
           };
         });
         
@@ -163,11 +163,10 @@ isPromotionActive(product: Product): boolean {
 }
 
 calculateDiscountedPrice(product: Product): number {
-  if (!this.isPromotionActive(product)) return product.unitPrice;
-  return product.unitPrice * (1 - (product.promotion?.discountPercentage || 0) / 100);
+  if (!product || !this.isPromotionActive(product)) return product?.unitPrice || 0;
+  const discount = product.promotion?.discountPercentage || 0;
+  return product.unitPrice * (1 - discount / 100);
 }
-
-
 
 private applyPromotion(product: Product, promoData: any): void {
   const updatedProduct: Product = {

@@ -357,9 +357,6 @@ export class FinancialDashboardComponent  implements OnInit, AfterViewInit, OnDe
      );
    }
  
-   sendReminder(commande: CommandeInvoice): void {
-     console.log('Envoi rappel pour commande:', commande.id);
-   }
  
    applyFilter(): void {
     if (!this.searchTerm) {

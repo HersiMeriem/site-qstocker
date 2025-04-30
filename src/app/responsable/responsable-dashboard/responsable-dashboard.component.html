@@ -1,6 +1,6 @@
 <div class="dashboard-container">
-  <!-- En-tête du tableau de bord -->
-  <div class="dashboard-header">
+  <!-- En-tête -->
+  <div class="dashboard-header mat-elevation-z2">
     <div class="header-content">
       <h1>
         <mat-icon>dashboard</mat-icon>
@@ -12,6 +12,14 @@
           <mat-icon>refresh</mat-icon>
           Actualiser
         </button>
+          <!-- bouton Scanner -->
+          <button mat-stroked-button 
+          color="accent" 
+          (click)="openScanner()"
+          matTooltip="Scanner un produit QR Code">
+    <mat-icon>qr_code_scanner</mat-icon>
+    Scanner
+  </button>
         <button mat-stroked-button color="accent" (click)="exportDashboardData()" matTooltip="Exporter les données" [disabled]="loading">
           <mat-icon>download</mat-icon>
           Exporter PDF
@@ -22,225 +30,337 @@
         </div>
       </div>
     </div>
-    <div class="dashboard-container">
-      <!-- KPI Cards Section -->
-      <mat-grid-list cols="4" rowHeight="1:1" gutterSize="16px" class="kpi-grid">
-        <mat-grid-tile *ngFor="let card of kpiCards">
-          <mat-card [class]="'kpi-card ' + card.color" (click)="onKpiClick(card.title)">
-            <mat-card-header>
-              <mat-card-title>
-                <mat-icon>{{card.icon}}</mat-icon>
-                {{card.title}}
-              </mat-card-title>
-              <mat-card-subtitle>{{card.description}}</mat-card-subtitle>
-            </mat-card-header>
-            <mat-card-content>
-              <div class="kpi-value">
-                <ng-container *ngIf="card.isCurrency; else plainValue">
-                  {{card.value | currency:'TND':'symbol':'1.2-2'}}
-                </ng-container>
-                <ng-template #plainValue>
-                  {{card.value}}
-                </ng-template>
-              </div>
-              <ng-container *ngIf="card.title === 'Clients'">
-                <div class="kpi-subtext">(Nouveaux aujourd'hui)</div>
-              </ng-container> 
-              <div *ngIf="card.trend !== undefined" class="kpi-trend">
-                <mat-icon [class]="card.trend >= 0 ? 'trend-up' : 'trend-down'">
-                  {{card.trend >= 0 ? 'trending_up' : 'trending_down'}}
-                </mat-icon>
-                <span>{{card.trend}}% vs hier</span>
-                <span class="kpi-comparison" *ngIf="card.comparisonValue !== undefined">
-                  {{card.comparisonValue | currency:'TND':'symbol':'1.2-2'}}
-                </span>
-              </div>
-            </mat-card-content>
-          </mat-card>
-        </mat-grid-tile>
-      </mat-grid-list>
-    <mat-progress-bar mode="indeterminate" *ngIf="loading"></mat-progress-bar>
   </div>
 
-  <!-- Contenu Principal -->
-  <div class="main-content">
-    <!-- Colonne Gauche -->
-    <div class="left-column">
-      <!-- Actions Rapides -->
-      <div class="quick-actions">
-        <!-- [Contenu existant des actions rapides] -->
-      </div>
-
-      <!-- Résumé des Performances -->
-      <div class="performance-summary mat-elevation-z1">
-        <!-- [Contenu existant des performances] -->
-      </div>
-    </div>
-
-    <!-- Colonne Droite -->
-    <div class="right-column">
-      <!-- Graphiques -->
-      <mat-tab-group class="charts-section">
-        <!-- [Contenu existant des graphiques] -->
-      </mat-tab-group>
-    </div>
-  </div>
-
-
-
-  <!-- Section Produits en Faible Stock Améliorée -->
-  <div class="low-stock mat-elevation-z1">
-    <div class="section-header">
-      <h2>
-        <mat-icon>warning</mat-icon>
-        Produits en Rupture Imminente
-        <span class="sub-header">(Seuil de sécurité : 15%)</span>
-      </h2>
-      <button mat-raised-button 
-      (click)="generateReplenishmentOrder()" 
-      color="warn"
-      class="order-button">
-      <mat-icon>add_shopping_cart</mat-icon>
-       Commander les manquants
-      </button>
-    </div>
-
-    <mat-table [dataSource]="lowStockProducts" class="stock-table">
-      <!-- Colonne Produit -->
-      <ng-container matColumnDef="product">
-        <mat-header-cell *matHeaderCellDef>Produit</mat-header-cell>
-        <mat-cell *matCellDef="let product">
-          <div class="product-info">
-            <img [src]="product.imageUrl || 'assets/default-product.png'" 
-                 class="product-image"
-                 alt="Image produit">
-            <div class="product-details">
-              <div class="product-name">{{product.nomProduit}}</div>
-              <div class="product-reference">Réf. {{product.idProduit}}</div>
-              <div class="product-category">{{product.category}}</div>
-            </div>
+  <!-- Indicateurs Clés -->
+<div class="kpi-section mat-elevation-z1">
+  <mat-grid-list cols="6" rowHeight="1:1" gutterSize="12px">
+    <!-- Cartes KPI existantes -->
+    <mat-grid-tile *ngFor="let card of kpiCards">
+      <mat-card [class]="'kpi-card ' + card.color" (click)="onKpiClick(card.title)">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>{{card.icon}}</mat-icon>
+            {{card.title}}
+          </mat-card-title>
+          <mat-card-subtitle>{{card.description}}</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="kpi-value">
+            <ng-container *ngIf="card.isCurrency; else plainValue">
+              {{card.value | currency:'TND':'symbol':'1.2-2'}}
+            </ng-container>
+            <ng-template #plainValue>
+              {{card.value}}
+            </ng-template>
           </div>
-        </mat-cell>
-      </ng-container>
-
-      <!-- Colonne Stock -->
-      <ng-container matColumnDef="stock">
-        <mat-header-cell *matHeaderCellDef>Niveau de Stock</mat-header-cell>
-        <mat-cell *matCellDef="let product">
-          <div class="stock-progress">
-            <div class="stock-numbers">
-              {{product.quantite}} / {{product.seuil}}
-              <span class="stock-alert" *ngIf="product.quantite === 0">RUPTURE!</span>
-            </div>
-            <mat-progress-bar mode="determinate" 
-                            [value]="(product.quantite / product.seuil) * 100"
-                            [color]="getStockProgressColor(product)">
-            </mat-progress-bar>
-            <div class="stock-days">
-              <mat-icon>schedule</mat-icon>
-              J-{{product.daysUntilStockout}} ({{product.lastSaleDate | date:'dd/MM'}})
-            </div>
+          <ng-container *ngIf="card.title === 'Clients'">
+            <div class="kpi-subtext">(Nouveaux aujourd'hui)</div>
+          </ng-container> 
+          <div *ngIf="card.trend !== undefined" class="kpi-trend">
+            <mat-icon [class]="card.trend >= 0 ? 'trend-up' : 'trend-down'">
+              {{card.trend >= 0 ? 'trending_up' : 'trending_down'}}
+            </mat-icon>
+            <span>{{card.trend}}% vs hier</span>
+            <span class="kpi-comparison" *ngIf="card.comparisonValue !== undefined">
+              {{card.comparisonValue | currency:'TND':'symbol':'1.2-2'}}
+            </span>
           </div>
-        </mat-cell>
-      </ng-container>
+        </mat-card-content>
+      </mat-card>
+    </mat-grid-tile>
 
-      <!-- Colonne Fournisseur -->
-      <ng-container matColumnDef="supplier">
-        <mat-header-cell *matHeaderCellDef>Fournisseur</mat-header-cell>
-        <mat-cell *matCellDef="let product">
-          <div class="supplier-info">
-            <div>{{product.supplier?.name || 'Aucun fournisseur'}}</div>
-            <div *ngIf="product.supplier" class="supplier-contact">
-              <button mat-icon-button (click)="contactSupplier(product.supplier)">
-                <mat-icon>email</mat-icon>
-              </button>
-              {{product.supplier?.leadTime}} jours de délai
-            </div>
+    <!-- Nouvelle carte Commandes en attente -->
+    <mat-grid-tile>
+      <mat-card class="kpi-card accent" (click)="onKpiClick('Commandes en attente')">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>pending_actions</mat-icon>
+            Commandes en attente
+          </mat-card-title>
+          <mat-card-subtitle>À traiter</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="kpi-value">{{ pendingOrders }}</div>
+          <div class="kpi-subtext">{{ pendingOrdersMonthly }} ce mois</div>
+          <div class="kpi-trend">
+            <mat-icon [class]="pendingOrdersMonthly >= 0 ? 'trend-up' : 'trend-down'">
+              {{pendingOrdersMonthly >= 0 ? 'trending_up' : 'trending_down'}}
+            </mat-icon>
+            <span>vs mois précédent</span>
           </div>
-        </mat-cell>
-      </ng-container>
+        </mat-card-content>
+      </mat-card>
+    </mat-grid-tile>
 
-      <!-- Colonne Actions -->
-      <ng-container matColumnDef="actions">
-        <mat-header-cell *matHeaderCellDef>Actions</mat-header-cell>
-        <mat-cell *matCellDef="let product">
-          <button mat-icon-button 
-          (click)="navigateToSupplierOrder()"
-          color="primary"
-          matTooltip="Créer une nouvelle commande">
-    <mat-icon>add</mat-icon>
-  </button>
+    <!-- Nouvelle carte Commandes en retard -->
+    <mat-grid-tile>
+      <mat-card class="kpi-card warn" (click)="onKpiClick('Commandes en retard')">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>warning</mat-icon>
+            Commandes en retard
+          </mat-card-title>
+          <mat-card-subtitle>À régulariser</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="kpi-value">{{ overdueOrders }}</div>
+          <div class="kpi-trend">
+            <mat-icon [class]="overdueTrend >= 0 ? 'trend-up' : 'trend-down'">
+              {{overdueTrend >= 0 ? 'trending_up' : 'trending_down'}}
+            </mat-icon>
+            <span>{{overdueTrend}}% vs mois dernier</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </mat-grid-tile>
+
+    <!-- Nouvelle carte Fournisseurs -->
+    <mat-grid-tile>
+      <mat-card class="kpi-card primary" (click)="onKpiClick('Fournisseurs')">
+        <mat-card-header>
+          <mat-card-title>
+            <mat-icon>local_shipping</mat-icon>
+            Fournisseurs
+          </mat-card-title>
+          <mat-card-subtitle>Partenaires</mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="kpi-value">{{ suppliersCount }}</div>
+          <div class="kpi-subtext">{{ newSuppliers }} nouveaux (30j)</div>
+          <div class="kpi-trend">
+            <mat-icon>group_add</mat-icon>
+            <span>Actifs</span>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </mat-grid-tile>
+    <!-- Dans la section des indicateurs clés -->
+<mat-grid-tile>
+  <mat-card class="kpi-card primary" (click)="onKpiClick('Produits Totaux')">
+    <mat-card-header>
+      <mat-card-title>
+        <mat-icon>category</mat-icon>
+        Produits Totaux
+      </mat-card-title>
+      <mat-card-subtitle>Variétés disponibles</mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <div class="kpi-value">{{ totalProducts }}</div>
+      <div class="kpi-subtext">{{ totalStockItems }} unités en stock</div>
+    </mat-card-content>
+  </mat-card>
+</mat-grid-tile>
+  </mat-grid-list>
   
-          <button mat-icon-button 
-                  color="warn"
-                  (click)="adjustSafetyStock(product)"
-                  matTooltip="Ajuster le seuil">
-            <mat-icon>tune</mat-icon>
-          </button>
-        </mat-cell>
-      </ng-container>
+  <mat-progress-bar mode="indeterminate" *ngIf="loading"></mat-progress-bar>
+</div>
 
-      <mat-header-row *matHeaderRowDef="['product', 'stock', 'supplier', 'actions']"></mat-header-row>
-      <mat-row *matRowDef="let row; columns: ['product', 'stock', 'supplier', 'actions'];"></mat-row>
-    </mat-table>
+  <!-- Analyse Financière -->
+  <div class="financial-charts mat-elevation-z1">
+    <h2><mat-icon>show_chart</mat-icon> Analyse Financière</h2>
+    
+    <!-- Debug : ajoutez ce message temporairement -->
+    <div *ngIf="!caTrendChart || !expensesChart" class="no-data-warning">
+      ⚠️ Chargement des graphiques en cours...
+    </div>
+  
+    <div class="chart-row">
+      <div class="chart-container">
+        <canvas id="caTrendChart"></canvas>
+      </div>
+      <div class="chart-container">
+        <h5>Répartition des dépenses</h5>
+        <canvas id="expensesChart"></canvas>
+      </div>
+    </div>
   </div>
 
+  <!-- Stock et Activités -->
+  <div class="row-section side-by-side">
+    <!-- Produits en Rupture -->
+    <div class="stock-section mat-elevation-z1">
+      <div class="section-header">
+        <h2>
+          <mat-icon>warning</mat-icon>
+          Produits en Rupture Imminente
+                </h2>
+        <button mat-raised-button 
+        color="primary" 
+        (click)="goToSupplierOrder()">
+  <mat-icon>add_shopping_cart</mat-icon>
+  Commander les manquants</button>
+      </div>
 
+      <mat-table [dataSource]="lowStockProducts" class="stock-table">
+        <!-- Colonne Produit -->
+        <ng-container matColumnDef="product">
+          <mat-header-cell *matHeaderCellDef>Produit</mat-header-cell>
+          <mat-cell *matCellDef="let product">
+            <div class="product-info">
+              <img [src]="product.imageUrl || 'assets/default-product.png'" 
+                  class="product-image"
+                  alt="Image produit">
+              <div class="product-details">
+                <div class="product-name">{{product.nomProduit}}</div>
+                <div class="product-reference">Réf. {{product.idProduit}}</div>
+                <div class="product-category">{{product.category}}</div>
+              </div>
+            </div>
+          </mat-cell>
+        </ng-container>
 
+        <!-- Colonne Stock -->
+        <ng-container matColumnDef="stock">
+          <mat-header-cell *matHeaderCellDef>Niveau de Stock</mat-header-cell>
+          <mat-cell *matCellDef="let product">
+            <div class="stock-progress">
+              <div class="stock-numbers">
+                {{product.quantite}} / {{product.seuil}}
+                <span class="stock-alert" *ngIf="product.quantite === 0">RUPTURE!</span>
+              </div>
+              <mat-progress-bar mode="determinate" 
+                              [value]="(product.quantite / product.seuil) * 100"
+                              [color]="getStockProgressColor(product)">
+              </mat-progress-bar>
+              <div class="stock-days">
+                <mat-icon>schedule</mat-icon>
+                J-{{product.daysUntilStockout}} ({{product.lastSaleDate | date:'dd/MM'}})
+              </div>
+            </div>
+          </mat-cell>
+        </ng-container>
 
-  <!-- Section Activité Récente Améliorée -->
-  <div class="recent-activity mat-elevation-z1">
+        <!-- Colonne Fournisseur -->
+        <ng-container matColumnDef="supplier">
+          <mat-header-cell *matHeaderCellDef>Fournisseur</mat-header-cell>
+          <mat-cell *matCellDef="let product">
+            <div class="supplier-info">
+              <div>{{product.supplier?.name || 'Aucun fournisseur'}}</div>
+              <div *ngIf="product.supplier" class="supplier-contact">
+                <button mat-icon-button (click)="contactSupplier(product.supplier)">
+                  <mat-icon>email</mat-icon>
+                </button>
+                {{product.supplier?.leadTime}} jours de délai
+              </div>
+            </div>
+          </mat-cell>
+        </ng-container>
+
+        <mat-header-row *matHeaderRowDef="['product', 'stock', 'supplier']"></mat-header-row>
+        <mat-row *matRowDef="let row; columns: ['product', 'stock', 'supplier'];"></mat-row>
+      </mat-table>
+    </div>
+
+  <!-- Journal des Événements -->
+<div class="activity-section mat-elevation-z1">
+  <div class="section-header">
     <h2>
       <mat-icon>timeline</mat-icon>
       Journal des Événements
+    </h2>
+    <div class="header-actions">
       <button mat-icon-button (click)="filterActivities('all')" matTooltip="Tout voir">
         <mat-icon>list</mat-icon>
       </button>
-    </h2>
-
-    <div class="activity-filters">
-      <mat-button-toggle-group #filters="matButtonToggleGroup" (change)="filterActivities(filters.value)">
-        <mat-button-toggle value="all">Tout</mat-button-toggle>
-        <mat-button-toggle value="sales">Ventes</mat-button-toggle>
-        <mat-button-toggle value="stock">Stock</mat-button-toggle>
-        <mat-button-toggle value="alerts">Alertes</mat-button-toggle>
-      </mat-button-toggle-group>
-    </div>
-
-    <div class="activity-list">
-      <div class="activity-item" 
-           *ngFor="let activity of filteredActivities"
-           [class]="activity.type">
-        <div class="activity-icon-container">
-          <mat-icon class="activity-icon">{{activity.icon}}</mat-icon>
-          <div class="activity-type-badge">{{activity.type | titlecase}}</div>
-        </div>
-        
-        <div class="activity-content">
-          <div class="activity-message">
-            <span class="highlight-text">{{activity.user}}</span>
-            {{activity.message}}
-            <span *ngIf="activity.product" class="product-link">
-              {{activity.product.nomProduit}} ({{activity.product.idProduit}})
-            </span>
-            <span *ngIf="activity.amount" class="amount">
-              {{activity.amount | currency:'TND':'symbol':'1.2-2'}}
-            </span>
-          </div>
-          
-          <div class="activity-details">
-            <div class="activity-time">
-              <mat-icon>schedule</mat-icon>
-              {{activity.time | timeAgo}}
-              <span class="exact-time">({{activity.time | date:'dd/MM HH:mm'}})</span>
-            </div>
-            <div class="activity-location" *ngIf="activity.location">
-              <mat-icon>location_on</mat-icon>
-              {{activity.location}}
-            </div>
-          </div>
-        </div>
-      </div>
+      <button mat-icon-button (click)="refreshActivities()" matTooltip="Actualiser">
+        <mat-icon>refresh</mat-icon>
+      </button>
     </div>
   </div>
+
+  <div class="activity-filters">
+    <mat-button-toggle-group #filters="matButtonToggleGroup" 
+                            (change)="filterActivities(filters.value)"
+                            value="all">
+      <mat-button-toggle value="all">Tout</mat-button-toggle>
+      <mat-button-toggle value="sales">Ventes</mat-button-toggle>
+      <mat-button-toggle value="stock">Stock</mat-button-toggle>
+      <mat-button-toggle value="alerts">Alertes</mat-button-toggle>
+      <mat-button-toggle value="system">Système</mat-button-toggle>
+    </mat-button-toggle-group>
+  </div>
+
+  <div class="activity-stats" *ngIf="activityStats">
+    <div class="stat-item">
+      <mat-icon>shopping_cart</mat-icon>
+      <span>Ventes: {{activityStats.sales}}</span>
+    </div>
+    <div class="stat-item">
+      <mat-icon>inventory</mat-icon>
+      <span>Stock: {{activityStats.stock}}</span>
+    </div>
+    <div class="stat-item">
+      <mat-icon>warning</mat-icon>
+      <span>Alertes: {{activityStats.alerts}}</span>
+    </div>
+    <div class="stat-item">
+      <mat-icon>info</mat-icon>
+      <span>Système: {{activityStats.system}}</span>
+    </div>
+  </div>
+
+  <div class="activity-list">
+    <div class="activity-item" 
+    *ngFor="let activity of filteredActivities"
+    [class]="activity.type"
+    (click)="onActivityClick(activity)">
+ <div class="activity-icon-container">
+   <mat-icon class="activity-icon">{{activity.icon}}</mat-icon>
+   <div class="activity-type-badge">{{activity.type | titlecase}}</div>
+ </div>
+ 
+ <div class="activity-content">
+   <div class="activity-message">
+     <span *ngIf="activity.user" class="highlight-text">{{activity.user}}</span>
+     {{activity.message}}
+     <span *ngIf="activity.product" class="product-link">
+       {{activity.product.nomProduit}} ({{activity.product.idProduit}})
+     </span>
+     <span *ngIf="activity.amount" class="amount">
+       {{activity.amount | currency:'TND':'symbol':'1.2-2'}}
+     </span>
+   </div>
+   
+   <div class="activity-details">
+     <div class="activity-time">
+       <mat-icon>schedule</mat-icon>
+       {{activity.time | timeAgo}}
+       <span class="exact-time">({{activity.time | date:'dd/MM HH:mm'}})</span>
+     </div>
+     <div class="activity-actions" *ngIf="activity.actions">
+       <button mat-button *ngFor="let action of activity.actions" 
+               (click)="handleActivityAction($event, activity, action)">
+         {{action.label}}
+       </button>
+     </div>
+   </div>
+ </div>
+</div>
+
+    <div class="no-activities" *ngIf="filteredActivities.length === 0">
+      <mat-icon>info</mat-icon>
+      <p>Aucun événement à afficher</p>
+    </div>
+  </div>
+</div>
+  </div>
+
+<!--scan -->
+
+<div class="scanner-overlay" *ngIf="showScanner">
+  <div class="scanner-header">
+    <button mat-icon-button (click)="closeScanner()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+  
+  <zxing-scanner 
+  [enable]="showScanner"
+  (scanSuccess)="handleQrCodeResult($event)"
+  [device]="selectedDevice"
+  [formats]="allowedFormats"
+  class="qr-scanner">
+</zxing-scanner>
+  <div class="scan-line"></div>
 </div>

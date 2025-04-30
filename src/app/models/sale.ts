@@ -24,7 +24,9 @@ export interface Sale {
   date: string;
   clientId?: string;  
   customerName: string; 
-  customerId: string;  
+  customerId: string; 
+  location?: string; 
+ 
 }
 
 export interface StockItem {
@@ -46,7 +48,7 @@ export interface StockItem {
   originalPrice?: number;
   status: 'active' | 'inactive' | 'promotion';
   discount?: number;
-  promotion?: Promotion | boolean; 
+  promotion?: Promotion; 
   seuil?: number;
 }
 

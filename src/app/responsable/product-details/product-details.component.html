@@ -60,6 +60,29 @@
           <div class="d-flex flex-wrap gap-2 mb-3">
             <span class="badge bg-info">{{ product.type }}</span>
             <span class="badge bg-secondary">{{ product.category }}</span>
+            
+            <!-- Badge de statut -->
+            <span class="badge" [ngClass]="{
+              'bg-success': product.status === 'active',
+              'bg-danger': product.status === 'inactive',
+              'bg-warning text-dark': product.status === 'promotion'
+            }">
+              <i class="fas fa-circle me-1" [ngClass]="{
+                'text-success': product.status === 'active',
+                'text-danger': product.status === 'inactive',
+                'text-warning': product.status === 'promotion'
+              }"></i>
+              {{ getStatusLabel(product.status) }}
+            </span>
+            
+            <!-- Badge de promotion si applicable -->
+            <span *ngIf="product.status === 'promotion' && product.promotion" 
+                  class="badge bg-purple text-white">
+              <i class="fas fa-tag me-1"></i>
+              PROMO -{{ product.promotion.discountPercentage }}%
+              <span *ngIf="!isPromotionActive()" class="small">(Expirée)</span>
+            </span>
+
             <span class="badge bg-success" *ngIf="realStockQuantity !== null && realStockQuantity > 0">
               <i class="fas fa-check-circle me-1"></i>
               En stock
@@ -74,25 +97,67 @@
             </span>
           </div>
           
-          <div class="product-price mb-3">
-            <h4 class="text-primary">
-              {{ product.unitPrice | number:'1.2-2' }} DT
-            </h4>
-            <p class="text-muted small mb-0">
-              <i class="fas fa-boxes me-1"></i>
-              <span *ngIf="stockLoading">
-                <span class="spinner-border spinner-border-sm text-secondary" role="status"></span>
-                Chargement du stock...
-              </span>
-              <span *ngIf="!stockLoading">
-                <span *ngIf="realStockQuantity !== null; else noStockData">
-                  {{ realStockQuantity }} unités disponibles
+          <!-- Section des Prix -->
+          <div class="product-prices mb-4">
+            <!-- Prix d'achat (Prix Unitaire HT) -->
+            <div class="purchase-price mb-3">
+              <h5 class="text-secondary">
+                <i class="fas fa-money-bill-wave me-2"></i>Prix d'achat (HT)
+              </h5>
+              <div class="price-value">
+                <span class="fw-bold">{{ stockItem?.prixUnitaireHT | number:'1.3-3' }} DT</span>
+                <small class="text-muted ms-2">(Prix Unitaire HT)</small>
+              </div>
+              <small class="text-muted">Moyenne pondérée (PMP)</small>
+            </div>
+
+            <!-- Prix de vente -->
+            <div class="sale-price">
+              <h5 class="text-primary">
+                <i class="fas fa-tag me-2"></i>Prix de vente
+              </h5>
+              <div *ngIf="product.status !== 'promotion' || !isPromotionActive()" class="price-value">
+                <span class="fw-bold">{{ stockItem?.prixDeVente | number:'1.3-3' }} DT</span>
+                <small class="text-muted ms-2">(TTC)</small>
+              </div>
+              <div *ngIf="product.status === 'promotion' && isPromotionActive()" class="price-value">
+                <span class="original-price text-muted me-2">
+                  <del>{{ stockItem?.prixDeVente | number:'1.3-3' }} DT</del>
                 </span>
-                <ng-template #noStockData>
-                  Données de stock non disponibles
-                </ng-template>
-              </span>
-            </p>
+                <span class="discounted-price fw-bold text-success">
+                  {{ calculateDiscountedPrice() | number:'1.3-3' }} DT
+                </span>
+                <span class="badge bg-danger ms-2">-{{ product.promotion?.discountPercentage }}%</span>
+                <div class="mt-1">
+                  <small class="text-muted">
+                    Économie: {{ calculateSavings() | number:'1.3-3' }} DT
+                                    </small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Informations sur le stock -->
+          <div class="stock-info mb-4 p-3 bg-light rounded">
+            <h5><i class="fas fa-boxes me-2"></i>Stock disponible</h5>
+            <div *ngIf="stockLoading" class="text-center">
+              <div class="spinner-border spinner-border-sm text-secondary" role="status"></div>
+              <span class="ms-2">Chargement du stock...</span>
+            </div>
+            <div *ngIf="!stockLoading" class="stock-details">
+              <div *ngIf="realStockQuantity !== null; else noStockData" class="d-flex align-items-center">
+                <span class="fw-bold me-2">{{ realStockQuantity }} unités</span>
+                <span class="badge" [ngClass]="{
+                  'bg-success': realStockQuantity > 0,
+                  'bg-danger': realStockQuantity <= 0
+                }">
+                  {{ realStockQuantity > 0 ? 'Disponible' : 'Rupture' }}
+                </span>
+              </div>
+              <ng-template #noStockData>
+                <span class="text-warning">Données de stock non disponibles</span>
+              </ng-template>
+            </div>
           </div>
           
           <div class="product-description mb-4">
@@ -101,6 +166,38 @@
               Description
             </h5>
             <p class="px-3">{{ product.description || 'Aucune description disponible' }}</p>
+          </div>
+          
+          <!-- Section Détails de promotion -->
+          <div *ngIf="product.status === 'promotion' && product.promotion" class="promotion-details mb-4 p-3 bg-light rounded">
+            <h5><i class="fas fa-tag me-2"></i>Détails de la promotion</h5>
+            <div class="row">
+              <div class="col-md-6">
+                <p><strong>Remise:</strong> {{ product.promotion.discountPercentage }}%</p>
+                <p><strong>Prix original:</strong> {{ stockItem?.prixDeVente | number:'1.2-2' }} DT</p>
+                <p><strong>Prix promotionnel:</strong> 
+                  <span class="text-success fw-bold">
+                    {{ calculateDiscountedPrice() | number:'1.2-2' }} DT
+                  </span>
+                </p>
+              </div>
+              <div class="col-md-6">
+                <p><strong>Début:</strong> {{ product.promotion.startDate | date:'dd/MM/yyyy' }}</p>
+                <p><strong>Fin:</strong> {{ product.promotion.endDate | date:'dd/MM/yyyy' }}</p>
+                <p><strong>Statut après promotion:</strong> 
+                  <span class="badge" [ngClass]="{
+                    'bg-success': product.postPromoStatus === 'active',
+                    'bg-danger': product.postPromoStatus === 'inactive'
+                  }">
+                    {{ product.postPromoStatus || 'active' | titlecase }}
+                  </span>
+                </p>
+              </div>
+            </div>
+            <div *ngIf="!isPromotionActive()" class="alert alert-warning mt-2 mb-0">
+              <i class="fas fa-exclamation-triangle me-2"></i>
+              Cette promotion est expirée
+            </div>
           </div>
           
           <div class="product-meta">

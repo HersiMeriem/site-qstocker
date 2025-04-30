@@ -96,30 +96,23 @@
             {{ product.description | truncate:100 }}
           </p> 
         
-          <div class="product-meta">
-            <div class="meta-item">
-              <i class="fas fa-tag"></i>
-              <span *ngIf="product.status === 'promotion' && isPromotionActive(product)" class="price">
-                <del>{{ product.unitPrice | number:'1.2-2' }} DT</del>
-                {{ calculateDiscountedPrice(product) | number:'1.2-2' }} DT
-                <span class="discount-badge">-{{ product.promotion?.discountPercentage }}%</span>
-              </span>
-              <span *ngIf="product.status !== 'promotion' || !isPromotionActive(product)">
-                {{ product.unitPrice | number:'1.2-2' }} DT
-              </span>
-            </div>
-            <div class="meta-item">
-              <i class="fas fa-box"></i>
-              <span>{{ product.stockQuantity }} en stock</span>
-            </div>
-            
-            <div class="meta-item">
-              <i class="fas fa-info-circle"></i>
-              <span class="status-badge" [ngClass]="'status-' + product.status">
-                {{ getStatusLabel(product.status) }}
-              </span>
-            </div>
-          </div>
+ <!-- la section des prix  : -->
+<div class="price-section">
+  <div *ngIf="product.status === 'promotion' && isPromotionActive(product)" class="promo-price">
+    <div class="original-price text-muted small">
+      <del>{{ product.unitPrice | number:'1.3-3' }} DT</del>
+    </div>
+    <div class="current-price">
+      <span class="fw-bold text-success">
+        {{ calculateDiscountedPrice(product) | number:'1.3-3' }} DT
+      </span>
+      <span class="badge bg-danger ms-1">-{{ product.promotion?.discountPercentage }}%</span>
+    </div>
+  </div>
+  <div *ngIf="product.status !== 'promotion' || !isPromotionActive(product)" class="normal-price">
+    <span class="fw-bold">{{ product.unitPrice | number:'1.3-3' }} DT</span>
+  </div>
+</div>
 
           <div class="action-buttons">
             <button class="action-btn info" (click)="viewDetails(product.id)" matTooltip="Voir plus de détails">

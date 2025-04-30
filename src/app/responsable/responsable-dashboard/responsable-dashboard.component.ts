@@ -13,7 +13,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatListModule } from '@angular/material/list';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { Chart, registerables } from 'chart.js';
+import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import { SaleService } from '../../services/sale.service';
 import { StockService } from '../../services/stock.service';
 import { ProductService } from '../../services/product.service';
@@ -26,9 +26,13 @@ import autoTable from 'jspdf-autotable';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { TimeAgoPipe } from 'src/app/pipes/time-ago.pipe';
 import { Router } from '@angular/router';
-
-
-
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { ZXingScannerModule } from '@zxing/ngx-scanner';
+import { BarcodeFormat } from '@zxing/library';
+import { EmailService } from 'src/app/services/email.service';
+import { SupplierService } from 'src/app/services/supplier.service';
+import { map } from 'rxjs/operators';
+import { combineLatest } from 'rxjs';
 
 
 
@@ -66,11 +70,23 @@ interface RecentSale {
 }
 
 interface Activity {
+  type: 'sales' | 'stock' | 'alerts' | 'system';
   icon: string;
   message: string;
   time: Date;
+  user?: string;
+  location?: string;
+  product?: any;
+  amount?: number;
+  stockData?: {
+    totalProducts: number;
+    totalStock: number;
+  };
+  actions?: Array<{
+    label: string;
+    action: string;
+  }>;
 }
-
 interface LowStockProduct {
   id: string;
   name: string;
@@ -95,12 +111,19 @@ interface Activity {
   message: string;
   time: Date;
 
-  user?: string; // Ajouter cette propriété comme optionnelle
+  user?: string; 
   location?: string;
   product?: any;
   amount?: number;
 }
 
+interface OrderStats {
+  pending: number;
+  overdue: number;
+  delivered: number;
+  canceled: number;
+  monthlyTrend: number;
+}
 
 @Component({
   selector: 'app-responsable-dashboard',
@@ -124,6 +147,8 @@ interface Activity {
     MatPaginatorModule,
     MatButtonToggleModule ,
     TimeAgoPipe,
+    MatProgressSpinnerModule,
+    ZXingScannerModule,
 
 
   ],
@@ -132,6 +157,8 @@ interface Activity {
   providers: [ DatePipe, ]
 })
 export class ResponsableDashboardComponent implements OnInit {
+  public caTrendChart?: Chart<'line'>;
+  public expensesChart?: Chart<'doughnut'>;
   currentDate = new Date();
   loading = false;
   authenticityStats: AuthenticityStats = { 
@@ -140,7 +167,11 @@ export class ResponsableDashboardComponent implements OnInit {
     lastCheck: new Date(),
     verificationDetails: null
   };
-    
+    //scan 
+    showScanner = false;
+    selectedDevice: MediaDeviceInfo | undefined;
+    allowedFormats = [ BarcodeFormat.QR_CODE ];
+
   stockMetrics: StockMetrics = {
     predictedStockouts: 0,
     stockoutTrend: 0,
@@ -151,6 +182,25 @@ export class ResponsableDashboardComponent implements OnInit {
   selectedPeriod = '30';
   authenticityChart: any;
   stockPredictionChart: any;
+
+  // Statistiques commandes
+pendingOrders = 0;
+pendingOrdersMonthly = 0;
+overdueOrders = 0;
+overdueTrend = 0;
+
+// Statistiques fournisseurs
+suppliersCount = 0;
+newSuppliers = 0;
+totalProducts = 0;
+totalStockItems = 0;
+
+activityStats = {
+  sales: 0,
+  stock: 0,
+  alerts: 0,
+  system: 0
+};
 
 
   // KPI Cards Data
@@ -249,12 +299,16 @@ export class ResponsableDashboardComponent implements OnInit {
     private productService: ProductService,
     private activityService: ActivityService,
     private datePipe: DatePipe,
-    private router: Router
+    private router: Router,
+    private emailService: EmailService,
+    private supplierService: SupplierService
   ) {}
 
   ngOnInit(): void {
     this.loadDashboardData();
     this.loadRecentActivities();
+    this.initFinancialCharts();
+    this.loadFinancialData();
     this.filteredActivities = [...this.recentActivities];
   }
 
@@ -264,8 +318,17 @@ export class ResponsableDashboardComponent implements OnInit {
     this.loadStockData();
     this.loadProductData();
     this.loadPerformanceMetrics();
-  }
+    this.loadFinancialData();
+    this.loadOrderStats(); 
+    this.loadSupplierStats(); 
+    this.loadProductAndStockCounts(); 
 
+  }
+  initFinancialCharts(): void {
+    this.createCaTrendChart();
+    this.createExpensesChart();
+  }
+  
   loadSalesData(): void {
     const today = new Date();
     const startOfDay = new Date(today.setHours(0, 0, 0, 0)).toISOString();
@@ -400,18 +463,6 @@ export class ResponsableDashboardComponent implements OnInit {
         this.calculateMonthlyTrends();
         this.loading = false;
       });
-  }
-
-  loadRecentActivities(): void {
-    this.activityService.getRecentActivities().subscribe(activities => {
-      this.recentActivities = activities.map(activity => ({
-        ...activity,
-        time: new Date(activity.time),
-        user: activity.user || 'Système',
-        type: activity.type || 'system'   
-      }));
-      this.filteredActivities = [...this.recentActivities];
-    });
   }
 
   private calculateDailyTrends(todaySales: Sale[], yesterdaySales: Sale[]): void {
@@ -621,12 +672,6 @@ export class ResponsableDashboardComponent implements OnInit {
   onTabChange(event: any): void {
     console.log('Tab changed to:', event.tab.textLabel);
   }
-
-  handleQuickAction(action: string): void {
-    console.log('Action:', action);
-    // In a real app, you would implement the actions
-  }
-
   viewAllSales(): void {
     console.log('View all sales');
   }
@@ -951,15 +996,301 @@ navigateToSupplierOrder() {
   this.router.navigate(['/responsable/commandes-fournisseur']);
 }
 
-generateReplenishmentOrder() {
-  // Récupérer les produits sélectionnés si nécessaire
-  const selectedProducts = this.lowStockProducts.filter(p => p.selected);
+//financiere 
+private createCaTrendChart(): void {
+  const ctx = document.getElementById('caTrendChart') as HTMLCanvasElement;
   
-  // Passer les données via le state du router
-  this.router.navigate(['/responsable/commandes-fournisseur'], {
-    state: {
-      products: selectedProducts,
-      autoFill: true
+  // Spécifiez le type complet de configuration
+  const config: ChartConfiguration<'line'> = {
+    type: 'line',
+    data: {
+      labels: ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin'],
+      datasets: [{
+        label: 'Chiffre d\'Affaires (DT)',
+        data: [65000, 59000, 80000, 81000, 56000, 75000],
+        borderColor: '#4CAF50',
+        tension: 0.4
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: {
+          beginAtZero: false
+        }
+      }
+    }
+  };
+
+  if (this.caTrendChart) {
+    this.caTrendChart.destroy();
+  }
+  this.caTrendChart = new Chart(ctx, config);
+}
+
+private createExpensesChart(): void {
+  const ctx = document.getElementById('expensesChart') as HTMLCanvasElement;
+  
+  const config: ChartConfiguration<'doughnut'> = {
+    type: 'doughnut',
+    data: {
+      labels: ['Fournitures', 'Transport', 'Salaires', 'Marketing'],
+      datasets: [{
+        data: [30000, 15000, 45000, 20000],
+        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0']
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'top',
+        }
+      }
+    }
+  };
+
+  if (this.expensesChart) {
+    this.expensesChart.destroy();
+  }
+  this.expensesChart = new Chart(ctx, config);
+}
+
+loadFinancialData(): void {
+  console.log('Chargement des données financières...'); // Debug
+  this.loading = true;
+  
+  this.saleService.getFinancialMetrics().subscribe({
+    next: (data) => {
+      console.log('Données reçues:', data); // Debug
+      if (!data || !data.caHistory || !data.expensesBreakdown) {
+        console.warn('Données financières incomplètes:', data);
+        return;
+      }
+      this.updateChartsWithRealData(data);
+      this.loading = false;
+    },
+    error: (err) => {
+      console.error('Erreur API:', err); // Debug
+      this.loading = false;
+    }
+  });
+}
+
+private updateChartsWithRealData(data: {caHistory: number[], expensesBreakdown: number[]}): void {
+  if (this.caTrendChart) {
+    this.caTrendChart.data.datasets[0].data = data.caHistory;
+    this.caTrendChart.update();
+  }
+  
+  if (this.expensesChart) {
+    this.expensesChart.data.datasets[0].data = data.expensesBreakdown;
+    this.expensesChart.update();
+  }
+}
+
+//scan 
+
+openScanner() {
+  this.showScanner = true;
+  this.requestCameraPermissions();
+}
+
+closeScanner() {
+  this.showScanner = false;
+  this.selectedDevice = undefined; 
+}
+
+async requestCameraPermissions() {
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const videoDevices = devices.filter(device => device.kind === 'videoinput');
+    this.selectedDevice = videoDevices[0] || undefined; // Explicitly set to undefined if no devices
+  } catch (error) {
+    console.error('Camera access error:', error);
+    alert('Veuillez autoriser l\'accès à la caméra');
+    this.selectedDevice = undefined;
+  }
+}
+
+handleQrCodeResult(resultString: string) {
+  this.closeScanner();
+  const productId = this.extractProductId(resultString);
+  
+  if (productId) {
+    this.router.navigate(['/responsable/product-details', productId]);
+  } else {
+    alert('QR Code non reconnu');
+  }
+}
+private extractProductId(qrData: string): string | null {
+  try {
+    const data = JSON.parse(qrData);
+    return data?.id || null;
+  } catch {
+    return qrData.match(/PRD-\d{3,5}/i)?.[0] || null;
+  }
+}
+
+//commande 
+
+goToSupplierOrder() {
+  this.router.navigate(['/responsable/commande-fournisseur']);
+}
+
+
+ // les stats commandes
+ loadOrderStats(): void {
+  this.emailService.getCommandes().subscribe(commandes => {
+    const now = new Date();
+    const lastMonth = new Date();
+    lastMonth.setMonth(lastMonth.getMonth() - 1);
+    
+    // Initialiser les compteurs
+    let pending = 0;
+    let overdue = 0;
+    let pendingMonthly = 0;
+
+    commandes.forEach(cmd => {
+      const cmdDate = new Date(cmd.dateCommande);
+      
+      if (cmd.status === 'En attente' || cmd.paymentStatus === 'En attente') {
+        pending++;
+        if (cmdDate >= lastMonth) pendingMonthly++;
+      }
+      // Update this line to use 'Retard' instead of 'En retard'
+      if (cmd.status === 'Retard' || cmd.paymentStatus === 'Retard') {
+        overdue++;
+      }
+    });
+
+    // Mettre à jour les propriétés
+    this.pendingOrders = pending;
+    this.pendingOrdersMonthly = pendingMonthly;
+    this.overdueOrders = overdue;
+
+    // Calculer les tendances
+    this.calculateOrderTrends();
+  });
+}
+
+loadSupplierStats(): void {
+  this.supplierService.getAll().pipe(
+    map(suppliers => {
+      const now = new Date();
+      const lastMonth = new Date();
+      lastMonth.setMonth(lastMonth.getMonth() - 1);
+      
+      this.suppliersCount = suppliers.length;
+      
+      // Filtrer les fournisseurs créés le mois dernier
+      this.newSuppliers = suppliers.filter(s => {
+        // Vérifier si le fournisseur a une date de création
+        const creationDate = (s as any).creationDate; // Cast temporaire
+        return creationDate && new Date(creationDate) >= lastMonth;
+      }).length;
+    })
+  ).subscribe();
+}
+
+// Add this method to your component class
+private calculateTrend(previousValue: number, currentValue: number): number {
+  if (previousValue === 0) {
+    return currentValue === 0 ? 0 : 100; // Handle division by zero
+  }
+  return ((currentValue - previousValue) / previousValue) * 100;
+}
+
+private calculateOrderTrends(): void {
+  const lastMonthOverdue = 10; // Valeur exemple - à remplacer par votre logique réelle
+  this.overdueTrend = this.calculateTrend(
+    lastMonthOverdue,
+    this.overdueOrders
+  );
+}
+
+loadProductAndStockCounts(): void {
+  combineLatest([
+    this.productService.getProducts(),
+    this.stockService.getStock()
+  ]).subscribe({
+    next: ([products, stockItems]) => {
+      this.totalProducts = products.length;
+      this.totalStockItems = stockItems.reduce((sum, item) => sum + item.quantite, 0);
+      
+      // Ajouter un événement au journal
+      this.activityService.logActivity(
+        `Stock mis à jour: ${this.totalProducts} produits, ${this.totalStockItems} unités en stock`,
+        'stock'
+      );
+    },
+    error: (err) => {
+      console.error('Erreur de chargement des comptes produits/stock:', err);
+    }
+  });
+} 
+
+//activité
+refreshActivities(): void {
+  this.loading = true;
+  this.loadRecentActivities();
+  this.loading = false;
+}
+onActivityClick(activity: Activity): void {
+  console.log('Activity clicked:', activity);
+  // Vous pouvez implémenter une logique spécifique ici
+}
+
+//activity
+handleActivityAction(event: Event, activity: Activity, action: any): void {
+  event.stopPropagation();
+  
+  switch(action.action) {
+    case 'viewSaleDetails':
+      this.viewSaleDetails(activity);
+      break;
+    case 'viewStockHistory':
+      this.viewStockHistory(activity);
+      break;
+    default:
+      console.log('Action non gérée:', action);
+  }
+}
+private viewSaleDetails(activity: Activity): void {
+  if (!activity.product) return;
+  this.router.navigate(['/sales', activity.product.idProduit]);
+}
+
+private viewStockHistory(activity: Activity): void {
+  if (!activity.product) return;
+  this.router.navigate(['/stock', activity.product.idProduit, 'history']);
+}
+
+
+private updateActivityStats(): void {
+  this.activityStats = {
+    sales: this.recentActivities.filter(a => a.type === 'sales').length,
+    stock: this.recentActivities.filter(a => a.type === 'stock').length,
+    alerts: this.recentActivities.filter(a => a.type === 'alerts').length,
+    system: this.recentActivities.filter(a => a.type === 'system').length
+  };
+}
+
+loadRecentActivities(): void {
+  this.activityService.getRecentActivities().subscribe({
+    next: (activities) => {
+      this.recentActivities = activities.map(activity => ({
+        ...activity,
+        time: new Date(activity.time),
+        user: activity.user || 'Système',
+        type: activity.type || 'system'
+      }));
+      this.filteredActivities = [...this.recentActivities];
+      this.updateActivityStats();
+    },
+    error: (err) => {
+      console.error('Erreur chargement activités:', err);
+      this.filteredActivities = [];
     }
   });
 }

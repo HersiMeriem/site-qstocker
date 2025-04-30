@@ -43,6 +43,27 @@
                 </select>
             </div>
 
+          <!-- Section Promotions -->
+          <section class="promo-products card">
+            <h4><i class="fas fa-tag"></i> Promotions en cours</h4>
+            <div class="promo-grid" *ngIf="promotedProducts.length > 0; else noPromo">
+              <div class="promo-item" *ngFor="let product of promotedProducts">
+                <div class="promo-content">
+                  <!-- Ajouter un *ngIf pour la validité -->
+                  <div *ngIf="isPromotionActive(product)" class="promo-header">
+                    <span class="badge bg-danger">-{{ product.promotion?.discountPercentage }}%</span>
+                    <qrcode [qrdata]="product.idProduit" [width]="60"></qrcode>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <ng-template #noPromo>
+                <div class="empty-promo">
+                  <i class="fas fa-tags"></i> Aucune promotion active actuellement
+                </div>
+              </ng-template>
+              
+          </section>
             <!-- Détails du produit sélectionné -->
             <article class="product-details card" *ngIf="selectedProduct">
                 <div class="product-info">
@@ -84,7 +105,7 @@
                         <div class="meta-item" *ngIf="isPromotionActive(selectedProduct)">
                             <i class="fas fa-clock"></i>
                             <span class="text-warning">
-                                Promo valide jusqu'au {{ selectedProduct.promotion?.endDate | date:'dd/MM/yyyy' }}
+                                Valide jusqu'au {{ selectedProduct.promotion?.endDate | date:'dd/MM/yyyy' }}
                             </span>
                         </div>
                     </div>
@@ -107,7 +128,6 @@
                     </button>
                 </div>
             </article>
-
         </section>
 
         <!-- Colonne droite : Panier -->
@@ -126,7 +146,7 @@
                             <span *ngIf="item.unitPrice !== item.originalPrice">
                                 <del class="text-muted">{{ item.originalPrice | number:'1.2-2' }} DT</del>
                                 <span class="text-success fw-bold">{{ item.unitPrice | number:'1.2-2' }} DT</span>
-                                <span class="badge bg-danger ms-1">PROMO</span>
+                                <span class="badge bg-danger">PROMO -{{ getDiscountPercentage(item) }}%</span>
                                 x {{ item.quantity }}
                             </span>
                             <span *ngIf="item.unitPrice === item.originalPrice">

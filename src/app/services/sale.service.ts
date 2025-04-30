@@ -13,7 +13,8 @@ export class SaleService {
 
   constructor(
     private db: AngularFireDatabase,
-    private stockService: StockService
+    private stockService: StockService,
+    private http: HttpClient
   ) {}
 
   async createSale(saleData: Omit<Sale, 'id' | 'invoiceNumber'>): Promise<Sale> {
@@ -118,5 +119,21 @@ getSalesByDateRange(startDate: string, endDate: string): Observable<Sale[]> {
   );
 }
 
+//financiere 
+getFinancialMetrics(): Observable<{caHistory: number[], expensesBreakdown: number[]}> {
+  return this.http.get<{caHistory: number[], expensesBreakdown: number[]}>(
+    'votre-api/financial-metrics'
+  );
+}
 
+getRecentSales(limit: number = 5): Observable<Sale[]> {
+  return this.db.list<Sale>(this.dbPath, ref => 
+    ref.orderByChild('date')
+       .limitToLast(limit)
+  ).valueChanges().pipe(
+    map(sales => sales.sort((a, b) => 
+      new Date(b.date).getTime() - new Date(a.date).getTime()
+    )) 
+  );
+}
 }

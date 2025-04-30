@@ -13,6 +13,7 @@ export interface Product {
   manufactureDate: string;
   createdAt: string;
   updatedAt?: string;
+  originalPrice?: number; // Ajoutez cette propriété pour stocker le prix avant promotion
   status: 'active' | 'inactive' | 'promotion';
   discount?: number;
   promotion?: Promotion | null; // Ajout de null comme type possible

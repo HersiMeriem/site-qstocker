@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { SnapshotAction } from '@angular/fire/compat/database/interfaces';
 import { Observable, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
+import { ProductService } from './product.service';
 
 export interface StockItem {
   originalPrice: number;
@@ -42,7 +43,7 @@ export class StockService {
   private movementsPath = '/stock-movements';
 
 
-  constructor(private db: AngularFireDatabase) {}
+  constructor(private db: AngularFireDatabase,  private productService: ProductService ) {}
 
     // Ajoutez cette méthode pour l'intégration avec les commandes
     async processSupplierOrder(order: any): Promise<void> {
@@ -316,7 +317,6 @@ export class StockService {
   getStock(): Observable<StockItem[]> {
     return this.db.list<StockItem>(this.stockPath).valueChanges().pipe(
       map(items => items.map(item => {
-        // Formater correctement les dates de promotion
         if (item.promotion && typeof item.promotion !== 'boolean') {
           return {
             ...item,
@@ -330,7 +330,7 @@ export class StockService {
         return item;
       })),
       catchError(error => {
-        console.error('Error loading stock:', error);
+        console.error('Erreur Firebase:', error);
         return of([]);
       })
     );
@@ -348,4 +348,35 @@ export class StockService {
       })))
     );
   }
+
+  // promo
+
+async updateStockStatusForPromotions(): Promise<void> {
+  const stock = await firstValueFrom(this.getStock());
+  const now = new Date();
+  
+  const updates = stock
+    .filter(item => item.status === 'promotion' && item.promotion)
+    .filter(item => {
+      const endDate = new Date(item.promotion!.endDate);
+      return now > endDate;
+    })
+    .map(async item => {
+      // Récupérer le produit correspondant pour obtenir le postPromoStatus
+      const product = await firstValueFrom(
+        this.productService.getProductById(item.idProduit)
+      ).catch(() => null);
+      
+      const newStatus = product?.postPromoStatus || 'active';
+      
+      await this.updateStock(item.idProduit, {
+        status: newStatus,
+        promotion: null
+      });
+      
+      return item.idProduit;
+    });
+
+  await Promise.all(updates);
+}
 }

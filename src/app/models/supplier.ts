@@ -5,5 +5,6 @@ export interface Supplier {
   phone: string;
   address: string;
   info?: string;
+  creationDate?: string;
 
 }

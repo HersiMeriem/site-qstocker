@@ -36,6 +36,7 @@ import { DetailsProductsComponent } from './admin/details-products/details-produ
 import { DashboardFinancierComponent } from './admin/dashboard-financier/dashboard-financier.component';
 import { LivraisonComponent } from './responsable/livraison/livraison.component';
 
+
 const routes: Routes = [
   { path: '', component: LoginComponent },
   { path: 'register', component: RegisterComponent },

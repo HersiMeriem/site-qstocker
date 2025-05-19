@@ -1,6 +1,5 @@
 export const environment = {
   production: false,
-  firebaseUrl: "https://qstocker-9b450-default-rtdb.firebaseio.com",
   firebaseConfig: {
    apiKey: "AIzaSyBETwPp4E8vIyaKrUdXMGCeRJLnVL87MV0",
   authDomain: "qstocker-9b450.firebaseapp.com",

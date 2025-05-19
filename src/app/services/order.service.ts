@@ -9,53 +9,59 @@ import { Order } from '../models/order';
 export class OrderService {
   constructor(private db: AngularFireDatabase) {}
 
-  runAllChecks() {
-    // Implémentez cette méthode
-    console.log('Running all checks...');
-  }
-  
-  getOrdersByStatus(status: string) {
+getOrdersByStatus(status: string) {
     return this.db.list<Order>('orders', ref =>
       ref.orderByChild('status').equalTo(status)
     ).snapshotChanges().pipe(
       map(changes =>
-        changes.map(c => ({
-          id: c.payload.key!,
-          ...c.payload.val() as Omit<Order, 'id'>
-        }))
+        changes
+          .filter(c => c.payload.key !== null && c.payload.val() !== null)
+          .map(c => {
+            const val = c.payload.val()!; // ! pour indiquer que val n'est pas null
+            return {
+              id: c.payload.key!,
+              customerName: val.customerName || '',
+              customerPhone: val.customerPhone || '',
+              customerAddress: val.customerAddress,
+              customerNotes: val.customerNotes,
+              items: val.items || [],
+              totalAmount: val.totalAmount || 0,
+              shippingFee: val.shippingFee || 0,
+              grandTotal: val.grandTotal || 0,
+              orderDate: val.orderDate || new Date().toISOString(),
+              status: val.status || 'pending',
+              paymentMethod: val.paymentMethod || 'on_delivery',
+              userId: val.userId || ''
+            };
+          })
       )
     );
   }
 
+  async updateOrderStatus(orderId: string, newStatus: string): Promise<void> {
+    if (!orderId) {
+      throw new Error('ID de commande invalide');
+    }
 
-updateOrderStatus(orderId: string, newStatus: string): Promise<void> {
-  console.log(`Updating order ${orderId} to status ${newStatus}`);
-  return this.db.object(`orders/${orderId}`).update({ status: newStatus })
-    .then(() => {
-      console.log(`Successfully updated order ${orderId} to status ${newStatus}`);
-    })
-    .catch(err => {
-      console.error(`Failed to update order ${orderId}:`, err);
-      throw err;
-    });
-}
+    try {
+      // Récupère la commande existante
+      const snapshot = await this.db.object(`orders/${orderId}`).query.once('value');
+      const order = snapshot.val();
 
-deleteOrder(orderId: string): Promise<void> {
-  if (!orderId) {
-    return Promise.reject('ID de commande invalide');
+      if (!order) {
+        throw new Error('Commande non trouvée');
+      }
+
+      // Met à jour seulement le statut
+      await this.db.object(`orders/${orderId}/status`).set(newStatus);
+      await this.db.object(`orders/${orderId}/lastUpdated`).set(new Date().toISOString());
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour:', error);
+      throw error;
+    }
   }
-  console.log(`Deleting order ${orderId}`);
-  return this.db.object(`orders/${orderId}`).remove()
-    .then(() => {
-      console.log(`Successfully deleted order ${orderId}`);
-    })
-    .catch(err => {
-      console.error(`Failed to delete order ${orderId}:`, err);
-      throw err;
-    });
-}
 
-
-
-
+  deleteOrder(orderId: string): Promise<void> {
+    return this.db.object(`orders/${orderId}`).remove();
+  }
 }

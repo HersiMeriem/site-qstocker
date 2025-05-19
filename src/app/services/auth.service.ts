@@ -8,83 +8,76 @@ import { firstValueFrom } from 'rxjs';
   providedIn: 'root'
 })
 export class AuthService {
-  getUserProfile: any;
-  currentUserValue: any;
-
-
-  showError: any;
-  showSuccess: any;
-  updateUserProfile: any;
-  updatePassword(oldPassword: any, newPassword: any) {
-    throw new Error('Method not implemented.');
-  }
-  reauthenticateUser(arg0: string, oldPassword: string) {
-    throw new Error('Method not implemented.');
-  }
-  getCurrentUserId // ✅ Déconnexion
-    () {
-    throw new Error('Method not implemented.');
-  }
-  changePassword(currentPassword: string, newPassword: string) {
-    throw new Error('Method not implemented.');
-  }
   constructor(
     private afAuth: AngularFireAuth,
     private router: Router,
-    private db: AngularFireDatabase,
-    
+    private db: AngularFireDatabase
   ) {}
 
-  async login(email: string, password: string) {
-    try {
-      const userCredential = await this.afAuth.signInWithEmailAndPassword(email, password);
+async login(email: string, password: string): Promise<{ user: any; role: string } | null> {
+  try {
+    const userCredential = await this.afAuth.signInWithEmailAndPassword(email, password);
+    
+    if (!userCredential.user) throw new Error('Identifiants incorrects');
 
-      if (!userCredential.user) {
-        throw new Error('❌ Connexion échouée.');
-      }
+    // Force le rafraîchissement du token pour les custom claims
+    await userCredential.user.getIdToken(true);
+    const idToken = await userCredential.user.getIdTokenResult();
+    const role = idToken.claims['role'] as string;
 
-      const uid = userCredential.user.uid;
+    // Vérification dans la base de données
+    const uid = userCredential.user.uid;
+    const snapshot = await this.db.object(`users/${uid}`).query.ref.once('value');
+    const userData = snapshot.val();
 
-      // ✅ Vérifier que l'utilisateur existe dans Firebase Database
-      const userRef = this.db.object(`users/${uid}`);
-      const userSnapshot = await firstValueFrom(userRef.valueChanges());
-
-      if (!userSnapshot) {
-        throw new Error("❌ Utilisateur introuvable en base de données.");
-      }
-
-      const userData = userSnapshot as any; // ✅ Accès aux données utilisateur
-
-      // ✅ Vérification du statut d'approbation
-      if (userData.status !== 'approved') {
-        throw new Error("❌ Votre compte est en attente d'approbation.");
-      }
-
-      // ✅ Vérification du rôle utilisateur
-      const role = userData.role;
-      if (!role) {
-        throw new Error("❌ Aucun rôle trouvé. Contactez l'administrateur.");
-      }
-
-      // ✅ Redirection selon le rôle
-      if (role === 'admin') {
-        this.router.navigate(['/admin']);
-      } else if (role === 'responsable') {
-        this.router.navigate(['/responsable']);
-      } else {
-        throw new Error("❌ Rôle inconnu. Contactez l'administrateur.");
-      }
-
-      return { user: userCredential.user, role };
-
-    } catch (error: any) {
-      alert(`❌ Erreur : ${error.message}`);
-      return null;
+    if (!userData) throw new Error("Compte non trouvé dans la base de données");
+    
+    // Vérification du statut
+    if (userData.status !== 'approved') {
+      throw new Error("Votre compte est en attente d'approbation par l'administrateur");
     }
-  }
 
-  // ✅ Inscription avec statut "pending" dans Firebase Database
-  async register(email: string, password: string) {
+    // Vérification cohérence des rôles
+    if (role !== userData.role) {
+      console.warn('Incohérence de rôle:', { claimsRole: role, dbRole: userData.role });
+      // Forcer la synchronisation
+      await userCredential.user.getIdToken(true);
+    }
+
+    // Redirection basée sur le rôle
+    switch(userData.role) {
+      case 'admin': 
+        await this.router.navigate(['/admin']);
+        break;
+      case 'responsable': 
+        await this.router.navigate(['/responsable']);
+        break;
+      default:
+        throw new Error("Rôle non autorisé");
+    }
+
+    return { user: userCredential.user, role: userData.role };
+
+  } catch (error: any) {
+    console.error('Erreur de connexion:', error);
+    
+    let message = 'Échec de la connexion';
+    switch(error.code) {
+      case 'auth/invalid-login-credentials':
+        message = 'Email ou mot de passe incorrect';
+        break;
+      case 'auth/too-many-requests':
+        message = 'Trop de tentatives, réessayez plus tard';
+        break;
+      default:
+        message = error.message || 'Erreur lors de la connexion';
+    }
+    
+    throw new Error(message);
+  }
+}
+
+  async register(email: string, password: string, additionalData: any = {}): Promise<any> {
     try {
       const userCredential = await this.afAuth.createUserWithEmailAndPassword(email, password);
 
@@ -94,11 +87,12 @@ export class AuthService {
 
       const uid = userCredential.user.uid;
 
-      // ✅ Ajouter l'utilisateur à Firebase Database avec le statut "pending"
+      // Ajout des données utilisateur dans la base de données
       await this.db.object(`users/${uid}`).set({
         email,
         role: 'responsable',
-        status: 'pending' // En attente d'approbation par l'admin
+        status: 'pending',
+        ...additionalData
       });
 
       alert("✅ Compte créé avec succès, en attente d'approbation.");
@@ -106,34 +100,75 @@ export class AuthService {
 
     } catch (error: any) {
       alert(`❌ Erreur : ${error.message}`);
-      return null; // ✅ Ajout d'un `return` pour éviter l'erreur TS7030
+      return null;
     }
   }
 
-  // ✅ Déconnexion
-  logout() {
-    return this.afAuth.signOut();
-
+  async logout(): Promise<void> {
+    try {
+      await this.afAuth.signOut();
+      this.router.navigate(['/login']);
+    } catch (error: any) {
+      console.error('Erreur lors de la déconnexion:', error);
+    }
   }
 
-  // ✅ Obtenir l'utilisateur connecté
   getCurrentUser() {
     return this.afAuth.authState;
   }
 
-  // ✅ Réinitialisation du mot de passe
-  async resetPassword(email: string) {
+  async resetPassword(email: string): Promise<void> {
     try {
       if (!email) {
         throw new Error("❌ Veuillez entrer une adresse email valide.");
       }
 
-      // Envoyer un email de réinitialisation du mot de passe
       await this.afAuth.sendPasswordResetEmail(email);
       alert("✅ Un email de réinitialisation a été envoyé à votre adresse.");
     } catch (error: any) {
       alert(`❌ Erreur : ${error.message}`);
     }
   }
+
+  // Méthodes supplémentaires pour la gestion de profil
+  async updateUserProfile(uid: string, data: any): Promise<void> {
+    try {
+      await this.db.object(`users/${uid}`).update(data);
+    } catch (error: any) {
+      console.error('Erreur lors de la mise à jour du profil:', error);
+      throw error;
+    }
+  }
+
+  async changePassword(currentPassword: string, newPassword: string): Promise<void> {
+    try {
+      const user = await this.afAuth.currentUser;
+      if (!user) {
+        throw new Error('Aucun utilisateur connecté');
+      }
+      
+      // Re-authentification
+      const credential = await this.afAuth.signInWithEmailAndPassword(user.email!, currentPassword);
+      await credential.user?.updatePassword(newPassword);
+    } catch (error: any) {
+      console.error('Erreur lors du changement de mot de passe:', error);
+      throw error;
+    }
+  }
+
+async getCurrentUserId(): Promise<string | null> {
+  const user = await this.afAuth.currentUser;
+  return user?.uid || null;
 }
 
+get currentUserValue() {
+  return this.afAuth.currentUser;
+} 
+
+
+async getUserData(uid: string): Promise<any> {
+  const snapshot = await this.db.object(`users/${uid}`).query.ref.once('value');
+  return snapshot.val();
+} 
+
+}

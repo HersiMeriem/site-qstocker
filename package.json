@@ -9,7 +9,6 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "build:large": "node --max_old_space_size=4096 ./node_modules/@angular/cli/bin/ng build"
-
   },
   "private": true,
   "dependencies": {
@@ -31,6 +30,7 @@
     "@fullcalendar/angular": "^6.1.16",
     "@fullcalendar/core": "^6.1.15",
     "@fullcalendar/daygrid": "^6.1.15",
+    "@ng-bootstrap/ng-bootstrap": "^14.0.0",
     "@ng-select/ng-select": "^11.0.0",
     "@ngx-translate/core": "^16.0.4",
     "@ngx-translate/http-loader": "^16.0.1",
@@ -67,6 +67,7 @@
     "ngx-toastr": "^19.0.0",
     "nodemailer": "^6.10.0",
     "pdfmake": "^0.2.18",
+    "primeicons": "^7.0.0",
     "qrcode": "^1.5.4",
     "rxjs": "~7.8.0",
     "seedrandom": "^3.0.5",

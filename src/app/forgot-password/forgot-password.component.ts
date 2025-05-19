@@ -8,14 +8,13 @@ import { Router } from '@angular/router';
   styleUrls: ['./forgot-password.component.css']
 })
 export class ForgotPasswordComponent {
-  email: string = ''; // Champ pour l'email
-  loading: boolean = false; // Indicateur de chargement
-  message: string = ''; // Message de succès ou d'erreur
-  isError: boolean = false; // Indicateur d'erreur
+  email: string = '';
+  loading: boolean = false;
+  message: string = '';
+  isError: boolean = false;
 
   constructor(private authService: AuthService, private router: Router) {}
 
-  // Fonction pour réinitialiser le mot de passe
   async resetPassword() {
     if (!this.email) {
       this.message = "❌ Veuillez entrer une adresse email valide.";
@@ -23,11 +22,10 @@ export class ForgotPasswordComponent {
       return;
     }
 
-    this.loading = true; // Activer le spinner de chargement
-    this.message = ''; // Réinitialiser le message
+    this.loading = true;
+    this.message = '';
 
     try {
-      // Appeler le service AuthService pour réinitialiser le mot de passe
       await this.authService.resetPassword(this.email);
       this.message = "✅ Un email de réinitialisation a été envoyé à votre adresse.";
       this.isError = false;
@@ -35,11 +33,10 @@ export class ForgotPasswordComponent {
       this.message = `❌ Erreur : ${error.message || "Un problème est survenu."}`;
       this.isError = true;
     } finally {
-      this.loading = false; // Désactiver le spinner de chargement
+      this.loading = false;
     }
   }
 
-  // Rediriger vers la page de connexion
   goToLogin() {
     this.router.navigate(['']);
   }

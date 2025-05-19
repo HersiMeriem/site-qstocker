@@ -14,14 +14,15 @@ import { StockService } from 'src/app/services/stock.service';
   styleUrls: ['./product-add.component.css']
 })
 export class ProductAddComponent {
-  productForm: FormGroup = this.fb.group({}); 
+  productForm: FormGroup = this.fb.group({});
   errorMessage: string | null = null;
   isLoading = false;
   qrCodeImage: string | null = null;
   imagePreview: string | null = null;
   showFileError = false;
   currentStockQuantity: number = 0;
-  showCustomTypeField = false;
+  showCustomCategoryField = false;
+  showCustomOlfactiveFamilyField = false;
   private readonly ID_PATTERN = /^PRD-\d{3,5}$/i;
   private readonly NAME_MIN_LENGTH = 2;
   private readonly NAME_MAX_LENGTH = 50;
@@ -43,7 +44,7 @@ export class ProductAddComponent {
     this.setupStockSync();
     const navigation = this.router.getCurrentNavigation();
     const state = navigation?.extras.state as { isPromo?: boolean };
-    
+
     if (state?.isPromo) {
       this.productForm.patchValue({
         status: 'promotion',
@@ -67,9 +68,13 @@ export class ProductAddComponent {
         Validators.minLength(this.NAME_MIN_LENGTH),
         Validators.maxLength(this.NAME_MAX_LENGTH)
       ]],
-      type: ['', Validators.required],
-      customType: [''],
+      brand: ['', Validators.required],
+      perfumeType: ['', Validators.required],
+      olfactiveFamily: ['', Validators.required],
+      customOlfactiveFamily: [''],
+      origin: ['', Validators.required],
       category: ['', Validators.required],
+      customCategory: [''],
       volume: ['50ml', Validators.required],
       customVolume: [''],
       stockQuantity: [0, [
@@ -83,15 +88,16 @@ export class ProductAddComponent {
       ]],
       promotionStart: [''],
       promotionEnd: [''],
-      info: ['', Validators.required]
+      info: ['', Validators.required],
+      isAuthentic: [true, Validators.required]
     });
-  
+
     // Gestion dynamique des validations pour les promotions
     this.productForm.get('status')?.valueChanges.subscribe(status => {
       const discountControl = this.productForm.get('discountPercentage');
       const startControl = this.productForm.get('promotionStart');
       const endControl = this.productForm.get('promotionEnd');
-  
+
       if (status === 'promotion') {
         discountControl?.setValidators([
           Validators.required,
@@ -105,30 +111,30 @@ export class ProductAddComponent {
         startControl?.clearValidators();
         endControl?.clearValidators();
       }
-  
+
       discountControl?.updateValueAndValidity();
       startControl?.updateValueAndValidity();
       endControl?.updateValueAndValidity();
     });
-  
+
     // Validation croisée des dates de promotion
     this.productForm.get('promotionStart')?.valueChanges.subscribe(() => {
       this.validatePromotionDates();
     });
-  
+
     this.productForm.get('promotionEnd')?.valueChanges.subscribe(() => {
       this.validatePromotionDates();
     });
   }
-  
+
   private validatePromotionDates(): void {
     const start = this.productForm.get('promotionStart')?.value;
     const end = this.productForm.get('promotionEnd')?.value;
-  
+
     if (start && end) {
       const startDate = new Date(start);
       const endDate = new Date(end);
-  
+
       if (startDate >= endDate) {
         this.productForm.get('promotionEnd')?.setErrors({ dateRange: true });
       } else {
@@ -149,7 +155,7 @@ export class ProductAddComponent {
     }
     this.productForm.get('customVolume')?.updateValueAndValidity();
   }
-  
+
   formatCustomVolume(): void {
     const customVolumeControl = this.productForm.get('customVolume');
     if (customVolumeControl) {
@@ -161,14 +167,24 @@ export class ProductAddComponent {
     }
   }
 
-  onTypeChange(): void {
-    this.showCustomTypeField = this.productForm.get('type')?.value === 'other';
-    if (this.showCustomTypeField) {
-      this.productForm.get('customType')?.setValidators([Validators.required]);
+  onCategoryChange(): void {
+    this.showCustomCategoryField = this.productForm.get('category')?.value === 'other';
+    if (this.showCustomCategoryField) {
+      this.productForm.get('customCategory')?.setValidators([Validators.required]);
     } else {
-      this.productForm.get('customType')?.clearValidators();
+      this.productForm.get('customCategory')?.clearValidators();
     }
-    this.productForm.get('customType')?.updateValueAndValidity();
+    this.productForm.get('customCategory')?.updateValueAndValidity();
+  }
+
+  onOlfactiveFamilyChange(): void {
+    this.showCustomOlfactiveFamilyField = this.productForm.get('olfactiveFamily')?.value === 'other';
+    if (this.showCustomOlfactiveFamilyField) {
+      this.productForm.get('customOlfactiveFamily')?.setValidators([Validators.required]);
+    } else {
+      this.productForm.get('customOlfactiveFamily')?.clearValidators();
+    }
+    this.productForm.get('customOlfactiveFamily')?.updateValueAndValidity();
   }
 
   private setupQRAutoGeneration(): void {
@@ -230,36 +246,41 @@ export class ProductAddComponent {
         }
       }
     });
-  } 
+  }
 
   async addProduct(): Promise<void> {
     this.errorMessage = null;
     this.markFormAsTouched();
-  
-    if (this.productForm.value.type === 'other' && !this.productForm.value.customType) {
-      this.errorMessage = 'Veuillez saisir le type de parfum manuellement';
+
+    if (this.productForm.value.category === 'other' && !this.productForm.value.customCategory) {
+      this.errorMessage = 'Veuillez saisir le public cible manuellement';
       return;
     }
-  
+
+    if (this.productForm.value.olfactiveFamily === 'other' && !this.productForm.value.customOlfactiveFamily) {
+      this.errorMessage = 'Veuillez saisir la famille olfactive manuellement';
+      return;
+    }
+
     if (this.productForm.invalid) {
       this.errorMessage = this.getFormErrors();
       return;
     }
-  
+
     if (!this.imagePreview || !this.qrCodeImage) {
       this.errorMessage = 'Veuillez compléter tous les médias requis';
       return;
     }
-  
+
     try {
       this.isLoading = true;
       const product = this.prepareProduct();
-      
+
       const existingStock = await firstValueFrom(
         this.stockService.getProduct(product.id).pipe(
           catchError(() => of(null))
       ));
-  
+
       if (existingStock) {
         const newQuantity = existingStock.quantite + product.stockQuantity;
         await this.stockService.updateStockQuantity(product.id, newQuantity);
@@ -274,7 +295,7 @@ export class ProductAddComponent {
           description: product.description || null
         });
       }
-  
+
       await this.productService.addProduct(product);
       this.handleSuccess();
     } catch (error: any) {
@@ -287,25 +308,30 @@ export class ProductAddComponent {
       this.isLoading = false;
     }
   }
-  
+
   private calculateUnitPrice(product: Product): number {
     return 0;
   }
-  
+
   private prepareProduct(): Product {
-    const type = this.productForm.value.type === 'other' 
-      ? this.productForm.value.customType 
-      : this.productForm.value.type;
-  
+    const category = this.productForm.value.category === 'other'
+      ? this.productForm.value.customCategory
+      : this.productForm.value.category;
+
     const volume = this.productForm.value.volume === 'other'
       ? this.productForm.value.customVolume
       : this.productForm.value.volume;
-  
+
+    const olfactiveFamily = this.productForm.value.olfactiveFamily === 'other'
+      ? this.productForm.value.customOlfactiveFamily
+      : this.productForm.value.olfactiveFamily;
+
     return {
       ...this.productForm.value,
       id: this.productForm.value.id.toUpperCase(),
-      type: type,
+      category: category,
       volume: volume,
+      olfactiveFamily: olfactiveFamily,
       description: this.productForm.value.info,
       imageUrl: this.imagePreview!,
       qrCode: this.qrCodeImage!,
@@ -331,39 +357,51 @@ export class ProductAddComponent {
   private getFormErrors(): string {
     const errors: string[] = [];
     const controls = this.productForm.controls;
-  
+
     if (controls['id']?.errors) {
       errors.push('- Format ID invalide (PRD-0000)');
     }
-    
+
     if (controls['name']?.errors) {
       errors.push(`- Nom invalide (${this.NAME_MIN_LENGTH}-${this.NAME_MAX_LENGTH} caractères)`);
     }
-    
-    if (controls['type']?.errors) {
+
+    if (controls['brand']?.errors) {
+      errors.push('- Marque requise');
+    }
+
+    if (controls['perfumeType']?.errors) {
       errors.push('- Type de parfum requis');
     }
-    
-    if (controls['customType']?.errors) {
-      errors.push('- Type personnalisé requis');
+
+    if (controls['olfactiveFamily']?.errors) {
+      errors.push('- Famille olfactive requise');
     }
-    
+
+    if (controls['origin']?.errors) {
+      errors.push('- Origine requise');
+    }
+
     if (controls['category']?.errors) {
       errors.push('- Public cible requis');
     }
-    
+
+    if (controls['customCategory']?.errors) {
+      errors.push('- Public cible personnalisé requis');
+    }
+
     if (controls['stockQuantity']?.errors) {
       errors.push('- Quantité en stock invalide');
     }
-    
+
     if (controls['info']?.errors) {
       errors.push('- Description requise');
     }
-    
+
     if (controls['volume']?.errors) {
       errors.push('- Volume requis');
     }
-    
+
     if (controls['customVolume']?.errors) {
       if (controls['customVolume']?.errors?.['required']) {
         errors.push('- Volume personnalisé requis');
@@ -372,7 +410,7 @@ export class ProductAddComponent {
         errors.push('- Format de volume invalide (doit être comme 75ml)');
       }
     }
-  
+
     return 'Erreurs de validation :\n' + errors.join('\n');
   }
 
@@ -385,8 +423,9 @@ export class ProductAddComponent {
     this.imagePreview = null;
     this.qrCodeImage = null;
     this.showFileError = false;
-    this.showCustomTypeField = false;
     this.showCustomVolumeField = false;
+    this.showCustomCategoryField = false;
+    this.showCustomOlfactiveFamilyField = false;
     this.markFormAsTouched();
   }
 
@@ -397,7 +436,7 @@ export class ProductAddComponent {
 
   getValidationMessage(controlName: string): string {
     const control = this.productForm.get(controlName);
-    
+
     if (control?.hasError('required')) return 'Ce champ est obligatoire';
     if (control?.hasError('pattern')) return 'Format ID invalide';
     if (control?.hasError('minlength')) return `Minimum ${control.errors?.['minlength'].requiredLength} caractères`;
@@ -405,5 +444,20 @@ export class ProductAddComponent {
     if (control?.hasError('min')) return 'La valeur doit être positive';
 
     return 'Valeur invalide';
+  }
+
+  private handleScannedData(scannedData: any): void {
+    if (scannedData.id) {
+      this.productForm.patchValue({
+        id: scannedData.id
+      });
+    }
+
+    if (scannedData.name) {
+      this.productForm.patchValue({
+        name: scannedData.name
+      });
+      this.generateQRCode(scannedData.name);
+    }
   }
 }

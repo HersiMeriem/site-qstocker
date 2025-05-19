@@ -87,10 +87,11 @@ interface Activity {
     action: string;
   }>;
 }
+
 interface LowStockProduct {
   id: string;
   name: string;
-  reference: string;
+  imageUrl?: string;
   category: string;
   quantity: number;
   threshold: number;
@@ -102,7 +103,6 @@ interface LowStockProduct {
     leadTime: number;
     contact: string;
   };
-  imageUrl?: string;
 }
 
 interface Activity {
@@ -579,50 +579,6 @@ activityStats = {
     });
   }
 
-  createProductDistributionChart(products: any[]): void {
-    const productsByCategory = products.reduce((acc, product) => {
-      if (!acc[product.category]) {
-        acc[product.category] = 0;
-      }
-      acc[product.category]++;
-      return acc;
-    }, {});
-
-    const labels = Object.keys(productsByCategory);
-    const data = Object.values(productsByCategory);
-
-    if (this.productDistributionChart) {
-      this.productDistributionChart.destroy();
-    }
-
-    this.productDistributionChart = new Chart('productDistributionChart', {
-      type: 'doughnut',
-      data: {
-        labels: labels,
-        datasets: [{
-          label: 'Produits par Catégorie',
-          data: data,
-          backgroundColor: [
-            'rgba(255, 99, 132, 0.7)',
-            'rgba(54, 162, 235, 0.7)',
-            'rgba(255, 206, 86, 0.7)',
-            'rgba(75, 192, 192, 0.7)',
-            'rgba(153, 102, 255, 0.7)'
-          ],
-          borderWidth: 1
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          title: {
-            display: true,
-            text: 'Répartition des Produits'
-          }
-        }
-      }
-    });
-  }
 
   createCategoryPerformanceChart(products: any[]): void {
     const categories = [...new Set(products.map(p => p.category))];
@@ -932,22 +888,8 @@ activityStats = {
     });
   }
 
-  loadStockData(): void {
-    this.stockService.getStock().subscribe({
-      next: stock => {
-        this.lowStockProducts = stock.filter(item => item.quantite < item.seuil);
-        this.kpiCards[2].value = this.lowStockProducts.length;
-        
-        // Calcul des nouvelles métriques
-        this.stockMetrics = {
-          ...this.stockMetrics,
-          turnoverRate: this.calculateTurnoverRate(stock),
-          optimizationPotential: this.calculateOptimizationPotential(stock)
-        };
-      },
-      error: err => console.error('Erreur de chargement du stock:', err)
-    });
-  }
+
+
   private calculateTurnoverRate(stock: any[]): number {
     const totalValue = stock.reduce((sum, item) => sum + (item.quantite * item.prixUnitaireHT), 0);
     const monthlySales = this.monthlyRevenue;
@@ -1294,4 +1236,89 @@ loadRecentActivities(): void {
     }
   });
 }
+
+
+handleImageError(product: any): void {
+  console.error('Erreur de chargement de l\'image pour le produit:', product.nomProduit, 'URL:', product.imageUrl);
+  // Remplacez l'URL de l'image par une image par défaut
+  product.imageUrl = 'assets/default-product.png';
+}
+
+
+loadStockData(): void {
+  this.stockService.getStock().subscribe({
+    next: stock => {
+      this.lowStockProducts = stock.filter(item => item.quantite < item.seuil);
+      this.kpiCards[2].value = this.lowStockProducts.length;
+
+      // Calcul des nouvelles métriques
+      this.stockMetrics = {
+        ...this.stockMetrics,
+        turnoverRate: this.calculateTurnoverRate(stock),
+        optimizationPotential: this.calculateOptimizationPotential(stock)
+      };
+
+      // Ajoutez ce log pour vérifier les URLs des images
+      this.lowStockProducts.forEach(product => {
+        console.log('Image URL:', product.imageUrl);
+      });
+    },
+    error: err => console.error('Erreur de chargement du stock:', err)
+  });
+}
+
+
+createProductDistributionChart(products: any[]): void {
+  if (!products || products.length === 0) {
+    console.error('No products data available');
+    return;
+  }
+
+  const productsByCategory = products.reduce((acc, product) => {
+    if (!acc[product.category]) {
+      acc[product.category] = 0;
+    }
+    acc[product.category]++;
+    return acc;
+  }, {});
+
+  const labels = Object.keys(productsByCategory);
+  const data = Object.values(productsByCategory);
+
+  if (this.productDistributionChart) {
+    this.productDistributionChart.destroy();
+  }
+
+  this.productDistributionChart = new Chart('productDistributionChart', {
+    type: 'doughnut',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Produits par Catégorie',
+        data: data,
+        backgroundColor: [
+          'rgba(255, 99, 132, 0.7)',
+          'rgba(54, 162, 235, 0.7)',
+          'rgba(255, 206, 86, 0.7)',
+          'rgba(75, 192, 192, 0.7)',
+          'rgba(153, 102, 255, 0.7)'
+        ],
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        title: {
+          display: true,
+          text: 'Répartition des Produits'
+        }
+      }
+    }
+  });
+}
+
+
+
+
 }

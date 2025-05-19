@@ -486,3 +486,48 @@ del {
   margin-right: 8px;
   font-size: 16px;
 }
+
+
+
+.image-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.upload-box {
+  position: relative;
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  margin-bottom: 10px;
+}
+
+.upload-box:hover {
+  border-color: #999;
+}
+
+.upload-box.active {
+  border-color: #4CAF50;
+  background-color: #f8f9fa;
+}
+
+.image-preview {
+  max-width: 100%;
+  max-height: 200px;
+  display: block;
+  margin: 0 auto;
+}
+
+.upload-placeholder {
+  color: #666;
+}
+
+.upload-placeholder i {
+  font-size: 48px;
+  margin-bottom: 10px;
+  color: #aaa;
+}

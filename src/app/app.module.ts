@@ -121,8 +121,8 @@ import { DetailsProductsComponent } from './admin/details-products/details-produ
 import { DashboardFinancierComponent } from './admin/dashboard-financier/dashboard-financier.component';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { PromotionDialogComponent } from './responsable/promotion-dialog/promotion-dialog.component';
-
-
+import { LivraisonComponent } from './responsable/livraison/livraison.component';
+import { DetailleCommandeComponent } from './responsable/detaille-commande/detaille-commande.component';
 const config: SocketIoConfig = { 
   url: 'http://localhost:3000', // Remplacez par votre URL de serveur
   options: {}
@@ -202,6 +202,8 @@ export function HttpLoaderFactory(http: HttpClient) {
     DetailsProductsComponent,
     DashboardFinancierComponent,
     PromotionDialogComponent,
+    LivraisonComponent,
+    DetailleCommandeComponent,
   
   ],
   imports: [

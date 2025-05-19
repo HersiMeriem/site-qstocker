@@ -46,7 +46,7 @@ export interface StockItem {
   description?: string | null;
   editingPrice?: boolean;
   originalPrice?: number;
-  status: 'active' | 'inactive' | 'promotion';
+  status: 'active' | 'inactive' | 'promotion'| 'out-of-stock';
   discount?: number;
   promotion?: Promotion; 
   seuil?: number;

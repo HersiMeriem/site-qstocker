@@ -20,15 +20,17 @@
         <span class="badge bg-light text-dark">{{ product.id }}</span>
       </div>
     </div>
-    
+
     <div class="card-body">
       <div class="row">
         <!-- Colonne gauche (Image + QR Code) -->
         <div class="col-md-4">
           <div class="product-image-container mb-4 p-3 border rounded bg-white">
-            <img [src]="product.imageUrl || 'assets/default-product.png'" 
-                 class="img-fluid rounded"
-                 alt="Image produit">
+            <img
+              [src]="product.imageUrl || 'assets/default-product.png'"
+              class="img-fluid rounded"
+              alt="Image produit"
+            />
           </div>
 
           <!-- Section QR Code -->
@@ -36,31 +38,31 @@
             <h5 class="text-center mb-3">
               <i class="fas fa-qrcode me-2"></i>QR Code du produit
             </h5>
-            
             <div *ngIf="qrCodeUrl" class="text-center">
-              <img [src]="qrCodeUrl" 
-                   alt="QR Code"
-                   class="img-thumbnail qr-image">
+              <img [src]="qrCodeUrl" alt="QR Code" class="img-thumbnail qr-image" />
               <p class="text-muted small mt-2">
                 Scannez ce code pour plus d'informations
               </p>
             </div>
-            
             <div *ngIf="!qrCodeUrl" class="alert alert-warning text-center">
               <i class="fas fa-exclamation-triangle me-2"></i>
               QR Code non disponible
             </div>
           </div>
         </div>
-        
+
         <!-- Colonne droite (Détails) -->
         <div class="col-md-8">
           <h3 class="product-name">{{ product.name }}</h3>
-          
+
+          <!-- Badges principaux -->
           <div class="d-flex flex-wrap gap-2 mb-3">
-            <span class="badge bg-info">{{ product.type }}</span>
-            <span class="badge bg-secondary">{{ product.category }}</span>
-            
+  <!--  le badge pour la famille olfactive -->
+      <span class="badge olfactive-family-badge">
+  {{ product.olfactiveFamily }}
+</span>      
+      <span class="badge bg-secondary">{{ product.category }}</span>
+
             <!-- Badge de statut -->
             <span class="badge" [ngClass]="{
               'bg-success': product.status === 'active',
@@ -74,15 +76,28 @@
               }"></i>
               {{ getStatusLabel(product.status) }}
             </span>
-            
+
             <!-- Badge de promotion si applicable -->
-            <span *ngIf="product.status === 'promotion' && product.promotion" 
+            <span *ngIf="product.status === 'promotion' && product.promotion"
                   class="badge bg-purple text-white">
               <i class="fas fa-tag me-1"></i>
               PROMO -{{ product.promotion.discountPercentage }}%
               <span *ngIf="!isPromotionActive()" class="small">(Expirée)</span>
             </span>
 
+            <!-- Badge d'authenticité -->
+            <span class="badge" [ngClass]="{
+              'bg-success': product.isAuthentic,
+              'bg-danger': !product.isAuthentic
+            }">
+              <i class="fas" [ngClass]="{
+                'fa-check-circle': product.isAuthentic,
+                'fa-times-circle': !product.isAuthentic
+              }"></i>
+              {{ product.isAuthentic ? 'Authentique' : 'Contrefaçon' }}
+            </span>
+
+            <!-- Badge de stock -->
             <span class="badge bg-success" *ngIf="realStockQuantity !== null && realStockQuantity > 0">
               <i class="fas fa-check-circle me-1"></i>
               En stock
@@ -96,7 +111,12 @@
               Stock inconnu
             </span>
           </div>
-          
+
+          <!-- Ajoutez les nouveaux champs ici -->
+          <p class="product-brand"><strong>Marque:</strong> {{ product.brand }}</p>
+          <p class="product-perfume-type"><strong>Type de parfum:</strong> {{ product.perfumeType }}</p>
+          <p class="product-origin"><strong>Origine:</strong> {{ product.origin }}</p>
+
           <!-- Section des Prix -->
           <div class="product-prices mb-4">
             <!-- Prix d'achat (Prix Unitaire HT) -->
@@ -131,7 +151,7 @@
                 <div class="mt-1">
                   <small class="text-muted">
                     Économie: {{ calculateSavings() | number:'1.3-3' }} DT
-                                    </small>
+                  </small>
                 </div>
               </div>
             </div>
@@ -159,23 +179,23 @@
               </ng-template>
             </div>
           </div>
-          
+
+          <!-- Description du produit -->
           <div class="product-description mb-4">
             <h5>
-              <i class="fas fa-align-left me-2"></i>
-              Description
+              <i class="fas fa-align-left me-2"></i>Description
             </h5>
             <p class="px-3">{{ product.description || 'Aucune description disponible' }}</p>
           </div>
-          
-          <!-- Section Détails de promotion -->
+
+          <!-- Détails de la promotion -->
           <div *ngIf="product.status === 'promotion' && product.promotion" class="promotion-details mb-4 p-3 bg-light rounded">
             <h5><i class="fas fa-tag me-2"></i>Détails de la promotion</h5>
             <div class="row">
               <div class="col-md-6">
                 <p><strong>Remise:</strong> {{ product.promotion.discountPercentage }}%</p>
                 <p><strong>Prix original:</strong> {{ stockItem?.prixDeVente | number:'1.2-2' }} DT</p>
-                <p><strong>Prix promotionnel:</strong> 
+                <p><strong>Prix promotionnel:</strong>
                   <span class="text-success fw-bold">
                     {{ calculateDiscountedPrice() | number:'1.2-2' }} DT
                   </span>
@@ -184,7 +204,7 @@
               <div class="col-md-6">
                 <p><strong>Début:</strong> {{ product.promotion.startDate | date:'dd/MM/yyyy' }}</p>
                 <p><strong>Fin:</strong> {{ product.promotion.endDate | date:'dd/MM/yyyy' }}</p>
-                <p><strong>Statut après promotion:</strong> 
+                <p><strong>Statut après promotion:</strong>
                   <span class="badge" [ngClass]="{
                     'bg-success': product.postPromoStatus === 'active',
                     'bg-danger': product.postPromoStatus === 'inactive'
@@ -195,11 +215,11 @@
               </div>
             </div>
             <div *ngIf="!isPromotionActive()" class="alert alert-warning mt-2 mb-0">
-              <i class="fas fa-exclamation-triangle me-2"></i>
-              Cette promotion est expirée
+              <i class="fas fa-exclamation-triangle me-2"></i>Cette promotion est expirée
             </div>
           </div>
-          
+
+          <!-- Métadonnées du produit -->
           <div class="product-meta">
             <div class="row">
               <div class="col-md-6">
@@ -219,7 +239,8 @@
         </div>
       </div>
     </div>
-    
+
+    <!-- Footer avec actions -->
     <div class="card-footer bg-light">
       <div class="d-flex justify-content-between">
         <button routerLink="/responsable/product-list" class="btn btn-outline-secondary">

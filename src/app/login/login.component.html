@@ -1,3 +1,4 @@
+<!-- login.component.html -->
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -20,15 +21,30 @@
             <div class="form-container">
               <h2>Connexion</h2>
               
-              <div class="input-container">
-                <input type="email" [(ngModel)]="email" placeholder="Email" required>
-                <i class="fas fa-envelope"></i>
+              <div *ngIf="errorMessage" class="error-message">
+                {{errorMessage}}
               </div>
               
-              <div class="input-container">
-                <input type="password" [(ngModel)]="password" placeholder="Mot de passe" required>
-                <i class="fas fa-lock"></i>
-              </div>
+              <form [formGroup]="loginForm">
+                <div class="input-container">
+                  <input 
+                    type="email" 
+                    formControlName="email" 
+                    placeholder="Email" 
+                    [class.invalid]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
+                  <i class="fas fa-envelope"></i>
+                </div>
+                
+                <div class="input-container">
+                  <input 
+                    type="password" 
+                    formControlName="password" 
+                    placeholder="Mot de passe" 
+                    [class.invalid]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
+                  <i class="fas fa-lock"></i>
+                </div>
+              </form>
+              
               <a routerLink="/forgot-password">Mot de passe oublié ?</a>
               
               <div *ngIf="loading" class="spinner"></div>
@@ -43,7 +59,6 @@
         </div>
       </div>
 
-      <!-- Face arrière (Register) -->
       <div class="back">
         <app-register (goToLogin)="toggleView()"></app-register>
       </div>

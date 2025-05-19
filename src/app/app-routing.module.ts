@@ -34,6 +34,7 @@ import { FinancialDashboardComponent } from './responsable/financial-dashboard/f
 import { FacturationCommandesComponent } from './responsable/facturation-commandes/facturation-commandes.component';
 import { DetailsProductsComponent } from './admin/details-products/details-products.component';
 import { DashboardFinancierComponent } from './admin/dashboard-financier/dashboard-financier.component';
+import { LivraisonComponent } from './responsable/livraison/livraison.component';
 
 const routes: Routes = [
   { path: '', component: LoginComponent },
@@ -68,6 +69,7 @@ const routes: Routes = [
     { path: 'sales', component: SalesComponent },
     { path: 'financial-dashboard', component: FinancialDashboardComponent},
     { path: 'facturation-commande', component: FacturationCommandesComponent},
+   { path: 'livraison', component: LivraisonComponent},
     { path: 'product-details/:id', component: ProductDetailsComponent },
     { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
   ]},

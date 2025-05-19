@@ -111,3 +111,24 @@ del {
   font-size: 0.6em;
   vertical-align: middle;
 }
+
+.olfactive-family-badge {
+  background: linear-gradient(135deg, #a8e6cf, #dcedc1); /* Dégradé doux et élégant */
+  color: #2b584b; /* Texte vert foncé pour un bon contraste */
+  padding: 6px 14px;
+  border-radius: 999px; /* Badge très arrondi */
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  box-shadow: 0 4px 8px rgba(168, 230, 207, 0.3); /* Ombre douce et colorée */
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: default;
+}
+
+.olfactive-family-badge:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 12px rgba(168, 230, 207, 0.4);
+}

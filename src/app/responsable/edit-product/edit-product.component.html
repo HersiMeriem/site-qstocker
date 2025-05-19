@@ -16,7 +16,7 @@
       <div class="form-column">
         <div class="form-section">
           <h2 class="section-title">Identification</h2>
-          
+
           <div class="form-group">
             <label>ID Produit</label>
             <input type="text" formControlName="id" class="modern-input" [attr.disabled]="true">
@@ -24,7 +24,7 @@
 
           <div class="form-group">
             <label>Nom du Produit <span class="required">*</span></label>
-            <input type="text" formControlName="name" 
+            <input type="text" formControlName="name"
                    (input)="generateQRCode(productForm.value.name)"
                    placeholder="Nom" class="modern-input">
             <div class="validation-hint" *ngIf="showValidation('name')">
@@ -33,42 +33,95 @@
           </div>
         </div>
 
+        <div class="form-group">
+          <label>Authenticité <span class="required">*</span></label>
+          <select formControlName="isAuthentic" class="modern-select">
+            <option [ngValue]="true">Authentique</option>
+            <option [ngValue]="false">Contrefaçon</option>
+          </select>
+        </div>
+
         <div class="form-section">
           <h2 class="section-title">Caractéristiques</h2>
-          
+
+          <!-- Champ Marque -->
           <div class="form-group">
-            <label>Type de Parfum <span class="required">*</span></label>
-            <select formControlName="type" class="modern-select" (change)="onTypeChange()">
+            <label>Marque <span class="required">*</span></label>
+            <input type="text" formControlName="brand" class="modern-input" placeholder="Marque">
+            <div *ngIf="showValidation('brand')" class="error-hint">
+              {{ getValidationMessage('brand') }}
+            </div>
+          </div>
+
+          <!-- Champ Type de parfum -->
+          <div class="form-group">
+            <label>Type de parfum <span class="required">*</span></label>
+            <select formControlName="perfumeType" class="modern-select">
               <option value="" disabled selected>Sélectionner...</option>
-              <option value="Floral">Floral</option>
-              <option value="Sucré">Sucré</option>
+              <option value="Eau de Toilette (EDT)">Eau de Toilette (EDT)</option>
+              <option value="Eau de Parfum (EDP)">Eau de Parfum (EDP)</option>
+              <option value="Parfum (Extrait)">Parfum (Extrait)</option>
+              <option value="Cologne">Cologne</option>
+            </select>
+            <div *ngIf="showValidation('perfumeType')" class="error-hint">
+              {{ getValidationMessage('perfumeType') }}
+            </div>
+          </div>
+
+          <!-- Champ Famille olfactive -->
+          <div class="form-group">
+            <label>Famille olfactive <span class="required">*</span></label>
+            <select formControlName="olfactiveFamily" class="modern-select" (change)="onOlfactiveFamilyChange()">
+              <option value="" disabled selected>Sélectionner...</option>
               <option value="Boisé">Boisé</option>
               <option value="Oriental">Oriental</option>
+              <option value="Floral">Floral</option>
+              <option value="Fruité">Fruité</option>
+              <option value="Fougère">Fougère</option>
               <option value="other">Autre</option>
             </select>
-            <div *ngIf="showCustomTypeField" class="form-group">
-              <input type="text" 
-                     formControlName="customType" 
-                     placeholder="Entrez le type manuellement"
-                     class="modern-input">
-              <div *ngIf="productForm.get('customType')?.invalid && 
-                         (productForm.get('customType')?.dirty || productForm.get('customType')?.touched)" 
+            <div *ngIf="showCustomOlfactiveFamilyField" class="form-group">
+              <input type="text" formControlName="customOlfactiveFamily" placeholder="Entrez la famille olfactive" class="modern-input">
+              <div *ngIf="productForm.get('customOlfactiveFamily')?.invalid &&
+                          (productForm.get('customOlfactiveFamily')?.dirty || productForm.get('customOlfactiveFamily')?.touched)"
                    class="error-hint">
                 Ce champ est obligatoire
               </div>
             </div>
           </div>
 
+          <!-- Champ Origine -->
+          <div class="form-group">
+            <label>Origine <span class="required">*</span></label>
+            <input type="text" formControlName="origin" class="modern-input" placeholder="Origine">
+            <div *ngIf="showValidation('origin')" class="error-hint">
+              {{ getValidationMessage('origin') }}
+            </div>
+          </div>
+
           <div class="form-group">
             <label>Public Cible <span class="required">*</span></label>
-            <select formControlName="category" class="modern-select">
+            <select formControlName="category" class="modern-select" (change)="onCategoryChange()">
               <option value="" disabled selected>Sélectionner...</option>
               <option value="Homme">Homme</option>
               <option value="Femme">Femme</option>
               <option value="Unisexe">Unisexe</option>
               <option value="Enfant-Fille">Enfant-Fille</option>
               <option value="Enfant-Garçon">Enfant-Garçon</option>
+              <option value="Bébé">Bébé</option>
+              <option value="other">Autre</option>
             </select>
+            <div *ngIf="showCustomCategoryField" class="form-group">
+              <input type="text"
+                     formControlName="customCategory"
+                     placeholder="Entrez le public cible"
+                     class="modern-input">
+              <div *ngIf="productForm.get('customCategory')?.invalid &&
+                          (productForm.get('customCategory')?.dirty || productForm.get('customCategory')?.touched)"
+                   class="error-hint">
+                Ce champ est obligatoire
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -76,7 +129,7 @@
       <div class="form-column">
         <div class="form-section">
           <h2 class="section-title">Gestion de Stock</h2>
-          
+
           <div class="form-group">
             <label>Volume <span class="required">*</span></label>
             <select formControlName="volume" class="modern-select" (change)="onVolumeChange()">
@@ -88,19 +141,19 @@
               <option value="other">Autre</option>
             </select>
             <div *ngIf="showCustomVolumeField" class="form-group">
-              <input type="text" 
-                     formControlName="customVolume" 
+              <input type="text"
+                     formControlName="customVolume"
                      placeholder="Entrez le volume (ex: 75ml)"
                      class="modern-input"
                      (blur)="formatCustomVolume()">
-              <div *ngIf="productForm.get('customVolume')?.invalid && 
-                         (productForm.get('customVolume')?.dirty || productForm.get('customVolume')?.touched)" 
+              <div *ngIf="productForm.get('customVolume')?.invalid &&
+                         (productForm.get('customVolume')?.dirty || productForm.get('customVolume')?.touched)"
                    class="error-hint">
                 <div *ngIf="productForm.get('customVolume')?.errors?.['required']">
                   Ce champ est obligatoire
                 </div>
                 <div *ngIf="productForm.get('customVolume')?.errors?.['pattern']">
-                  Format invalide (ex: 75ml)
+                  Le volume doit être un nombre suivi de "ml" (ex: 75ml)
                 </div>
               </div>
             </div>
@@ -108,7 +161,7 @@
 
           <div class="form-group">
             <label>Quantité en Stock <span class="required">*</span></label>
-            <input type="number" formControlName="stockQuantity" 
+            <input type="number" formControlName="stockQuantity"
                    min="0" class="modern-input">
           </div>
 
@@ -126,13 +179,13 @@
             <div class="promotion-fields">
               <div class="promo-field">
                 <label>Remise (%)</label>
-                <input type="number" 
-                       formControlName="discountPercentage" 
+                <input type="number"
+                       formControlName="discountPercentage"
                        min="1" max="100"
                        placeholder="10"
                        class="modern-input">
-                <div class="error-hint" *ngIf="productForm.get('discountPercentage')?.invalid && 
-                                           (productForm.get('discountPercentage')?.dirty || 
+                <div class="error-hint" *ngIf="productForm.get('discountPercentage')?.invalid &&
+                                           (productForm.get('discountPercentage')?.dirty ||
                                             productForm.get('discountPercentage')?.touched)">
                   Entre 1% et 100%
                 </div>
@@ -140,12 +193,12 @@
 
               <div class="promo-field">
                 <label>Date début</label>
-                <input type="date" 
-                       formControlName="promotionStart" 
+                <input type="date"
+                       formControlName="promotionStart"
                        class="modern-input"
                        [min]="todayDate">
-                <div class="error-hint" *ngIf="productForm.get('promotionStart')?.invalid && 
-                                           (productForm.get('promotionStart')?.dirty || 
+                <div class="error-hint" *ngIf="productForm.get('promotionStart')?.invalid &&
+                                           (productForm.get('promotionStart')?.dirty ||
                                             productForm.get('promotionStart')?.touched)">
                   Date requise
                 </div>
@@ -153,12 +206,12 @@
 
               <div class="promo-field">
                 <label>Date fin</label>
-                <input type="date" 
-                       formControlName="promotionEnd" 
+                <input type="date"
+                       formControlName="promotionEnd"
                        class="modern-input"
                        [min]="productForm.get('promotionStart')?.value || todayDate">
-                <div class="error-hint" *ngIf="productForm.get('promotionEnd')?.invalid && 
-                                           (productForm.get('promotionEnd')?.dirty || 
+                <div class="error-hint" *ngIf="productForm.get('promotionEnd')?.invalid &&
+                                           (productForm.get('promotionEnd')?.dirty ||
                                             productForm.get('promotionEnd')?.touched)">
                   Doit être après la date de début
                 </div>
@@ -176,15 +229,15 @@
       <div class="media-group">
         <label class="media-label">
           <span class="label-text">Image du Produit</span>
-          <input type="file" id="image" (change)="onFileSelected($event)" 
+          <input type="file" id="image" (change)="onFileSelected($event)"
                  accept="image/*" hidden>
           <div class="upload-box" [class.active]="imagePreview || existingImage">
             <div *ngIf="!imagePreview && !existingImage" class="upload-placeholder">
               <i class="fas fa-cloud-upload-alt"></i>
               <p>Glisser-déposer ou cliquer pour uploader</p>
             </div>
-            <img *ngIf="imagePreview || existingImage" 
-                 [src]="imagePreview || existingImage" 
+            <img *ngIf="imagePreview || existingImage"
+                 [src]="imagePreview || existingImage"
                  alt="Aperçu" class="image-preview">
           </div>
           <div class="validation-hint" *ngIf="showFileError">
@@ -197,7 +250,7 @@
         <label class="media-label">
           <span class="label-text">QR Code</span>
           <div class="qr-container generated">
-            <img [src]="qrCodeImage || existingQrCode" 
+            <img [src]="qrCodeImage || existingQrCode"
                  alt="QR Code" class="qr-preview">
           </div>
         </label>
@@ -206,7 +259,7 @@
 
     <div class="form-section">
       <h2 class="section-title">Description</h2>
-      <textarea formControlName="info" 
+      <textarea formControlName="info"
                 placeholder="Décrire le produit en détail..."
                 class="modern-textarea"></textarea>
       <small class="char-counter">
@@ -221,9 +274,9 @@
       <button type="button" (click)="cancelEdit()" class="cancel-btn" [disabled]="isLoading">
         <i class="fas fa-times-circle"></i> Annuler
       </button>
-      
-      <button type="submit" 
-              [disabled]="isLoading || productForm.invalid || productForm.pristine" 
+
+      <button type="submit"
+              [disabled]="isLoading || productForm.invalid || productForm.pristine"
               class="submit-btn">
         <span *ngIf="!isLoading && !showSaveSuccess">
           <i class="fas fa-save"></i> Enregistrer
@@ -238,64 +291,6 @@
     </div>
   </form>
 </div>
-
-<!-- Promotion Dialog Template -->
-<ng-template #promoDialog>
-  <h2 mat-dialog-title>🛎️ Gestion de Promotion</h2>
-  <mat-dialog-content>
-    <form [formGroup]="promoForm">
-      <div class="row">
-        <div class="col-12">
-          <mat-form-field appearance="fill">
-            <mat-label>Pourcentage de réduction</mat-label>
-            <input matInput type="number" formControlName="discount" min="1" max="100">
-            <mat-error *ngIf="promoForm.get('discount')?.invalid">
-              Doit être entre 1% et 100%
-            </mat-error>
-          </mat-form-field>
-        </div>
-
-        <div class="col-6">
-          <mat-form-field>
-            <mat-label>Date de début</mat-label>
-            <input matInput [matDatepicker]="startPicker" formControlName="startDate">
-            <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
-            <mat-datepicker #startPicker></mat-datepicker>
-            <mat-error *ngIf="promoForm.get('startDate')?.invalid">
-              Date requise
-            </mat-error>
-          </mat-form-field>
-        </div>
-
-        <div class="col-6">
-          <mat-form-field>
-            <mat-label>Date de fin</mat-label>
-            <input matInput [matDatepicker]="endPicker" formControlName="endDate">
-            <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
-            <mat-datepicker #endPicker></mat-datepicker>
-            <mat-error *ngIf="promoForm.get('endDate')?.invalid">
-              Doit être après la date de début
-            </mat-error>
-          </mat-form-field>
-        </div>
-
-        <div class="col-12">
-          <mat-form-field>
-            <mat-label>Statut après promotion</mat-label>
-            <mat-select formControlName="postPromoStatus">
-              <mat-option value="active">Actif</mat-option>
-              <mat-option value="inactive">Inactif</mat-option>
-            </mat-select>
-          </mat-form-field>
-        </div>
-      </div>
-    </form>
-  </mat-dialog-content>
-  <mat-dialog-actions align="end">
-    <button mat-button mat-dialog-close>Annuler</button>
-    <button mat-raised-button color="primary" (click)="savePromotion()">Enregistrer</button>
-  </mat-dialog-actions>
-</ng-template>
 
 <div *ngIf="showSaveSuccess" class="save-success-message">
   <div class="message-content">

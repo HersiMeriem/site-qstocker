@@ -2,14 +2,17 @@
   <header class="list-header">
     <div class="header-top">
       <h1 class="title">📦 Liste des Produits</h1>
-      <div class="promo-btn-container">
-        <!-- Supprimé l'ancien bouton de promotion -->
+      <div class="scanner-controls">
+        <button mat-flat-button (click)="toggleScanner()" class="scan-btn">
+          <i class="fas fa-qrcode"></i>
+          {{ scannerActive ? 'Arrêter le scan' : 'Scanner un produit' }}
+        </button>
       </div>
     </div>
     <div class="controls">
       <div class="search-box">
-        <input type="text" 
-               [(ngModel)]="searchTerm" 
+        <input type="text"
+               [(ngModel)]="searchTerm"
                (input)="filterProducts()"
                placeholder="Rechercher par nom, ID, type ou catégorie..."
                class="search-input">
@@ -30,23 +33,56 @@
     </div>
   </header>
 
+  <div class="scanner-container" *ngIf="scannerActive">
+    <zxing-scanner
+      [enable]="scannerActive"
+      [formats]="supportedFormats"
+      (scanSuccess)="onScanSuccess($event)"
+      (scanError)="onScanError($event)"
+      class="scanner-viewport">
+    </zxing-scanner>
+
+    <div class="scanner-overlay">
+      <div class="scan-frame"></div>
+      <p class="scan-instructions">Scannez le QR code du produit</p>
+    </div>
+
+    <div class="scan-actions">
+      <button class="scan-action-btn scan-edit" (click)="scanMode = 'edit'; scannerActive = true">
+        <i class="fas fa-edit"></i> Modifier
+      </button>
+      <button class="scan-action-btn scan-delete" (click)="scanMode = 'delete'; scannerActive = true">
+        <i class="fas fa-trash"></i> Supprimer
+      </button>
+      <button class="scan-action-btn scan-view" (click)="scanMode = 'view'; scannerActive = true">
+        <i class="fas fa-eye"></i> Consulter
+      </button>
+    </div>
+
+    <button mat-flat-button (click)="scannerActive = false; scanMode = null" class="close-scanner-btn">
+      <i class="fas fa-times"></i> Fermer
+    </button>
+  </div>
+
   <!-- Contrôles de sélection -->
   <div class="selection-controls" *ngIf="filteredProducts.length > 0">
     <mat-checkbox
       [checked]="isAllSelected()"
       [indeterminate]="selection.hasValue() && !isAllSelected()"
-      (change)="toggleAll()">
+      (change)="toggleAll()"
+    >
       Sélectionner tout
     </mat-checkbox>
-  
-    <button 
+
+    <button
       mat-flat-button
-      (click)="openPromotionDialog()" 
+      (click)="openPromotionDialog()"
       class="promo-fab"
       [disabled]="selection.selected.length === 0 || isPromotionDialogOpen"
-      [class.promo-active]="selection.selected.length > 0">
+      [class.promo-active]="selection.selected.length > 0"
+    >
       <i class="fas fa-tag"></i>
-      <span class="promo-badge">{{selection.selected.length}}</span>
+      <span class="promo-badge">{{ selection.selected.length }}</span>
       <span class="promo-label">Gérer les promotions</span>
     </button>
   </div>
@@ -62,20 +98,21 @@
       <mat-checkbox
         [checked]="selection.isSelected(product)"
         (change)="selection.toggle(product)"
-        class="product-checkbox">
+        class="product-checkbox"
+      >
       </mat-checkbox>
 
       <div class="card-content">
         <div class="image-section">
-          <img [src]="product.imageUrl || 'assets/default-product.png'" 
-               alt="Image produit"
-               class="product-image">
-          
+          <img
+            [src]="product.imageUrl || 'assets/default-product.png'"
+            alt="Image produit"
+            class="product-image"
+          />
+
           <div class="product-identifier">
             <div class="qr-wrapper">
-              <img [src]="product.qrCode" 
-                   alt="QR Code" 
-                   class="qr-code">
+              <img [src]="product.qrCode" alt="QR Code" class="qr-code" />
             </div>
             <span class="product-id">REF-{{ product.id | slice:0:8 }}</span>
           </div>
@@ -86,44 +123,67 @@
             <i class="fas fa-tag"></i> PROMO -{{ product.promotion?.discountPercentage }}%
             <span *ngIf="!isPromotionActive(product)" class="expired-text">(Expirée)</span>
           </div>
-
-          <div class="badge-group">
-            <span class="type-badge">{{ product.type }}</span>
-            <span class="category-badge">{{ product.category }}</span>
-          </div>
-          <h3 class="product-name">{{ product.name }}</h3>
-          <p class="product-description">
-            {{ product.description | truncate:100 }}
-          </p> 
-        
- <!-- la section des prix  : -->
-<div class="price-section">
-  <div *ngIf="product.status === 'promotion' && isPromotionActive(product)" class="promo-price">
-    <div class="original-price text-muted small">
-      <del>{{ product.unitPrice | number:'1.3-3' }} DT</del>
-    </div>
-    <div class="current-price">
-      <span class="fw-bold text-success">
-        {{ calculateDiscountedPrice(product) | number:'1.3-3' }} DT
-      </span>
-      <span class="badge bg-danger ms-1">-{{ product.promotion?.discountPercentage }}%</span>
-    </div>
-  </div>
-  <div *ngIf="product.status !== 'promotion' || !isPromotionActive(product)" class="normal-price">
-    <span class="fw-bold">{{ product.unitPrice | number:'1.3-3' }} DT</span>
-  </div>
+<div class="badge-group">
+  <span class="category-badge">{{ product.category }}</span>
+  <span class="authenticity-badge" [ngClass]="{
+    'authentic': product.isAuthentic,
+    'counterfeit': !product.isAuthentic
+  }">
+    <i class="fas" [class.fa-check-circle]="product.isAuthentic" [class.fa-exclamation-triangle]="!product.isAuthentic"></i>
+    {{ product.isAuthentic ? 'Authentique' : 'Contrefaçon' }}
+  </span>
+  <span class="olfactive-family-badge">
+    {{ product.olfactiveFamily }}
+  </span>
+  <!-- Ajoutez le badge de statut -->
+  <span class="status-badge" [ngClass]="'status-' + product.status">
+    <i [class]="getStatusIcon(product.status)"></i>
+    {{ getStatusLabel(product.status) }}
+    <span *ngIf="product.status === 'promotion' && !isPromotionActive(product)" class="expired-text">
+      (Expirée)
+    </span>
+  </span>
 </div>
 
+          <h3 class="product-name">{{ product.name }}</h3>
+
+          <!-- Ajoutez les nouveaux champs ici -->
+          <p class="product-brand"><strong>Marque:</strong> {{ product.brand }}</p>
+          <p class="product-perfume-type"><strong>Type de parfum:</strong> {{ product.perfumeType }}</p>
+          <p class="product-origin"><strong>Origine:</strong> {{ product.origin }}</p>
+         <p class="product-price">
+  <strong>Prix de vente:</strong>
+  <span [class.strikethrough]="isPromotionActive(product)">
+    {{ product.unitPrice | number:'1.3-3' }} DT
+  </span>
+  <span *ngIf="isPromotionActive(product)" class="promo-price">
+    {{ calculateDiscountedPrice(product) | number:'1.3-3' }} DT
+  </span>
+</p>
+
+
           <div class="action-buttons">
-            <button class="action-btn info" (click)="viewDetails(product.id)" matTooltip="Voir plus de détails">
-              <i class="fas fa-eye"></i> 
+            <button
+              class="action-btn info"
+              (click)="viewDetails(product.id)"
+              matTooltip="Voir plus de détails"
+            >
+              <i class="fas fa-eye"></i>
             </button>
-            
-            <button class="action-btn warning" (click)="editProduct(product.id)" matTooltip="Modifier">
+
+            <button
+              class="action-btn warning"
+              (click)="editProduct(product.id)"
+              matTooltip="Modifier"
+            >
               <i class="fas fa-pencil-alt"></i>
             </button>
-            
-            <button class="action-btn danger" (click)="deleteProduct(product.id)" matTooltip="Supprimer">
+
+            <button
+              class="action-btn danger"
+              (click)="deleteProduct(product.id)"
+              matTooltip="Supprimer"
+            >
               <i class="fas fa-trash"></i>
             </button>
           </div>

@@ -196,18 +196,22 @@
         <!-- Colonne Produit -->
         <ng-container matColumnDef="product">
           <mat-header-cell *matHeaderCellDef>Produit</mat-header-cell>
-          <mat-cell *matCellDef="let product">
-            <div class="product-info">
-              <img [src]="product.imageUrl || 'assets/default-product.png'" 
-                  class="product-image"
-                  alt="Image produit">
-              <div class="product-details">
-                <div class="product-name">{{product.nomProduit}}</div>
-                <div class="product-reference">Réf. {{product.idProduit}}</div>
-                <div class="product-category">{{product.category}}</div>
-              </div>
-            </div>
-          </mat-cell>
+   <mat-cell *matCellDef="let product">
+  <div class="product-info">
+    <img [src]="product.imageUrl || 'assets/default-product.png'"
+         class="product-image"
+         alt="Image produit"
+         (error)="handleImageError(product)">
+    <div class="product-details">
+      <div class="product-name">{{product.nomProduit}}</div>
+      <div class="product-reference">Réf. {{product.idProduit}}</div>
+      <div class="product-category">{{product.category}}</div>
+    </div>
+  </div>
+</mat-cell>
+
+
+
         </ng-container>
 
         <!-- Colonne Stock -->
@@ -231,24 +235,8 @@
           </mat-cell>
         </ng-container>
 
-        <!-- Colonne Fournisseur -->
-        <ng-container matColumnDef="supplier">
-          <mat-header-cell *matHeaderCellDef>Fournisseur</mat-header-cell>
-          <mat-cell *matCellDef="let product">
-            <div class="supplier-info">
-              <div>{{product.supplier?.name || 'Aucun fournisseur'}}</div>
-              <div *ngIf="product.supplier" class="supplier-contact">
-                <button mat-icon-button (click)="contactSupplier(product.supplier)">
-                  <mat-icon>email</mat-icon>
-                </button>
-                {{product.supplier?.leadTime}} jours de délai
-              </div>
-            </div>
-          </mat-cell>
-        </ng-container>
-
-        <mat-header-row *matHeaderRowDef="['product', 'stock', 'supplier']"></mat-header-row>
-        <mat-row *matRowDef="let row; columns: ['product', 'stock', 'supplier'];"></mat-row>
+       <mat-header-row *matHeaderRowDef="['product', 'stock']"></mat-header-row>
+<mat-row *matRowDef="let row; columns: ['product', 'stock'];"></mat-row>
       </mat-table>
     </div>
 

@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { AuthService } from '../services/auth.service';
 import { Router } from '@angular/router';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 @Component({
   selector: 'app-login',
@@ -8,43 +9,70 @@ import { Router } from '@angular/router';
   styleUrls: ['./login.component.css']
 })
 export class LoginComponent {
-  email: string = '';
-  password: string = '';
+  loginForm: FormGroup;
   loading: boolean = false;
   isLoginVisible: boolean = true;
+  errorMessage: string = '';
 
-  constructor(private authService: AuthService, private router: Router) {}
+  constructor(
+    private authService: AuthService, 
+    private router: Router,
+    private fb: FormBuilder
+  ) {
+    this.loginForm = this.fb.group({
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [
+        Validators.required,
+        Validators.minLength(8),
+        Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%?&])[A-Za-z\d@$!%?&]+$/)
+      ]]
+    });
+  }
 
-  async login() {
-    if (!this.email || !this.password) {
-      alert("❌ Veuillez entrer un email et un mot de passe.");
+async login() {
+  if (this.loginForm.invalid) {
+    this.markFormGroupTouched(this.loginForm);
+    return;
+  }
+
+  this.errorMessage = '';
+  this.loading = true;
+
+  try {
+    const { email, password } = this.loginForm.value;
+    const response = await this.authService.login(email, password);
+
+    if (!response) {
+      this.errorMessage = 'Erreur inattendue lors de la connexion';
       return;
     }
 
-    this.loading = true;
-    try {
-      const response = await this.authService.login(this.email, this.password) as unknown as { user: any; role: string };
+    // Debug: Afficher les informations utilisateur
+    console.log('Utilisateur connecté:', {
+      uid: response.user.uid,
+      role: response.role,
+      email: response.user.email
+    });
 
-      if (!response || !response.user) throw new Error("❌ Échec de la connexion.");
+  } catch (error: any) {
+    this.errorMessage = error.message;
+    console.error('Erreur de connexion complète:', error);
+  } finally {
+    this.loading = false;
+  }
+}
 
-      console.log("✅ Utilisateur connecté :", response.user.email);
-      console.log("🔍 Rôle détecté :", response.role);
+  private markFormGroupTouched(formGroup: FormGroup) {
+    Object.values(formGroup.controls).forEach(control => {
+      control.markAsTouched();
 
-      if (response.role === 'admin') {
-        this.router.navigate(['/admin']);
-      } else if (response.role === 'responsable') {
-        this.router.navigate(['/responsable']);
-      } else {
-        alert("❌ Rôle inconnu. Contactez l'administrateur.");
+      if (control instanceof FormGroup) {
+        this.markFormGroupTouched(control);
       }
-    } catch (error: any) {
-      alert(`❌ Erreur : ${error.message || "Un problème est survenu."}`);
-    } finally {
-      this.loading = false;
-    }
+    });
   }
 
   toggleView() {
     this.isLoginVisible = !this.isLoginVisible;
   }
-}
+} 

@@ -1647,108 +1647,68 @@ to {
 }
 }
 
+
 /* Styles pour les promotions */
-
-.promotion-badge {
-  background-color: #ff5722;
-  color: white;
-  padding: 3px 8px;
-  border-radius: 12px;
-  font-size: 0.8rem;
-  display: inline-block;
-  margin-left: 8px;
-}
-
-.promotion-price {
-  color: #ff5722;
-  font-weight: bold;
-}
-
-.original-price {
-  text-decoration: line-through;
-  color: #999;
-  font-size: 0.9em;
-  margin-left: 5px;
-}
-
-/* Dans sales.component.css */
-.promo-products {
-  margin-top: 1rem;
+.promotion-banner {
+  background: #fff3e0;
+  border-radius: 8px;
+  margin: 1rem 0;
   padding: 1rem;
 }
 
-.promo-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+.promotion-scroller {
+  display: flex;
+  overflow-x: auto;
   gap: 1rem;
-  margin-top: 1rem;
+  padding: 1rem 0;
 }
 
 .promo-item {
-  border: 1px solid #e0e0e0;
+  flex: 0 0 250px;
+  border: 1px solid #ffd8a8;
   border-radius: 8px;
   padding: 1rem;
+  cursor: pointer;
   transition: transform 0.2s;
 }
 
 .promo-item:hover {
-  transform: translateY(-3px);
+  transform: translateY(-2px);
 }
 
-.promo-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-
-.promo-body h5 {
-  font-size: 1.1rem;
-  margin-bottom: 0.5rem;
-}
-
-.price-container {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-  margin-bottom: 0.5rem;
-}
-
-.old-price {
-  color: #888;
-  font-size: 0.9rem;
-}
-
-.new-price {
-  color: #28a745;
-  font-weight: bold;
-  font-size: 1.2rem;
-}
-
-.stock {
-  display: block;
-  font-size: 0.9rem;
-  color: #666;
-}
-
-.add-promo-btn {
+.promo-item img {
   width: 100%;
-  margin-top: 1rem;
-  padding: 0.5rem;
-  background-color: #dc3545;
-  color: white;
-  border: none;
+  height: 120px;
+  object-fit: cover;
   border-radius: 4px;
-  cursor: pointer;
 }
 
-.add-promo-btn:disabled {
-  background-color: #6c757d;
-  cursor: not-allowed;
+.promo-details {
+  padding-top: 0.5rem;
 }
 
-.empty-promo {
-  text-align: center;
-  padding: 1rem;
-  color: #6c757d;
+.promo-price del {
+  color: #ff3d00;
+  font-size: 0.9em;
+}
+
+.promo-price {
+  color: #2e7d32;
+  font-weight: bold;
+  font-size: 1.1em;
+}
+
+.promo-time {
+  color: #ef6c00;
+  font-size: 0.8em;
+}
+
+/* Styles pour les badges de réduction */
+.discount-badge {
+  background: #ff4081;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8em;
+  margin-left: 0.5rem;
 }

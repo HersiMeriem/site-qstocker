@@ -5,7 +5,6 @@ import { StockService } from '../../services/stock.service';
 import { Product } from '../../models/product';
 import { StockItem } from '../../services/stock.service';
 
-
 @Component({
   selector: 'app-product-details',
   templateUrl: './product-details.component.html',
@@ -18,7 +17,7 @@ export class ProductDetailsComponent implements OnInit {
   loading = true;
   stockLoading = true;
   error: string | null = null;
-  stockItem: StockItem | null = null; 
+  stockItem: StockItem | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -29,7 +28,7 @@ export class ProductDetailsComponent implements OnInit {
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
-    
+
     if (id) {
       this.loadProductAndStock(id);
     } else {
@@ -37,7 +36,7 @@ export class ProductDetailsComponent implements OnInit {
       this.loading = false;
     }
   }
-  
+
   private loadProductAndStock(productId: string): void {
     this.productService.getProductById(productId).subscribe({
       next: (product) => {
@@ -58,7 +57,7 @@ export class ProductDetailsComponent implements OnInit {
     this.stockLoading = true;
     this.stockService.getProduct(productId).subscribe({
       next: (stockItem: StockItem | null) => {
-        this.stockItem = stockItem; 
+        this.stockItem = stockItem;
         if (stockItem) {
           this.realStockQuantity = stockItem.quantite;
         } else {
@@ -116,23 +115,23 @@ export class ProductDetailsComponent implements OnInit {
     console.error('Erreur détaillée:', error);
   }
 
-  //promo 
-  getStatusLabel(status: string): string {
-    const statusMap: {[key: string]: string} = {
-      'active': 'Actif',
-      'inactive': 'Inactif',
-      'promotion': 'En promotion'
-    };
-    return statusMap[status] || status;
-  }
+getStatusLabel(status: string): string {
+  const statusMap: {[key: string]: string} = {
+    'active': 'Actif',
+    'inactive': 'Inactif',
+    'promotion': 'En promotion',
+    'out-of-stock': 'Rupture'
+  };
+  return statusMap[status] || status;
+}
 
   isPromotionActive(): boolean {
     if (!this.product || this.product.status !== 'promotion' || !this.product.promotion) return false;
-    
+
     const now = new Date();
     const start = new Date(this.product.promotion.startDate);
     const end = new Date(this.product.promotion.endDate);
-    
+
     return now >= start && now <= end;
   }
 
@@ -148,6 +147,4 @@ export class ProductDetailsComponent implements OnInit {
     if (!this.stockItem?.prixDeVente) return 0;
     return this.stockItem.prixDeVente - this.calculateDiscountedPrice();
   }
-
-
 }

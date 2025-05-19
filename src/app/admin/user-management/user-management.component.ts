@@ -8,9 +8,11 @@ import { SnapshotAction } from '@angular/fire/compat/database';
   styleUrls: ['./user-management.component.css'],
 })
 export class UserManagementComponent implements OnInit {
-  getPendingUsers(): any[] {
-    throw new Error('Method not implemented.');
-  }
+
+  
+ getPendingUsers(): any[] {
+  return this.users.filter(user => user.status === 'pending');
+}
   users: any[] = []; 
   filteredUsers: any[] = []; 
   searchQuery: string = ''; 
@@ -22,19 +24,20 @@ export class UserManagementComponent implements OnInit {
   }
 
   // Récupérer tous les utilisateurs
-  getUsers() {
-    this.db
-      .list('users')
-      .snapshotChanges()
-      .subscribe((users: SnapshotAction<any>[]) => {
-        this.users = users.map((user) => {
-          const userData = user.payload.val() as any;
-          return { uid: user.key, ...userData };
-        });
-        console.log('Utilisateurs récupérés :', this.users); // Debug
-        this.filteredUsers = this.users; // Initialiser les utilisateurs filtrés
+getUsers() {
+  this.db
+    .list('users')
+    .snapshotChanges()
+    .subscribe((users: SnapshotAction<any>[]) => {
+      this.users = users.map((user) => {
+        const userData = user.payload.val() as any;
+        console.log('User data:', userData); // Debug chaque utilisateur
+        return { uid: user.key, ...userData };
       });
-  }
+      console.log('Tous les utilisateurs:', this.users); // Debug complet
+      this.filteredUsers = this.users;
+    });
+}
 
   // Appliquer la recherche
   applySearch() {
@@ -97,5 +100,8 @@ export class UserManagementComponent implements OnInit {
       .catch((error) => alert(`❌ Erreur : ${error.message}`));
   }
 
+getResponsableUsers(): any[] {
+  return this.users.filter(user => user.role === 'responsable');
+} 
 
 }

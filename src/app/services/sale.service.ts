@@ -10,7 +10,8 @@ import { HttpClient } from '@angular/common/http';
 export class SaleService {
   private dbPath = '/sales';
   private lastInvoiceNumber = 0;
-
+  selectedProduct: any;
+  selectedQuantity!: number;
   constructor(
     private db: AngularFireDatabase,
     private stockService: StockService,
@@ -21,7 +22,7 @@ export class SaleService {
     const invoiceNumber = this.generateInvoiceNumber();
     const newSale: Sale = {
       ...saleData,
-      id: this.db.createPushId() || '', // Gestion du cas undefined
+      id: this.db.createPushId() || '',
       invoiceNumber,
       date: new Date().toISOString()
     };
@@ -32,7 +33,7 @@ export class SaleService {
   }
 
   private async updateStockQuantities(items: SaleItem[]): Promise<void> {
-    const updates = items.map(item => 
+    const updates = items.map(item =>
       this.stockService.updateStockQuantity(item.productId, -item.quantity)
     );
     await Promise.all(updates);
@@ -63,10 +64,9 @@ export class SaleService {
     return this.getSalesByDateRange(startDate.toISOString(), endDate.toISOString());
   }
 
-
   getAllSales(): Observable<Sale[]> {
     return this.db.list<Sale>(this.dbPath).valueChanges().pipe(
-      map(sales => sales.sort((a, b) => 
+      map(sales => sales.sort((a, b) =>
         new Date(b.date).getTime() - new Date(a.date).getTime()))
     );
   }
@@ -80,19 +80,18 @@ export class SaleService {
     return `INV-${year}${month}${day}-${random}`;
   }
 
-  // sale.service.ts
   getSalesReport(): Observable<any> {
     return this.getAllSales().pipe(
       map(sales => {
-        const todaySales = sales.filter(s => 
+        const todaySales = sales.filter(s =>
           new Date(s.date).toDateString() === new Date().toDateString());
-        
+
         return {
           totalSales: sales.length,
           totalRevenue: sales.reduce((sum, sale) => sum + sale.totalAmount, 0),
           todaySales: todaySales.length,
           todayRevenue: todaySales.reduce((sum, sale) => sum + sale.totalAmount, 0),
-          avgSale: sales.length > 0 ? 
+          avgSale: sales.length > 0 ?
             sales.reduce((sum, sale) => sum + sale.totalAmount, 0) / sales.length : 0,
           paymentMethods: sales.reduce((acc, sale) => {
             acc[sale.paymentMethod] = (acc[sale.paymentMethod] || 0) + 1;
@@ -102,38 +101,45 @@ export class SaleService {
       })
     );
   }
-  
+
+  getSalesByDateRange(startDate: string, endDate: string): Observable<Sale[]> {
+    return this.db.list<Sale>(this.dbPath, ref =>
+      ref.orderByChild('date')
+         .startAt(startDate)
+         .endAt(endDate)
+    ).valueChanges().pipe(
+      map(sales => sales.filter(sale =>
+        sale.date &&
+        new Date(sale.date) >= new Date(startDate) &&
+        new Date(sale.date) <= new Date(endDate)
+      ))
+    );
+  }
+
+  getFinancialMetrics(): Observable<{caHistory: number[], expensesBreakdown: number[]}> {
+    return this.http.get<{caHistory: number[], expensesBreakdown: number[]}>(
+      'votre-api/financial-metrics'
+    );
+  }
+
+  getRecentSales(limit: number = 5): Observable<Sale[]> {
+    return this.db.list<Sale>(this.dbPath, ref =>
+      ref.orderByChild('date')
+         .limitToLast(limit)
+    ).valueChanges().pipe(
+      map(sales => sales.sort((a, b) =>
+        new Date(b.date).getTime() - new Date(a.date).getTime()
+      ))
+    );
+  }
 
 
-getSalesByDateRange(startDate: string, endDate: string): Observable<Sale[]> {
-  return this.db.list<Sale>(this.dbPath, ref => 
-    ref.orderByChild('date')
-       .startAt(startDate)
-       .endAt(endDate)
-  ).valueChanges().pipe(
-    map(sales => sales.filter(sale => 
-      sale.date && 
-      new Date(sale.date) >= new Date(startDate) && 
-      new Date(sale.date) <= new Date(endDate)
-    ))
-  );
+  //out of stock 
+  get canAddToCart(): boolean {
+  return !!this.selectedProduct && 
+         this.selectedQuantity > 0 &&
+         this.selectedProduct.status !== 'out-of-stock' &&
+         this.selectedQuantity <= (this.selectedProduct.quantite || 0);
 }
 
-//financiere 
-getFinancialMetrics(): Observable<{caHistory: number[], expensesBreakdown: number[]}> {
-  return this.http.get<{caHistory: number[], expensesBreakdown: number[]}>(
-    'votre-api/financial-metrics'
-  );
-}
-
-getRecentSales(limit: number = 5): Observable<Sale[]> {
-  return this.db.list<Sale>(this.dbPath, ref => 
-    ref.orderByChild('date')
-       .limitToLast(limit)
-  ).valueChanges().pipe(
-    map(sales => sales.sort((a, b) => 
-      new Date(b.date).getTime() - new Date(a.date).getTime()
-    )) 
-  );
-}
 }

@@ -1,0 +1,120 @@
+/* Container spacing */
+.container-fluid {
+  padding: 1rem 2rem;
+}
+
+/* Alertes */
+.alert {
+  font-size: 0.95rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 0 10px rgba(0,0,0,0.05);
+}
+
+/* Card global */
+.card {
+  border-radius: 0.75rem;
+  box-shadow: 0 0 12px rgba(0,0,0,0.05);
+  margin-bottom: 1.5rem;
+  transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+  transform: scale(1.01);
+}
+
+/* Card headers */
+.card-header {
+  padding: 1rem 1.25rem;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+/* Buttons */
+.btn-outline-primary,
+.btn-outline-danger,
+.btn-outline-success,
+.btn-outline-secondary {
+  border-radius: 20px;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.875rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-danger:hover,
+.btn-outline-success:hover,
+.btn-outline-secondary:hover {
+  transform: scale(1.05);
+}
+
+/* Active status button */
+.btn-group .btn.active {
+  background-color: #0d6efd;
+  color: white;
+  border-color: #0d6efd;
+}
+
+/* List group orders */
+.list-group-item {
+  border-radius: 0.5rem;
+  margin-bottom: 0.5rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.list-group-item.active {
+  border: 2px solid #0d6efd;
+}
+
+.list-group-item .badge {
+  font-size: 0.75rem;
+  padding: 0.4em 0.7em;
+}
+
+/* Order item image */
+.table td img {
+  object-fit: cover;
+  border-radius: 0.25rem;
+}
+
+/* Table styles */
+.table th, .table td {
+  vertical-align: middle;
+  font-size: 0.875rem;
+}
+
+.table-responsive {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+/* Buttons inside list group items */
+.list-group-item .btn-group-sm .btn {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+  margin-left: 0.25rem;
+}
+
+/* Details section */
+.card-body h5 {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.card-body p {
+  margin-bottom: 0.3rem;
+  font-size: 0.875rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .col-md-6 {
+    width: 100%;
+    margin-bottom: 1.5rem;
+  }
+
+  .btn-group {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+}

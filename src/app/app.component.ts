@@ -36,6 +36,7 @@ export class AppComponent implements OnInit {
       this.userEmail = null;
     });
   }
+  
 
 
 }

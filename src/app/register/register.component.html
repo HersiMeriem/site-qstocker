@@ -7,46 +7,85 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </head>
 <body>
-  <div class="main-container">
-    <div class="register-container">
-      <div class="form-container">
-        <h2>Rejoignez-nous</h2>
-        <p class="subtitle">Créez votre compte en quelques secondes</p>
-        
-        <div class="input-container">
-          <i class="fas fa-user"></i>
-          <input type="text" [(ngModel)]="Name" placeholder="Nom" required>
-        </div>
-        
-        <div class="input-container">
-          <i class="fas fa-envelope"></i>
-          <input type="email" [(ngModel)]="email" placeholder="Adresse email" required>
-        </div>
-        
-        <div class="input-container">
-          <i class="fas fa-lock"></i>
-          <input type="password" [(ngModel)]="password" placeholder="Mot de passe" required>
+  <div class="registration-wrapper">
+    <div class="registration-container">
+      <div class="form-section">
+        <div class="form-header">
+          <h2>Créez votre compte</h2>
+          <p class="subtitle">Rejoignez nous</p>
         </div>
 
-        <div *ngIf="loading" class="spinner"></div>
+        <form class="registration-form" (ngSubmit)="register()" #registerForm="ngForm">
+          <!-- Champ Nom -->
+          <div class="form-group">
+            <div class="input-wrapper">
+              <i class="fas fa-user input-icon"></i>
+              <input type="text" [(ngModel)]="Name" name="name" 
+                     placeholder="Votre nom complet" #nameInput="ngModel">
+            </div>
+          </div>
 
-        <button class="register-btn" (click)="register()" [disabled]="loading">
-          <span *ngIf="!loading">S'inscrire maintenant</span>
-          <span *ngIf="loading">Création en cours...</span>
-        </button>
+          <!-- Champ Email -->
+          <div class="form-group">
+            <div class="input-wrapper">
+              <i class="fas fa-envelope input-icon"></i>
+              <input type="email" [(ngModel)]="email" name="email" 
+                     placeholder="exemple@domaine.com" required #emailInput="ngModel"
+                     (blur)="validateEmail()">
+              <div *ngIf="registerForm.submitted && emailInput.errors?.['required']" class="error-icon">
+                <i class="fas fa-exclamation-circle"></i>
+              </div>
+            </div>
+            <div *ngIf="registerForm.submitted && emailInput.errors?.['required']" class="error-message">
+              L'email est obligatoire
+            </div>
+            <div *ngIf="registerForm.submitted && emailError && !emailInput.errors?.['required']" class="error-message">
+              {{emailError}}
+            </div>
+          </div>
+          <!-- Champ Mot de passe -->
+          <div class="form-group">
+            <div class="input-wrapper">
+              <i class="fas fa-lock input-icon"></i>
+              <input [type]="showPassword ? 'text' : 'password'" [(ngModel)]="password" name="password"
+                     placeholder="••••••••" required #passwordInput="ngModel"
+                     (input)="validatePassword()" (blur)="validatePassword()">
+              <i class="fas fa-eye password-toggle" [class.fa-eye-slash]="showPassword" 
+                 (click)="togglePasswordVisibility()"></i>
+              <div *ngIf="registerForm.submitted && passwordInput.errors?.['required']" class="error-icon">
+                <i class="fas fa-exclamation-circle"></i>
+              </div>
+            </div>
+            <div *ngIf="registerForm.submitted && passwordInput.errors?.['required']" class="error-message">
+              Le mot de passe est obligatoire
+            </div>
+            <div *ngIf="registerForm.submitted && passwordError && !passwordInput.errors?.['required']" class="error-message">
+              {{passwordError}}
+            </div>
+            <div class="password-requirements compact">
+              <div class="requirements-grid">
+                <span [class.valid]="hasMinLength">8+</span>
+                <span [class.valid]="hasUpperCase">A-Z</span>
+                <span [class.valid]="hasNumber">0-9</span>
+                <span [class.valid]="hasSpecialChar">!*#</span>
+              </div>
+            </div>
+          </div>
 
-        <div class="separator">
-          <span>ou</span>
-        </div>
+          <button type="submit" class="submit-btn" [disabled]="loading">
+            <span *ngIf="!loading">S'inscrire maintenant</span>
+            <span *ngIf="loading"><i class="fas fa-spinner fa-spin"></i> Création...</span>
+          </button>
 
-        <p class="login-link">
-          Vous avez déjà un compte ? <a (click)="goToLogin.emit()">Se connecter</a>
-        </p>
+          <p class="login-link">
+            Vous avez déjà un compte ? <a (click)="goToLogin.emit()">Connectez-vous</a>
+          </p>
+        </form>
       </div>
-    </div>
-    
-    <div class="image-container">
-      <img src="assets/images/register.png" alt="Illustration d'inscription" class="register-image">
+
+      <div class="illustration-section">
+        <img src="assets/images/register.png" alt="Illustration inscription" class="registration-image">
+      </div>
     </div>
   </div>
 </body>

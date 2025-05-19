@@ -7,19 +7,11 @@ import autoTable from 'jspdf-autotable';
 import { Sale, SaleItem } from '../../models/sale';
 import { MatDialog } from '@angular/material/dialog';
 import { SalesReportsComponent } from '../sales-reports/sales-reports.component';
-import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
-import { QRCodeModule } from 'angularx-qrcode';
 import { ZXingScannerComponent } from '@zxing/ngx-scanner';
 import { BarcodeFormat } from '@zxing/library';
 import { v4 as uuidv4 } from 'uuid';
-
-
-interface Promotion {
-  startDate: string;
-  endDate: string;
-  discountPercentage: number;
-}
- 
+import { HttpClient } from '@angular/common/http';
+import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 
 @Component({
   selector: 'app-sales',
@@ -40,13 +32,12 @@ export class SalesComponent implements OnInit {
   historyError: string | null = null;
   imageLoaded: boolean = false;
 
-
-    // Propriétés du scanner
-    scannerEnabled = false;
-    availableCameras: MediaDeviceInfo[] = [];
-    currentCamera: MediaDeviceInfo | undefined;
-    allowedFormats: BarcodeFormat[] = [BarcodeFormat.QR_CODE];
-    scannedProduct: any = null;
+  // Propriétés du scanner
+  scannerEnabled = false;
+  availableCameras: MediaDeviceInfo[] = [];
+  currentCamera: MediaDeviceInfo | undefined;
+  allowedFormats: BarcodeFormat[] = [BarcodeFormat.QR_CODE];
+  scannedProduct: any = null;
 
   // Cart management
   currentSale: Omit<Sale, 'id'> = {
@@ -62,28 +53,32 @@ export class SalesComponent implements OnInit {
     userId: 'current-user-id',
     date: new Date().toISOString()
   };
-console: any;
 
-generateCustomerId(customerName: string): string {
-  // Normaliser le nom et la date
-  const normalizedName = customerName.trim().toLowerCase();
-  const today = new Date().toISOString().slice(0, 10); // Format YYYY-MM-DD
+  generateCustomerId(customerName: string): string {
+    const normalizedName = customerName.trim().toLowerCase();
+    const today = new Date().toISOString().slice(0, 10);
 
-  // Rechercher dans l'historique
-  const existingSale = this.salesHistory.find(sale => {
-    const saleDate = new Date(sale.date).toISOString().slice(0, 10);
-    return sale.customerName.toLowerCase() === normalizedName 
-      && saleDate === today;
-  });
+    // Vérifiez si le client a déjà un identifiant dans l'historique des ventes
+    const existingSale = this.salesHistory.find(sale => {
+      const saleDate = new Date(sale.date).toISOString().slice(0, 10);
+      return sale.customerName.toLowerCase() === normalizedName
+        && saleDate === today;
+    });
 
-  return existingSale?.customerId || this.createNewCustomerId();
-}
+    // Si un identifiant existe déjà, utilisez-le
+    if (existingSale) {
+      return existingSale.customerId;
+    }
 
-private createNewCustomerId(): string {
-  const timestamp = new Date().getTime().toString().slice(-6);
-  const random = Math.floor(100 + Math.random() * 900);
-  return `CLI-${timestamp}-${random}`;
-}
+    // Sinon, générez un nouvel identifiant
+    return this.createNewCustomerId();
+  }
+
+  private createNewCustomerId(): string {
+    const timestamp = new Date().getTime().toString().slice(-6);
+    const random = Math.floor(100 + Math.random() * 900);
+    return `CLI-${timestamp}-${random}`;
+  }
 
   // Données
   salesHistory: Sale[] = [];
@@ -91,7 +86,6 @@ private createNewCustomerId(): string {
   dailyRevenue = 0;
   dailySalesCount = 0;
   historyFilter = 'today';
-    // Stats
 
   paymentMethods = [
     { value: 'cash', label: 'Espèces', icon: 'fas fa-money-bill-wave' },
@@ -106,7 +100,6 @@ private createNewCustomerId(): string {
     private dialog: MatDialog
   ) {}
 
-
   async ngOnInit(): Promise<void> {
     try {
       await this.loadStock();
@@ -117,20 +110,18 @@ private createNewCustomerId(): string {
       console.error('Erreur initialisation:', error);
     }
   }
-  
+
   private async loadStock(): Promise<void> {
     return new Promise((resolve, reject) => {
       this.stockService.getStock().subscribe({
         next: (items) => {
           this.availableProducts = items;
-          this.checkPromotionsValidity();
           resolve();
         },
         error: (err) => reject(err)
       });
     });
   }
-
 
   private loadInitialData(): void {
     this.loadStock();
@@ -149,10 +140,10 @@ private createNewCustomerId(): string {
   private loadDailyStats(): void {
     this.loadingStats = true;
     this.statsError = null;
-    
+
     const todayStart = startOfDay(new Date()).toISOString();
     const todayEnd = endOfDay(new Date()).toISOString();
-    
+
     this.saleService.getSalesByDateRange(todayStart, todayEnd).subscribe({
       next: (sales: Sale[]) => {
         this.dailySalesCount = sales.length;
@@ -167,31 +158,32 @@ private createNewCustomerId(): string {
     });
   }
 
-public loadSalesHistory(): void {
-  this.loadingHistory = true;
-  this.historyError = null;
-  
-  this.saleService.getSalesHistory(this.historyFilter).subscribe({
-    next: (sales: Sale[]) => {
-      console.log('Données brutes:', sales); // Debug
-      this.salesHistory = sales
-        .filter(s => s.items && s.items.length > 0) // Filtre les ventes vides
-        .sort((a, b) => 
-          new Date(b.date).getTime() - new Date(a.date).getTime()
-        );
-      
-      this.filteredSalesHistory = [...this.salesHistory];
-      this.loadingHistory = false;
-      
-      console.log('Ventes traitées:', this.salesHistory); // Debug
-    },
-    error: (err: any) => {
-      console.error('Erreur complète:', err); // Log complet
-      this.historyError = 'Erreur de chargement: ' + err.message;
-      this.loadingHistory = false;
-    }
-  });
-}
+  public loadSalesHistory(): void {
+    this.loadingHistory = true;
+    this.historyError = null;
+
+    this.saleService.getSalesHistory(this.historyFilter).subscribe({
+      next: (sales: Sale[]) => {
+        console.log('Données brutes:', sales);
+        this.salesHistory = sales
+          .filter(s => s.items && s.items.length > 0)
+          .sort((a, b) =>
+            new Date(b.date).getTime() - new Date(a.date).getTime()
+          );
+
+        this.filteredSalesHistory = [...this.salesHistory];
+        this.loadingHistory = false;
+
+        console.log('Ventes traitées:', this.salesHistory);
+      },
+      error: (err: any) => {
+        console.error('Erreur complète:', err);
+        this.historyError = 'Erreur de chargement: ' + err.message;
+        this.loadingHistory = false;
+      }
+    });
+  }
+
   refreshQRCode(): void {
     if (this.selectedProduct) {
         this.selectedProduct = { ...this.selectedProduct };
@@ -202,19 +194,17 @@ public loadSalesHistory(): void {
     this.scannedProduct = null;
     this.selectedQuantity = 1;
   }
-  
-  //scan qrcode 
+
   handleScanSuccess(resultString: string): void {
     console.log('Données brutes du QR code:', resultString);
-  
+
     try {
       let productId: string;
-  
-      // Tentative de parsing JSON avec vérification de structure
+
       try {
         const qrData = JSON.parse(resultString);
         console.log('QR code structuré:', qrData);
-        
+
         if (!qrData.idProduit && !qrData.id) {
           throw new Error('Structure QR code invalide');
         }
@@ -223,21 +213,18 @@ public loadSalesHistory(): void {
         console.log('QR code non-JSON - Utilisation directe de la chaîne');
         productId = resultString;
       }
-  
-      // Normalisation avancée de l'ID
+
       productId = productId.toString().trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
-  
-      // Recherche avec indexation pour meilleure performance
+
       const product = this.availableProducts.find(p => {
         const normalizedId = p.idProduit.toString().trim().toLowerCase();
         return normalizedId === productId && p.quantite > 0;
       });
-  
+
       if (product) {
         console.log('Produit trouvé:', product);
         this.scannedProduct = {
           ...product,
-          // Génération dynamique du QR code et validation de l'image
           qrCode: this.generateProductQRCode(product),
         };
         this.selectedQuantity = 1;
@@ -250,59 +237,58 @@ public loadSalesHistory(): void {
     }
   }
 
- generateProductQRCode(product: StockItem): string {
-  return JSON.stringify({
-    system: 'QStocker',
-    version: '2.0',
-    productId: product.idProduit,
-    timestamp: new Date().toISOString()
-  });
-}
-
-  //gestion de scan
-  async openScanner(): Promise<void> {
-  try {
-    if (this.scannerEnabled) return;
-
-    const stream = await navigator.mediaDevices.getUserMedia({ 
-      video: { 
-        facingMode: 'environment',
-        width: { ideal: 1280 },
-        height: { ideal: 720 }
-      } 
+  generateProductQRCode(product: StockItem): string {
+    return JSON.stringify({
+      system: 'QStocker',
+      version: '2.0',
+      productId: product.idProduit,
+      timestamp: new Date().toISOString()
     });
-
-    this.scannerEnabled = true;
-    this.scannedProduct = null;
-    
-    // Gestion propre de la fermeture
-    window.addEventListener('beforeunload', () => this.cleanupScanner(stream));
-    
-  } catch (error) {
-    console.error('Erreur d\'accès caméra:', error);
-    this.showScanError('Accès caméra refusé - Vérifiez les permissions');
   }
-}
-private cleanupScanner(stream: MediaStream): void {
-  stream.getTracks().forEach(track => {
-    track.stop();
-    stream.removeTrack(track);
-  });
-  this.scannerEnabled = false;
-}
-private showProductNotFoundError(productId: string): void {
-  const message = `Produit "${productId}" non trouvé ou hors stock`;
-  console.warn(message);
-  alert(message);
-  this.scannedProduct = null;
-}
 
-private showScanError(message: string): void {
-  alert(`Erreur de scan: ${message}`);
-  this.scannerEnabled = false;
-  this.scannedProduct = null;
-}
+  async openScanner(): Promise<void> {
+    try {
+      if (this.scannerEnabled) return;
 
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: 'environment',
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
+      });
+
+      this.scannerEnabled = true;
+      this.scannedProduct = null;
+
+      window.addEventListener('beforeunload', () => this.cleanupScanner(stream));
+
+    } catch (error) {
+      console.error('Erreur d\'accès caméra:', error);
+      this.showScanError('Accès caméra refusé - Vérifiez les permissions');
+    }
+  }
+
+  private cleanupScanner(stream: MediaStream): void {
+    stream.getTracks().forEach(track => {
+      track.stop();
+      stream.removeTrack(track);
+    });
+    this.scannerEnabled = false;
+  }
+
+  private showProductNotFoundError(productId: string): void {
+    const message = `Produit "${productId}" non trouvé ou hors stock`;
+    console.warn(message);
+    alert(message);
+    this.scannedProduct = null;
+  }
+
+  private showScanError(message: string): void {
+    alert(`Erreur de scan: ${message}`);
+    this.scannerEnabled = false;
+    this.scannedProduct = null;
+  }
 
   handleCamerasFound(devices: MediaDeviceInfo[]): void {
     this.availableCameras = devices;
@@ -345,20 +331,18 @@ private showScanError(message: string): void {
       this.selectedQuantity--;
     }
   }
+
   addScannedToCart(): void {
     if (this.scannedProduct) {
         this.selectedProduct = this.scannedProduct;
         this.selectedProductId = this.scannedProduct.idProduit;
-        
-        // Applique automatiquement le prix réduit via addToCart()
         this.addToCart();
-        
         this.closeScanner();
     }
-}
-  // Gestion du panier
+  }
+
   get canAddToCart(): boolean {
-    return !!this.selectedProduct && 
+    return !!this.selectedProduct &&
            this.selectedQuantity > 0 &&
            this.selectedQuantity <= (this.selectedProduct.quantite || 0);
   }
@@ -366,59 +350,51 @@ private showScanError(message: string): void {
   addToCart(): void {
     if (!this.selectedProduct || !this.canAddToCart) return;
 
-    // Utilisation des prix avec gestion des promotions
-    const unitPrice = this.getCurrentPrice(this.selectedProduct);
+    const unitPrice = this.selectedProduct.prixDeVente;
     const originalPrice = this.selectedProduct.prixDeVente;
 
-    // Vérifier si le produit est déjà dans le panier
-    const existingItem = this.currentSale.items.find(item => 
-        item.productId === this.selectedProduct?.idProduit && 
-        item.unitPrice === unitPrice
+    const existingItem = this.currentSale.items.find(item =>
+      item.productId === this.selectedProduct?.idProduit &&
+      item.unitPrice === unitPrice
     );
 
     if (existingItem) {
-        existingItem.quantity += this.selectedQuantity;
-        existingItem.totalPrice = existingItem.quantity * unitPrice;
+      existingItem.quantity += this.selectedQuantity;
+      existingItem.totalPrice = existingItem.quantity * unitPrice;
     } else {
-        const newItem: SaleItem = {
-            productId: this.selectedProduct.idProduit,
-            name: this.selectedProduct.nomProduit,
-            quantity: this.selectedQuantity,
-            unitPrice: unitPrice,
-            originalPrice: originalPrice, // Ajout du prix original
-            totalPrice: this.selectedQuantity * unitPrice
-        };
-        this.currentSale.items.push(newItem);
+      const newItem: SaleItem = {
+        productId: this.selectedProduct.idProduit,
+        name: this.selectedProduct.nomProduit,
+        quantity: this.selectedQuantity,
+        unitPrice: unitPrice,
+        originalPrice: originalPrice,
+        totalPrice: this.selectedQuantity * unitPrice
+      };
+      this.currentSale.items.push(newItem);
     }
 
     this.updateCartTotals();
     this.clearSelection();
-}
- 
+  }
 
-  // Finalisation de la vente
   get canFinalize(): boolean {
-    return this.currentSale.items.length > 0 && 
+    return this.currentSale.items.length > 0 &&
            this.currentSale.totalAmount > 0 &&
            !!this.currentSale.customerName.trim();
   }
 
   async finalizeSale(): Promise<void> {
     if (!this.canFinalize) return;
-  
-    // Vérifie les promotions expirées
-    this.checkPromotionsBeforeSale();
-  
+
     this.currentSale.customerId = this.generateCustomerId(this.currentSale.customerName);
     try {
       const createdSale = await this.saleService.createSale(this.currentSale);
-      this.salesHistory.unshift(createdSale); 
+      this.salesHistory.unshift(createdSale);
       this.filteredSalesHistory = [...this.salesHistory];
       this.printInvoice(createdSale);
       this.resetSale();
       this.loadDailyStats();
-      
-      // Recharger les produits après la vente
+
       await this.loadStock();
     } catch (error) {
       console.error('Erreur lors de la vente:', error);
@@ -430,7 +406,7 @@ private showScanError(message: string): void {
       }
       alert(`Échec de la vente : ${errorMessage}`);
     }
-}
+  }
 
   resetSale(): void {
     this.currentSale = {
@@ -442,14 +418,12 @@ private showScanError(message: string): void {
       paymentMethod: 'cash',
       customerId: '',
       customerName: '',
-      invoiceNumber: '', 
+      invoiceNumber: '',
       userId: 'current-user-id',
       date: new Date().toISOString()
     };
   }
- 
 
-  // Utilitaires
   getPaymentMethodLabel(method: string): string {
     return this.paymentMethods.find(m => m.value === method)?.label || method;
   }
@@ -460,13 +434,13 @@ private showScanError(message: string): void {
 
   applySearchFilter(): void {
     const search = this.searchTerm.toLowerCase().trim();
-    
+
     if (!search) {
       this.filteredSalesHistory = [...this.salesHistory];
       return;
     }
 
-    this.filteredSalesHistory = this.salesHistory.filter(sale => 
+    this.filteredSalesHistory = this.salesHistory.filter(sale =>
       sale.invoiceNumber.toLowerCase().includes(search) ||
       sale.items.some(item => item.name.toLowerCase().includes(search)) ||
       new Date(sale.date).toLocaleDateString('fr-FR').includes(search)
@@ -487,37 +461,35 @@ private showScanError(message: string): void {
     });
   }
 
-
   private loadImageBase64(path: string): Promise<string> {
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.crossOrigin = 'anonymous';
       img.src = path;
-  
+
       img.onload = () => {
         const canvas = document.createElement('canvas');
         canvas.width = img.width;
         canvas.height = img.height;
-  
+
         const ctx = canvas.getContext('2d');
         if (!ctx) return reject('Canvas context not found');
-  
+
         ctx.drawImage(img, 0, 0);
         resolve(canvas.toDataURL('image/png'));
       };
-  
+
       img.onerror = (error) => reject(`Erreur lors du chargement de l'image: ${error}`);
     });
   }
-   
+
   private async printInvoice(sale: Sale): Promise<void> {
     const doc = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
       format: 'a4'
     });
-  
-    // Configuration des styles
+
     const styles = {
       primaryColor: [41, 128, 185] as [number, number, number],
       secondaryColor: [236, 240, 241] as [number, number, number],
@@ -526,8 +498,7 @@ private showScanError(message: string): void {
       margin: 20,
       footerHeight: 20
     };
-  
-    // ==================== EN-TÊTE ====================
+
     try {
       const logoBase64 = await this.loadImageBase64('assets/images/qstockerlogo.PNG');
       doc.addImage({
@@ -545,8 +516,7 @@ private showScanError(message: string): void {
       doc.setFont(styles.font, 'bold');
       doc.text('QStocker', styles.margin, 25);
     }
-  
-    // Coordonnées entreprise
+
     doc.setFontSize(10);
     doc.setTextColor(40);
     doc.setFont(styles.font, 'normal');
@@ -559,13 +529,11 @@ private showScanError(message: string): void {
     companyInfo.forEach((line, index) => {
       doc.text(line, 130, 25 + (index * 5));
     });
-  
-    // Ligne de séparation
+
     doc.setDrawColor(...styles.primaryColor);
     doc.setLineWidth(0.5);
     doc.line(styles.margin, 45, doc.internal.pageSize.width - styles.margin, 45);
-  
-    // ==================== INFORMATIONS FACTURE ====================
+
     doc.setFontSize(12);
     doc.setTextColor(40);
     doc.setFont(styles.font, 'bold');
@@ -576,8 +544,7 @@ private showScanError(message: string): void {
       month: 'long',
       year: 'numeric'
     })}`, styles.margin, 60);
-  
-    // ==================== SECTION CLIENT ====================
+
     const clientStartY = 65;
     autoTable(doc, {
       startY: clientStartY,
@@ -606,8 +573,7 @@ private showScanError(message: string): void {
         1: { cellWidth: 60 }
       }
     });
-  
-    // ==================== SECTION ARTICLES ====================
+
     const itemsStartY = (doc as any).lastAutoTable.finalY + 10;
     autoTable(doc, {
       startY: itemsStartY,
@@ -621,7 +587,10 @@ private showScanError(message: string): void {
       ],
       body: sale.items.map(item => [
         item.name || 'Produit non nommé',
-        { content: `${(item.unitPrice || 0).toFixed(2)} DT`, styles: { halign: 'right' } },
+        {
+          content: `${item.unitPrice.toFixed(2)} DT`,
+          styles: { halign: 'right' }
+        },
         { content: (item.quantity || 0).toString(), styles: { halign: 'center' } },
         { content: `${(item.totalPrice || 0).toFixed(2)} DT`, styles: { halign: 'right' } }
       ]),
@@ -640,222 +609,93 @@ private showScanError(message: string): void {
         fillColor: [245, 245, 245]
       },
       columnStyles: {
-        0: { cellWidth: 90 },
-        1: { cellWidth: 35 },
+        0: { cellWidth: 80 },
+        1: { cellWidth: 45 },
         2: { cellWidth: 25 },
         3: { cellWidth: 35 }
       }
     });
-  
-    // ==================== SECTION TOTAUX ====================
+
     const totals = {
       subTotal: sale.items.reduce((sum, item) => sum + (item.totalPrice || 0), 0),
       discount: sale.discount || 0,
       get discountAmount() { return this.subTotal * (this.discount / 100) },
       get total() { return this.subTotal - this.discountAmount }
     };
-  
+
     const totalsStartY = (doc as any).lastAutoTable.finalY + 15;
     const totalsWidth = 70;
     const totalsX = doc.internal.pageSize.width - styles.margin - totalsWidth;
-  
-    // Encadré des totaux
+
     doc.setDrawColor(...styles.primaryColor);
     doc.setFillColor(...styles.secondaryColor);
     doc.rect(totalsX - 5, totalsStartY - 5, totalsWidth + 10, totals.discount ? 45 : 30, 'FD');
-  
-    // Contenu des totaux
-    const formatCurrency = (value: number) => `${value.toFixed(2)} DT`;
-    let currentY = totalsStartY;
-  
+
     doc.setFontSize(11);
     doc.setTextColor(40);
     doc.setFont(styles.font, 'bold');
-    doc.text('Sous-total:', totalsX, currentY);
-    doc.text(formatCurrency(totals.subTotal), totalsX + totalsWidth - 5, currentY, { align: 'right' });
-    currentY += 8;
-  
+    doc.text('Sous-total:', totalsX, totalsStartY);
+    doc.text(`${totals.subTotal.toFixed(2)} DT`, totalsX + totalsWidth - 5, totalsStartY, { align: 'right' });
+    let currentY = totalsStartY + 8;
+
     if (totals.discount) {
       doc.text(`Remise (${totals.discount}%):`, totalsX, currentY);
-      doc.text(`-${formatCurrency(totals.discountAmount)}`, totalsX + totalsWidth - 5, currentY, { align: 'right' });
+      doc.text(`-${totals.discountAmount.toFixed(2)} DT`, totalsX + totalsWidth - 5, currentY, { align: 'right' });
       currentY += 8;
-      
+
       doc.setDrawColor(200);
       doc.setLineWidth(0.3);
       doc.line(totalsX, currentY, totalsX + totalsWidth, currentY);
       currentY += 5;
     }
-  
+
     doc.setFontSize(12);
     doc.setTextColor(...styles.primaryColor);
     doc.text('Total à payer:', totalsX, currentY);
-    doc.text(formatCurrency(totals.total), totalsX + totalsWidth - 5, currentY, { align: 'right' });
-  
-    // ==================== PIED DE PAGE ====================
+    doc.text(`${totals.total.toFixed(2)} DT`, totalsX + totalsWidth - 5, currentY, { align: 'right' });
+
     const footerContent = [
       'Merci pour votre confiance !',
       'Contact : contact.qstocker@gmail.com | Tél: +216 70 123 456'
     ];
-  
+
     doc.setFontSize(8);
     doc.setTextColor(100);
     footerContent.forEach((line, index) => {
       doc.text(line, doc.internal.pageSize.width / 2, 290 + (index * 4), { align: 'center' });
     });
-  
-    // ==================== GÉNÉRATION DU FICHIER ====================
+
     const cleanName = (sale.customerName || 'client').replace(/[^a-zA-Z0-9_]/g, '_');
     const fileName = `Facture_${sale.invoiceNumber}_${cleanName}.pdf`;
     doc.save(fileName);
   }
 
-printExistingInvoice(sale: Sale): void {
-  this.printInvoice(sale);
-}
-
-
-
-getTotalProductDiscount(): number {
-  return this.currentSale.items.reduce((total, item) => {
-    if (item.unitPrice !== item.originalPrice) {
-      return total + ((item.originalPrice || 0) - item.unitPrice) * item.quantity;
-    }
-    return total;
-  }, 0);
-}
-
-
- //promo
-updateCartPrices(): void {
-  this.currentSale.items.forEach(item => {
-    const product = this.availableProducts.find(p => p.idProduit === item.productId);
-    if (product) {
-      item.unitPrice = this.getCurrentPrice(product);
-      item.totalPrice = item.unitPrice * item.quantity;
-    }
-  });
-  this.updateCartTotals();
-}
-
-getDiscountPercentage(item: SaleItem): number {
-  if (!item.originalPrice || item.unitPrice === item.originalPrice) return 0;
-  return Math.round(((item.originalPrice - item.unitPrice) / item.originalPrice) * 100);
-} 
-
-
-
-addPromoToCart(product: StockItem): void {
-  if (!product || product.quantite < 1) return;
-
-  this.selectedProduct = product;
-  this.selectedProductId = product.idProduit;
-  this.selectedQuantity = 1;
-  
-  if (this.canAddToCart) {
-    this.addToCart();
+  printExistingInvoice(sale: Sale): void {
+    this.printInvoice(sale);
   }
-}
 
-getTimeRemaining(endDate?: string): string {
-  if (!endDate) return 'Date invalide';
-  
-  const end = new Date(endDate);
-  const now = new Date();
-  const diff = end.getTime() - now.getTime();
-  
-  if (diff <= 0) return 'Expirée';
-  
-  const hours = Math.floor(diff / (1000 * 60 * 60));
-  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  
-  return `${hours}h ${minutes}m`;
-}
-
-private checkPromotionsValidity(): void {
-  const now = new Date();
-  
-  this.availableProducts.forEach(product => {
-    if (product.status === 'promotion' && product.promotion && typeof product.promotion !== 'boolean') {
-      const end = new Date(product.promotion.endDate);
-      if (now > end) {
-        product.status = 'active'; // Désactive les promotions expirées
-      }
-    }
-  });
-}
-
-get promotedProducts(): StockItem[] {
-  return this.availableProducts.filter(product => 
-    product.status === 'promotion' && 
-    this.isPromotionActive(product) &&
-    product.quantite > 0
-  ).sort((a, b) => 
-    (b.promotion?.discountPercentage || 0) - (a.promotion?.discountPercentage || 0)
-  );
-}
-
-private checkPromotionsBeforeSale(): void {
-  const now = new Date();
-  
-  this.currentSale.items.forEach(item => {
-    const product = this.availableProducts.find(p => p.idProduit === item.productId);
-    if (product && product.promotion && typeof product.promotion !== 'boolean') {
-      const endDate = new Date(product.promotion.endDate);
-      
-      // Si la promotion est expirée, rétablir le prix original
-      if (now > endDate) {
-        item.unitPrice = product.prixDeVente;
-        item.totalPrice = item.quantity * item.unitPrice;
-      }
-    }
-  });
-  
-  // Mettre à jour les totaux après vérification des promotions
-  this.updateCartTotals();
-}
-
-isPromotionActive(product: StockItem): boolean {
-  if (!product?.promotion) return false;
-  
-  const now = new Date();
-  const start = new Date(product.promotion.startDate);
-  const end = new Date(product.promotion.endDate);
-
-  // Ajuster le fuseau horaire
-  start.setHours(0, 0, 0, 0);
-  end.setHours(23, 59, 59, 999);
-  
-  return now >= start && now <= end;
-}
-
-// Calcul du prix avec réduction
-getCurrentPrice(product: any): number {
-  if (this.isPromotionActive(product) && product.promotion?.discountPercentage) {
-    return product.prixDeVente * (1 - product.promotion.discountPercentage / 100);
+  getTotalProductDiscount(): number {
+    return 0;
   }
-  return product.prixDeVente;
-}
 
+  updateCartTotals(): void {
+    this.currentSale.subTotal = this.currentSale.items.reduce((sum, item) => sum + item.totalPrice, 0);
+    this.updateDiscount();
+  }
 
-removeItem(index: number): void {
-  this.currentSale.items.splice(index, 1);
-  this.updateCartTotals();
-}
-updateCartTotals(): void {
-  this.currentSale.subTotal = this.currentSale.items.reduce((sum, item) => sum + item.totalPrice, 0);
-  this.updateDiscount();
-}
+  updateDiscount(): void {
+    this.currentSale.discountAmount = this.currentSale.subTotal * (this.currentSale.discount / 100);
+    this.currentSale.totalAmount = this.currentSale.subTotal - this.currentSale.discountAmount;
+  }
 
-updateDiscount(): void {
-  this.currentSale.discountAmount = this.currentSale.subTotal * (this.currentSale.discount / 100);
-  this.currentSale.totalAmount = this.currentSale.subTotal - this.currentSale.discountAmount;
-}
+  removeItem(index: number): void {
+    this.currentSale.items.splice(index, 1);
+    this.updateCartTotals();
+  }
 
-private clearSelection(): void {
-  this.selectedProductId = '';
-  this.selectedProduct = null;
-  this.selectedQuantity = 1;
-} 
-
-
+  private clearSelection(): void {
+    this.selectedProductId = '';
+    this.selectedProduct = null;
+    this.selectedQuantity = 1;
+  }
 }

@@ -128,7 +128,7 @@ body {
 /* ================ PRODUCT GRID ================ */
 .product-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(5, 1fr);
   gap: 25px;
 }
 
@@ -377,6 +377,7 @@ body {
   }
 }
 
+
 /* ================ UTILITY CLASSES ================ */
 /* (Conserver les classes utilitaires existantes pour les couleurs et états) */
 .status-active { background-color: #4caf50; }
@@ -391,3 +392,346 @@ body {
 .action-btn.danger { background-color: #dc3545; color: white; }
 .price { color: #2ed573; font-weight: bold; }
 .price del { color: #a4b0be; }
+
+
+/* authenticity */
+
+/* ================ AUTHENTICITY BADGES (TAILLE RÉDUITE) ================ */
+.authenticity-badge {
+  padding: 2px 6px;           /* Espace intérieur réduit */
+  border-radius: 8px;         /* Coins légèrement arrondis */
+  font-size: 0.6em;           /* Texte plus petit */
+  font-weight: 500;           /* Légèrement plus fin */
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;                   /* Moins d’espace entre icône et texte */
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  order: 1;
+  flex: initial;              /* Pas de largeur forcée */
+  justify-content: center;
+  margin-bottom: 2px;         /* Réduit l’espace en bas */
+}
+
+.authentic {
+  background-color: #28a745;
+  color: white;
+  box-shadow: 0 1px 2px rgba(40, 167, 69, 0.3);
+}
+
+.counterfeit {
+  background-color: #dc3545;
+  color: white;
+  box-shadow: 0 1px 2px rgba(220, 53, 69, 0.3);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 4px rgba(220, 53, 69, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+  }
+}
+
+/* Pour regrouper les badges */
+.badge-group {
+  display: flex;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+
+
+
+/* Styles pour le scanner */
+/* Styles pour le bouton principal de scan */
+.scan-btn {
+  background: linear-gradient(135deg, #6e8efb, #4a6cf7);
+  color: white;
+  border: none;
+  border-radius: 30px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(74, 108, 247, 0.25);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.scan-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(74, 108, 247, 0.35);
+}
+
+.scan-btn i {
+  font-size: 16px;
+}
+
+/* Conteneur du scanner */
+.scanner-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(0.95);
+  animation: scannerFadeIn 0.3s forwards;
+}
+
+@keyframes scannerFadeIn {
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Vue du scanner */
+.scanner-viewport {
+  width: 90%;
+  max-width: 700px;
+  height: 700px;
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  transform: translateY(20px);
+  transition: transform 0.3s ease;
+}
+
+.scanner-container.active .scanner-viewport {
+  transform: translateY(0);
+}
+
+/* Overlay et cadre de scan */
+.scanner-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.scan-frame {
+  width: 70%;
+  height: 500px;
+  border-radius: 8px;
+  box-shadow: 0 0 0 2000px rgba(0, 0, 0, 0.6);
+  position: relative;
+  overflow: hidden;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { border-color: #4CAF50; }
+  50% { border-color: #8BC34A; }
+  100% { border-color: #4CAF50; }
+}
+
+.scan-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  animation: scan 3s linear infinite;
+}
+
+@keyframes scan {
+  0% { top: 0; }
+  100% { top: 100%; }
+}
+
+.scan-instructions {
+  color: white;
+  margin-top: 30px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 500;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+/* Boutons d'action */
+.scan-actions {
+  display: flex;
+  gap: 15px;
+  margin-top: 30px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  padding: 15px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.scan-action-btn {
+  padding: 12px 20px;
+  border-radius: 8px;
+  border: none;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.scan-action-btn i {
+  font-size: 16px;
+}
+
+.scan-edit { 
+  background: linear-gradient(135deg, #2196F3, #1976D2);
+}
+
+.scan-delete { 
+  background: linear-gradient(135deg, #f44336, #d32f2f);
+}
+
+.scan-view { 
+  background: linear-gradient(135deg, #4CAF50, #388E3C);
+}
+
+.scan-action-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.scan-action-btn:active {
+  transform: translateY(1px);
+}
+
+/* Bouton fermer */
+.close-scanner-btn {
+  margin-top: 25px;
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  border: none;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.close-scanner-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.close-scanner-btn i {
+  font-size: 20px;
+}
+
+
+/* Ajoutez ces styles supplémentaires */
+.camera-selector {
+  margin-top: 15px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 4px;
+}
+
+.camera-selector select {
+  padding: 5px;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  background: white;
+}
+
+
+/*fin scan */
+
+
+
+.olfactive-family-badge {
+  background: linear-gradient(135deg, #a8e6cf, #dcedc1); /* Dégradé doux et élégant */
+  color: #2b584b; /* Texte vert foncé pour un bon contraste */
+  padding: 6px 14px;
+  border-radius: 999px; /* Badge très arrondi */
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  box-shadow: 0 4px 8px rgba(168, 230, 207, 0.3); /* Ombre douce et colorée */
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: default;
+}
+
+.olfactive-family-badge:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 12px rgba(168, 230, 207, 0.4);
+}
+
+/* barre prix  */
+.strikethrough {
+  text-decoration: line-through;
+  color: gray;
+}
+
+.promo-price {
+  color: red;
+  margin-left: 10px;
+}
+
+
+/* statu */
+
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.status-active {
+  background-color: #e6f7ee;
+  color: #10b981;
+}
+
+.status-inactive {
+  background-color: #fee2e2;
+  color: #ef4444;
+}
+
+.status-promotion {
+  background-color: #f3e8ff;
+  color: #8b5cf6;
+}
+
+.status-out-of-stock {
+  background-color: #ffedd5;
+  color: #f97316;
+}
+
+.expired-text {
+  font-size: 0.8em;
+  opacity: 0.8;
+}

@@ -1,30 +1,20 @@
 import { Injectable } from '@angular/core';
 import { AngularFireDatabase } from '@angular/fire/compat/database';
-import { ConfirmationService } from 'primeng/api';
 
 @Injectable({
   providedIn: 'root'
 })
+
+
 export class DataIntegrityService {
-  showSuccess: any;
-  issues: any;
-
-  constructor(
-    private db: AngularFireDatabase,
-    private confirmationService: ConfirmationService
-  ) { }
-
-  async runAllChecks() {
-    const checks = ['orphan_records', 'data_integrity', 'duplicates'];
-    const allIssues: string[] = [];
-
-    for (const check of checks) {
-      const result = await this.runCheck(check);
-      allIssues.push(...result.issues);
-    }
-
-    return { issues: allIssues };
+  runAllChecks() {
+    throw new Error("Method not implemented.");
   }
+  showSuccess: any;
+  dataIntegrityService: any;
+  confirmationService: any;
+  issues: any;
+  constructor(private db: AngularFireDatabase) { }
 
   async runCheck(checkId: string): Promise<{ issues: string[] }> {
     switch (checkId) {
@@ -54,11 +44,11 @@ export class DataIntegrityService {
 
   private async checkOrphanRecords(): Promise<{ issues: string[] }> {
     const issues: string[] = [];
-
-    const usersWithoutProfile = await this.db.list('users', ref =>
+    
+    const usersWithoutProfile = await this.db.list('users', ref => 
       ref.orderByChild('profileExists').equalTo(false)
     ).query.once('value');
-
+    
     usersWithoutProfile.forEach(user => {
       issues.push(`Utilisateur orphelin: ${user.key} (pas de profil associé)`);
     });
@@ -68,32 +58,32 @@ export class DataIntegrityService {
 
   async checkDataIntegrity(): Promise<{ issues: string[] }> {
     const issues: string[] = [];
-
+    
     try {
       const ordersSnapshot = await this.db.list('orders').query.once('value');
       const orders = ordersSnapshot.val() || {};
-
+  
       const customersSnapshot = await this.db.list('customers').query.once('value');
       const customers = customersSnapshot.val() || {};
-
+  
       Object.keys(orders).forEach(orderId => {
         const order = orders[orderId];
-
+        
         if (!order.customerId) {
           issues.push(`Commande ${orderId} : aucun customerId spécifié`);
           return;
         }
-
+  
         if (!customers[order.customerId]) {
           issues.push(`Commande ${orderId} : client ${order.customerId} introuvable`);
         }
       });
-
+  
     } catch (error: any) {
       console.error('Erreur de vérification:', error);
       issues.push('Erreur technique lors de la vérification: ' + error.message);
     }
-
+  
     return { issues };
   }
 
@@ -101,7 +91,7 @@ export class DataIntegrityService {
     const issues: string[] = [];
     const products = await this.db.list('products').query.once('value');
     const seenNames = new Set();
-
+    
     products.forEach(product => {
       const name = product.val().name;
       if (seenNames.has(name)) {
@@ -143,21 +133,21 @@ export class DataIntegrityService {
     try {
       const ordersSnapshot = await this.db.list('orders').query.once('value');
       const customersSnapshot = await this.db.list('customers').query.once('value');
-
+      
       const updates: Promise<void>[] = [];
       let fixedCount = 0;
       const defaultCustomerId = 'CLIENT_PAR_DEFAUT'; // À définir
-
+  
       Object.keys(ordersSnapshot.val() || {}).forEach(orderId => {
         const order = ordersSnapshot.val()[orderId];
-
+        
         // Cas 1: Aucun customerId spécifié
         if (!order.customerId) {
           updates.push(
             this.db.object(`orders/${orderId}/customerId`).set(defaultCustomerId)
           );
           fixedCount++;
-        }
+        } 
         // Cas 2: customerId invalide
         else if (!customersSnapshot.val()[order.customerId]) {
           updates.push(
@@ -166,7 +156,7 @@ export class DataIntegrityService {
           fixedCount++;
         }
       });
-
+  
       await Promise.all(updates);
       return { success: true, fixedCount };
     } catch (error) {
@@ -219,9 +209,9 @@ export class DataIntegrityService {
       confirmText: 'Corriger',
       cancelText: 'Annuler'
     });
-
+    
     if (confirmation) {
-      const result = await this.fixDataIntegrity();
+      const result = await this.dataIntegrityService.fixDataIntegrity();
       if (result.success) {
         this.showSuccess(`${result.fixedCount} commandes corrigées`);
       }
@@ -230,47 +220,49 @@ export class DataIntegrityService {
 
   async fixAllMissingCustomerIds() {
     const defaultCustomerId = "ID_CLIENT_DEFAUT"; // À remplacer
-    const issues = await this.runAllChecks();
-
-    const ordersWithoutCustomer = issues.issues.filter(
-      (issue: { message: string }) => issue.message.includes('aucun customerId')
+    const issues = await this.dataIntegrityService.detectIssues();
+    
+    const ordersWithoutCustomer = issues.filter(
+      (      issue: { message: string | string[]; }) => issue.message.includes('aucun customerId')
     );
-
+  
     const results = await Promise.all(
-      ordersWithoutCustomer.map((order: { orderId: any; }) =>
+      ordersWithoutCustomer.map((order: { orderId: any; }) => 
         this.db.object(`orders/${order.orderId}`).update({
           customerId: defaultCustomerId,
           _fixedAt: new Date().toISOString()
         })
       )
     );
-
+  
     this.showSuccess(`${results.length} commandes corrigées`);
   }
 
-  private scheduleConfigRef = this.db.object('config/dataCheckSchedule');
 
-  async setSchedule(frequency: 'daily' | 'weekly' | 'monthly') {
-    const nextRun = this.calculateNextRun(frequency);
-    await this.scheduleConfigRef.set({
-      frequency,
-      nextRun: nextRun.toISOString(),
-      lastUpdated: new Date().toISOString()
-    });
-    return nextRun;
-  }
 
-  private calculateNextRun(frequency: string): Date {
-    const now = new Date();
-    switch(frequency) {
-      case 'daily':
-        return new Date(now.setDate(now.getDate() + 1));
-      case 'weekly':
-        return new Date(now.setDate(now.getDate() + 7));
-      case 'monthly':
-        return new Date(now.setMonth(now.getMonth() + 1));
-      default:
-        return new Date(now.setDate(now.getDate() + 1));
-    }
+private scheduleConfigRef = this.db.object('config/dataCheckSchedule');
+
+async setSchedule(frequency: 'daily' | 'weekly' | 'monthly') {
+  const nextRun = this.calculateNextRun(frequency);
+  await this.scheduleConfigRef.set({
+    frequency,
+    nextRun: nextRun.toISOString(),
+    lastUpdated: new Date().toISOString()
+  });
+  return nextRun;
+}
+
+private calculateNextRun(frequency: string): Date {
+  const now = new Date();
+  switch(frequency) {
+    case 'daily':
+      return new Date(now.setDate(now.getDate() + 1));
+    case 'weekly':
+      return new Date(now.setDate(now.getDate() + 7));
+    case 'monthly':
+      return new Date(now.setMonth(now.getMonth() + 1));
+    default:
+      return new Date(now.setDate(now.getDate() + 1));
   }
+}
 }

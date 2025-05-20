@@ -14,6 +14,7 @@ export interface Order {
   userId: string;
 }
 
+
 export interface CartItem {
   productId: string;
   productName: string;

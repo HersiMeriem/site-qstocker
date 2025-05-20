@@ -397,26 +397,27 @@ export class StockService {
     await this.db.list('/notifications').push(notification);
   }
 
-async updateStockQuantity(productId: string, delta: number): Promise<void> {
-  const ref = this.db.object<StockItem>(`${this.stockPath}/${productId}`);
-  const snapshot = await firstValueFrom(ref.valueChanges());
 
-  if (!snapshot) throw new Error(`Produit ${productId} non trouvé`);
 
-  const newQuantity = snapshot.quantite + delta;
-  if (newQuantity < 0) throw new Error('Stock insuffisant');
+  //
 
-  // Mettre à jour le statut si rupture
-  const newStatus = newQuantity === 0 ? 'out-of-stock' : snapshot.status === 'out-of-stock' ? 'active' : snapshot.status;
+  async updateStockQuantity(productId: string, delta: number): Promise<void> {
+    const ref = this.db.object<StockItem>(`${this.stockPath}/${productId}`);
+    const snapshot = await firstValueFrom(ref.valueChanges());
 
-  await ref.update({
-    quantite: newQuantity,
-    status: newStatus,
-    dateMiseAJour: new Date().toISOString()
-  });
+    if (!snapshot) throw new Error(`Produit ${productId} non trouvé`);
 
-  this.checkStockLevels(productId, newQuantity);
-}
+    const newQuantity = snapshot.quantite + delta;
+    if (newQuantity < 0) throw new Error('Stock insuffisant');
 
-  
+    const newStatus = newQuantity === 0 ? 'out-of-stock' : snapshot.status === 'out-of-stock' ? 'active' : snapshot.status;
+
+    await ref.update({
+      quantite: newQuantity,
+      status: newStatus,
+      dateMiseAJour: new Date().toISOString()
+    });
+
+    this.checkStockLevels(productId, newQuantity);
+  }
 }

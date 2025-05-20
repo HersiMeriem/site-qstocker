@@ -129,45 +129,159 @@ export class LivraisonComponent implements OnInit {
     }
   }
 
-  generateInvoice(): void {
-    if (!this.selectedOrder) {
-      this.showErrorAlert('Aucune commande sélectionnée');
-      return;
+async generateInvoice(): Promise<void> {
+  if (!this.selectedOrder) {
+    this.showErrorAlert('Aucune commande sélectionnée');
+    return;
+  }
+
+  const doc = new jsPDF();
+  const logoUrl = await this.getDataUrlFromImage('assets/images/qstocker.png');
+
+  // Dimensions utiles
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const leftMargin = 20;
+  const rightMargin = 190;
+
+  // === En-tête ===
+  if (logoUrl) {
+    doc.addImage(logoUrl, 'PNG', leftMargin, 15, 20, 12);
+  }
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.setTextColor('#1e4868');
+  doc.text('Q', leftMargin, 30);
+  doc.setTextColor('#548CB8');
+  doc.text('Stocker', leftMargin + 4, 30);
+
+  // Coordonnées magasin à droite
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor('#000000');
+  doc.text('Email: contact.qstocker@gmail.com', rightMargin - 70, 20);
+  doc.text('Téléphone: +1234567890', rightMargin - 70, 28);
+  doc.text('Adresse: Sfax', rightMargin - 70, 36);
+
+  // Titre "FACTURE"
+  doc.setFontSize(24);
+  doc.setTextColor('#1e4868');
+  doc.text('FACTURE', pageWidth / 2, 55, { align: 'center' });
+
+  // Ligne de séparation
+  doc.setDrawColor('#548CB8');
+  doc.setLineWidth(1);
+  doc.line(leftMargin, 60, rightMargin, 60);
+
+  // Informations de commande
+  doc.setFontSize(12);
+  doc.setTextColor('#000');
+  doc.text(`Commande #: ${this.selectedOrder.id.substring(0, 8)}`, leftMargin, 70);
+  doc.text(`Date: ${new Date(this.selectedOrder.orderDate).toLocaleDateString()}`, leftMargin, 80);
+  doc.text(`Client: ${this.selectedOrder.customerName}`, leftMargin, 90);
+  doc.text(`Téléphone: ${this.selectedOrder.customerPhone}`, leftMargin, 100);
+
+  // Ligne de séparation
+  doc.setDrawColor('#eeeeee');
+  doc.line(leftMargin, 105, rightMargin, 105);
+
+  // En-tête tableau produits
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.setTextColor('#1e4868');
+  doc.text('Articles', leftMargin, 115);
+
+  // Tableau entête
+  doc.setFillColor('#f0f7fc');
+  doc.rect(leftMargin, 120, 170, 8, 'F');
+  doc.setDrawColor('#cccccc');
+  doc.rect(leftMargin, 120, 170, 8, 'D');
+
+  doc.setFontSize(11);
+  doc.setTextColor('#000000');
+  doc.text('Produit', leftMargin + 2, 126);
+  doc.text('Qté', 90, 126);
+  doc.text('Prix', 120, 126);
+  doc.text('Total', 160, 126);
+
+  let y = 135;
+
+  // Liste des articles
+  this.selectedOrder.items.forEach((item, index) => {
+    if (y > 270) {
+      doc.addPage();
+      y = 20;
     }
 
-    const doc = new jsPDF();
-    
-    // En-tête
-    doc.setFontSize(20);
-    doc.text('Facture', 105, 20, { align: 'center' });
-    
-    // Détails de la commande
-    doc.setFontSize(12);
-    doc.text(`Commande #${this.selectedOrder.id.substring(0, 8)}`, 20, 40);
-    doc.text(`Date: ${new Date(this.selectedOrder.orderDate).toLocaleDateString()}`, 20, 50);
-    doc.text(`Client: ${this.selectedOrder.customerName}`, 20, 60);
-    doc.text(`Téléphone: ${this.selectedOrder.customerPhone}`, 20, 70);
+    // Alternance de couleur pour chaque ligne
+    if (index % 2 === 0) {
+      doc.setFillColor(245, 245, 245);
+      doc.rect(leftMargin, y - 5, 170, 8, 'F');
+    }
 
-    // Articles
-    let y = 90;
-    doc.text('Articles:', 20, y);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor('#000');
+    doc.text(item.productName, leftMargin + 2, y);
+    doc.text(`${item.quantity}`, 90, y);
+    doc.text(`${(item.totalPrice / item.quantity).toFixed(2)} DT`, 120, y);
+    doc.text(`${item.totalPrice.toFixed(2)} DT`, 160, y);
+
     y += 10;
-    
-    this.selectedOrder.items.forEach(item => {
-      doc.text(`${item.productName} (x${item.quantity}) - ${item.totalPrice} DT`, 20, y);
-      y += 10;
+  });
+
+  // Ligne de séparation avant les totaux
+  doc.setDrawColor('#dddddd');
+  doc.line(leftMargin, y, rightMargin, y);
+  y += 10;
+
+  // Totaux
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(12);
+  doc.setTextColor('#000');
+  doc.text(`Sous-total:`, rightMargin - 60, y);
+  doc.text(`${this.selectedOrder.totalAmount.toFixed(2)} DT`, rightMargin - 10, y, { align: 'right' });
+  y += 10;
+
+  doc.text(`Frais de livraison:`, rightMargin - 60, y);
+  doc.text(`${this.selectedOrder.shippingFee.toFixed(2)} DT`, rightMargin - 10, y, { align: 'right' });
+  y += 10;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.setTextColor('#1e4868');
+  doc.text(`Total:`, rightMargin - 60, y);
+  doc.text(`${this.selectedOrder.grandTotal.toFixed(2)} DT`, rightMargin - 10, y, { align: 'right' });
+  y += 20;
+
+  // Message final
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(11);
+  doc.setTextColor('#548CB8');
+  doc.text('Merci pour votre confiance !', pageWidth / 2, y, { align: 'center' });
+
+  // Sauvegarder le PDF
+  doc.save(`facture-${this.selectedOrder.id}.pdf`);
+}
+
+
+  private getDataUrlFromImage(imagePath: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      fetch(imagePath)
+        .then(response => response.blob())
+        .then(blob => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(blob);
+        })
+        .catch(error => {
+          console.error('Erreur lors du chargement de l\'image:', error);
+          reject(error);
+        });
     });
-
-    // Total
-    y += 10;
-    doc.text(`Sous-total: ${this.selectedOrder.totalAmount} DT`, 20, y);
-    y += 10;
-    doc.text(`Frais de livraison: ${this.selectedOrder.shippingFee} DT`, 20, y);
-    y += 10;
-    doc.text(`Total: ${this.selectedOrder.grandTotal} DT`, 20, y);
-
-    doc.save(`facture-${this.selectedOrder.id}.pdf`);
   }
+
+
+
 
   filterBySearch(): void {
     if (this.searchQuery) {
@@ -180,17 +294,7 @@ export class LivraisonComponent implements OnInit {
     }
   }
 
-  filterByDate(event: Event): void {
-    const date = (event.target as HTMLInputElement).value;
-    if (date) {
-      this.orders = this.orders.filter(order => {
-        const orderDate = new Date(order.orderDate).toISOString().split('T')[0];
-        return orderDate === date;
-      });
-    } else {
-      this.loadOrders();
-    }
-  }
+
 
   private showSuccessAlert(message: string): void {
     this.successMessage = message;

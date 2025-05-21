@@ -11,7 +11,19 @@ export interface FinancialData {
     revenueDetails: RevenueDetail[];
     detailedExpenses: DetailedExpense[];
     kpis: KPI[];
-  }
+    deliveryOrdersCount: number; // Ajouté
+    deliveryRevenue: number;   // Ajouté
+    inStoreRevenue: number;    // Ajouté
+}
+
+export interface RevenueDetail {
+    source: string;
+    amount: number;
+    percentage: number;
+    trend: number;
+    deliveryCount?: number;    // Ajouté
+    inStoreCount?: number;    // Ajouté
+}
   
   export interface ExpenseCategory {
     category: string;

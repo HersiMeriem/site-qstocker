@@ -1,12 +1,14 @@
 <div class="dashboard-wrapper">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2><i class="fas fa-chart-line"></i> Tableau Financier</h2>
-    <button class="btn btn-primary" (click)="toggleExpensesSection()">
-      <i class="fas fa-file-invoice-dollar"></i> {{ showExpensesSection ? 'Masquer' : 'Afficher' }} les dépenses
-    </button>
-    <button class="btn btn-primary" (click)="toggleCommandInvoicesSection()">
-      <i class="fas fa-file-invoice"></i> {{ showCommandInvoices ? 'Masquer' : 'Afficher' }} les factures fournisseurs
-    </button>
+    <div class="d-flex">
+      <button class="btn btn-primary btn-sm me-2" (click)="toggleExpensesSection()">
+        <i class="fas fa-file-invoice-dollar"></i> {{ showExpensesSection ? 'Masquer' : 'Afficher' }} les dépenses
+      </button>
+      <button class="btn btn-primary btn-sm" (click)="toggleCommandInvoicesSection()">
+        <i class="fas fa-file-invoice"></i> {{ showCommandInvoices ? 'Masquer' : 'Afficher' }} les factures fournisseurs
+      </button>
+    </div>
   </div>
 
   <div class="filters">
@@ -50,20 +52,41 @@
       <!-- First row - Key metrics -->
       <div class="col-md-12">
         <div class="row g-4">
-          <!-- Revenue card -->
-          <div class="col-md-3">
-            <div class="metric-box highlight card h-100">
-              <div class="card-body">
-                <h4 class="card-title">Chiffre d'affaires</h4>
-                <p class="card-text display-6">{{ totalCA | number:'1.2-2' }} DT</p>
-                <div class="trend" [class.positive]="caTrend >= 0">
-                  <i [class]="'fas fa-arrow-' + (caTrend >= 0 ? 'up' : 'down')"></i>
-                  {{ caTrend | number:'1.1-1' }}%
-                </div>
-              </div>
-            </div>
-          </div>
-          
+
+<!-- CA Total -->
+<div class="col-md-3">
+  <div class="metric-box highlight card h-100">
+    <div class="card-body">
+      <h4 class="card-title">CA Total</h4>
+      <p class="card-text display-6">{{ totalCA + deliveredOrdersRevenue | number:'1.2-2' }} DT</p>
+      <div class="subtext">Transactions ({{ totalCA | number:'1.2-2' }} DT) + Commandes ({{ deliveredOrdersRevenue | number:'1.2-2' }} DT)</div>
+    </div>
+  </div>
+</div>
+
+   <!-- Transactions card -->
+<div class="col-md-3">
+  <div class="metric-box card h-100">
+    <div class="card-body">
+      <h4 class="card-title">Transactions</h4>
+      <p class="card-text display-6">{{ transactions }}</p>
+      <div class="subtext">Panier moyen par transaction : {{ panierMoyen | number:'1.2-2' }} DT</div>
+      <div class="subtext">CA: {{ totalCA | number:'1.2-2' }} DT</div>
+    </div>
+  </div>
+</div>
+
+<!-- Dans la section metrics-grid, première row -->
+<div class="col-md-3">
+  <div class="metric-box card h-100">
+    <div class="card-body">
+      <h4 class="card-title">Commandes Livrées</h4>
+      <p class="card-text display-6">{{ deliveredOrdersCount }}</p>
+      <div class="subtext">CA: {{ deliveredOrdersRevenue | number:'1.2-2' }} DT</div>
+    </div>
+  </div>
+</div>
+
           <!-- Gross profit card -->
           <div class="col-md-3">
             <div class="metric-box card h-100">
@@ -74,30 +97,6 @@
               </div>
             </div>
           </div>
-          
-          <!-- Transactions card -->
-          <div class="col-md-3">
-            <div class="metric-box card h-100">
-              <div class="card-body">
-                <h4 class="card-title">Transactions</h4>
-                <p class="card-text display-6">{{ transactions }}</p>
-                <div class="subtext">Panier moyen: {{ panierMoyen | number:'1.2-2' }} DT</div>
-              </div>
-            </div>
-          </div>
-          
-          <!-- Average costs card -->
-          <div class="col-md-3">
-            <div class="metric-box card h-100">
-              <div class="card-body">
-                <h4 class="card-title">Coûts moyens</h4>
-                <p class="card-text display-6">{{ costPerTransaction | number:'1.2-2' }} DT</p>
-                <div class="subtext">Par transaction</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       <!-- Second row - Expenses and net profit -->
       <div class="col-md-12 mt-3">
@@ -121,7 +120,7 @@
         </div>
       </div>
       <div class="progress mt-2" style="height: 8px;">
-        <div class="progress-bar bg-warning" 
+        <div class="progress-bar bg-warning"
              [style.width]="(totalExpenses / totalCA * 100) + '%'"
              role="progressbar">
         </div>
@@ -140,7 +139,7 @@
                 <p class="card-text display-6">{{ (benefice - totalExpenses) | number:'1.2-2' }} DT</p>
                 <div class="d-flex justify-content-between">
                   <small class="text-muted">Après dépenses</small>
-                  <span class="badge" 
+                  <span class="badge"
                         [ngClass]="(benefice - totalExpenses) >= 0 ? 'bg-success' : 'bg-danger'">
                     {{ ((benefice - totalExpenses) / totalCA * 100) | number:'1.1-1' }}% de marge nette
                   </span>
@@ -151,30 +150,18 @@
         </div>
       </div>
     </div>
-
-    <div class="charts row mt-4 g-4">
-      <div class="col-lg-6">
-        <div class="chart-container card h-100">
-          <div class="card-body">
-            <h4 class="card-title">Évolution du CA</h4>
-            <div class="chart-wrapper">
-              <canvas id="lineChart"></canvas>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="col-lg-6">
-        <div class="chart-container card h-100">
-          <div class="card-body">
-            <h4 class="card-title">Répartition des dépenses</h4>
-            <div class="chart-wrapper">
-              <canvas id="doughnutChart"></canvas>
-            </div>
-          </div>
-        </div>
+<!--courbe -->
+<br>
+    <div class="col-lg-12">
+  <div class="chart-container card h-100">
+    <div class="card-body">
+      <h4 class="card-title">Évolution du Chiffre d'Affaires</h4>
+      <div class="chart-wrapper">
+        <canvas id="combinedCAChart"></canvas>
       </div>
     </div>
   </div>
+</div>
 
   <!-- Expenses Section -->
   <div class="expenses-section mt-5" *ngIf="showExpensesSection">
@@ -185,7 +172,7 @@
     <div class="card">
       <div class="card-body">
         <h4 class="card-title mb-4">Dépenses récentes</h4>
-        
+
         <div *ngIf="expensesLoading" class="text-center py-3">
           <div class="spinner-border text-secondary" role="status"></div>
         </div>
@@ -233,11 +220,11 @@
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h3><i class="fas fa-truck-moving"></i> Factures Fournisseurs</h3>
     <div>
-      <input 
-      type="text" 
-      class="form-control" 
-      [(ngModel)]="searchTerm" 
-      (input)="applyFilter()" 
+      <input
+      type="text"
+      class="form-control"
+      [(ngModel)]="searchTerm"
+      (input)="applyFilter()"
       placeholder="Rechercher ..."
       style="width: 250px; display: inline-block; margin-right: 10px;"
     >
@@ -282,7 +269,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let cmd of filteredCommandInvoices" 
+            <tr *ngFor="let cmd of filteredCommandInvoices"
                 [class.table-danger]="cmd.paymentStatus === 'En retard'">
               <td class="fw-bold">{{ cmd.id || 'N/A' }}</td>
               <td class="fw-bold">{{ cmd.invoiceNumber || 'N/A' }}</td>
@@ -310,13 +297,13 @@
                           title="Marquer comme payé">
                     <i class="fas fa-check-circle"></i>
                   </button>
-                  
+
                   <button class="btn btn-sm btn-info"
                           (click)="generateInvoice(cmd)"
                           title="Générer facture">
                     <i class="fas fa-file-invoice"></i>
                   </button>
-                  
+
                 </div>
               </td>
             </tr>
@@ -346,7 +333,7 @@
           <div class="col-md-6 text-end">
             <p><strong>Date:</strong> {{ selectedInvoice.dateCommande | date:'dd/MM/yyyy' }}</p>
             <p>
-              <strong>Statut:</strong> 
+              <strong>Statut:</strong>
               <span class="badge" [ngClass]="{
                 'bg-success': selectedInvoice.paymentStatus === 'Payé',
                 'bg-warning': selectedInvoice.paymentStatus === 'En attente',
@@ -357,14 +344,14 @@
             </p>
           </div>
         </div>
-        
+
         <div class="row mb-3">
           <div class="col-md-12">
             <h6>Fournisseur</h6>
             <p>{{ selectedInvoice.supplierName }}</p>
           </div>
         </div>
-        
+
         <div class="row mb-3">
           <div class="col-md-4">
             <h6>Produit</h6>
@@ -383,7 +370,7 @@
             <p>{{ getTotalHT(selectedInvoice) | number:'1.3-3' }} DT</p>
           </div>
         </div>
-        
+
         <div class="row">
           <div class="col-md-12">
             <h6>Total TTC</h6>
@@ -413,7 +400,7 @@
       <form #expenseForm="ngForm" (ngSubmit)="submitExpense()">
         <div class="mb-3">
           <label class="form-label">Méthode de paiement</label>
-          <select class="form-control" 
+          <select class="form-control"
                   [(ngModel)]="newExpense.paymentMethod" name="paymentMethod" required>
             <option value="Carte">Carte</option>
             <option value="Espèces">Espèces</option>
@@ -423,7 +410,7 @@
         </div>
         <div class="mb-3">
           <label class="form-label">Date</label>
-          <input type="date" class="form-control" 
+          <input type="date" class="form-control"
                  [(ngModel)]="newExpense.date" name="date" required>
         </div>
         <div class="mb-3">
@@ -433,7 +420,7 @@
         </div>
         <div class="mb-3">
           <label class="form-label">Catégorie</label>
-          <select class="form-control" 
+          <select class="form-control"
                   [(ngModel)]="newExpense.category" name="category" required>
             <option value="">Sélectionnez une catégorie</option>
             <option *ngFor="let cat of expenseCategories" [value]="cat">
@@ -447,7 +434,7 @@
                    [(ngModel)]="newExpense.description" name="description"></textarea>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" 
+          <button type="button" class="btn btn-secondary"
                   (click)="closeExpenseModal()">Annuler</button>
           <button type="submit" class="btn btn-primary"
                   [disabled]="expenseForm.invalid || addingExpense">

@@ -26,4 +26,5 @@ export interface CartItem {
   category?: string;
   stock?: number;
   sellingPrice?: number;
+
 }

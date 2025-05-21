@@ -3,14 +3,15 @@ import { AngularFireDatabase } from '@angular/fire/compat/database';
 import { map } from 'rxjs/operators';
 import { CartItem, Order } from '../models/order';
 import { StockService } from './stock.service';
+import { Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class OrderService {
-  constructor(private db: AngularFireDatabase ,     private stockService: StockService) {}
+  constructor(private db: AngularFireDatabase, private stockService: StockService) {}
 
- getOrdersByStatus(status: string) {
+  getOrdersByStatusWithSnapshots(status: string) {
     return this.db.list<Order>('orders', ref =>
       ref.orderByChild('status').equalTo(status)
     ).snapshotChanges().pipe(
@@ -19,12 +20,13 @@ export class OrderService {
           .filter(c => c.payload.key !== null && c.payload.val() !== null)
           .map(c => {
             const val = c.payload.val()!;
+            // Remove the id from val to avoid duplication
+            const { id, ...rest } = val;
             return {
               id: c.payload.key!,
+              ...rest,
               customerName: val.customerName || '',
               customerPhone: val.customerPhone || '',
-              customerAddress: val.customerAddress,
-              customerNotes: val.customerNotes,
               items: val.items || [],
               totalAmount: val.totalAmount || 0,
               shippingFee: val.shippingFee || 0,
@@ -39,7 +41,7 @@ export class OrderService {
     );
   }
 
-async updateOrderStatus(orderId: string, newStatus: string): Promise<void> {
+  async updateOrderStatus(orderId: string, newStatus: string): Promise<void> {
     if (!orderId) {
         throw new Error('ID de commande invalide');
     }
@@ -80,11 +82,22 @@ async updateOrderStatus(orderId: string, newStatus: string): Promise<void> {
         console.error('Erreur lors de la mise à jour:', error);
         throw error;
     }
-}
+  }
 
-
-  
   deleteOrder(orderId: string): Promise<void> {
     return this.db.object(`orders/${orderId}`).remove();
   }
+
+  //dashboard-fin
+  getOrdersByStatus(status: string): Observable<Order[]> {
+    return this.db.list<Order>('orders', ref =>
+      ref.orderByChild('status').equalTo(status)
+    ).valueChanges().pipe(
+      map(orders => orders.map(order => ({
+        ...order,
+        orderDate: order.orderDate || new Date().toISOString()
+      })))
+    );
+  }
+  
 }

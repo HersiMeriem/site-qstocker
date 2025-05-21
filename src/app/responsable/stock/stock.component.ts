@@ -25,7 +25,7 @@ export class StockComponent implements OnInit, OnDestroy {
   products: Product[] = [];
 
   private stockSubscription!: Subscription;
-  private stockPath = '/stock'; // Définissez le chemin du stock
+  private stockPath = '/stock'; // Define stock path
 
   constructor(
     private db: AngularFireDatabase,
@@ -33,54 +33,17 @@ export class StockComponent implements OnInit, OnDestroy {
     private productService: ProductService
   ) {}
 
-async ngOnInit(): Promise<void> {
-  await this.syncStockStatus();
-  this.loadStock();
-  this.loadProducts();
-}
+  async ngOnInit(): Promise<void> {
+    await this.syncStockStatus();
+    this.loadStock();
+    this.loadProducts();
+  }
 
   ngOnDestroy(): void {
     if (this.stockSubscription) {
       this.stockSubscription.unsubscribe();
     }
   }
-
-loadStock(): void {
-  this.loading = true;
-  combineLatest([
-    this.stockService.getStock(),
-    this.productService.getProducts()
-  ]).subscribe({
-    next: ([stock, products]) => {
-      this.stock = stock.map(item => {
-        const product = products.find(p => p.id === item.idProduit);
-        
-        // Mettre à jour le statut si la quantité est 0
-        const status = item.quantite <= 0 ? 'out-of-stock' : 
-                      product?.status || item.status || 'active';
-
-        return {
-          ...item,
-          status,
-          promotion: product?.promotion || item.promotion || undefined,
-          editingPrice: false,
-          originalPrice: item.prixDeVente || 0,
-          qrCode: item.qrCode || product?.qrCode || null,
-          imageUrl: item.imageUrl || product?.imageUrl || null,
-          description: item.description || product?.description || null,
-          seuil: item.seuil || 10
-        };
-      });
-      this.filteredStock = [...this.stock];
-      this.loading = false;
-    },
-    error: (err) => {
-      this.errorMessage = 'Erreur lors du chargement du stock';
-      this.loading = false;
-      console.error(err);
-    }
-  });
-}
 
   loadProducts(): void {
     this.productService.getProducts().subscribe({
@@ -89,8 +52,8 @@ loadStock(): void {
         this.mergeProductInfo();
       },
       error: (err) => {
-        console.error('Erreur lors du chargement des produits', err);
-        this.errorMessage = 'Erreur lors du chargement des produits.';
+        console.error('Error loading products', err);
+        this.errorMessage = 'Error loading products.';
       }
     });
   }
@@ -142,7 +105,7 @@ loadStock(): void {
       })
       .catch((error: Error) => {
         console.error(error);
-        this.errorMessage = `Erreur de mise à jour: ${error.message}`;
+        this.errorMessage = `Error updating: ${error.message}`;
       })
       .finally(() => {
         this.updating = false;
@@ -150,26 +113,26 @@ loadStock(): void {
   }
 
   async deleteProduct(productId: string): Promise<void> {
-    if (confirm('Êtes-vous sûr de vouloir supprimer définitivement ce produit ?')) {
+    if (confirm('Are you sure you want to permanently delete this product?')) {
       try {
         await this.stockService.deleteProduct(productId);
         this.loadStock();
         this.errorMessage = null;
       } catch (error: unknown) {
-        this.errorMessage = "Échec de la suppression du produit";
+        this.errorMessage = "Failed to delete product";
         console.error(error);
       }
     }
   }
 
   async quickEditQuantity(produit: StockItem): Promise<void> {
-    const newQty = prompt(`Modifier la quantité pour ${produit.nomProduit}:`, produit.quantite.toString());
+    const newQty = prompt(`Modify quantity for ${produit.nomProduit}:`, produit.quantite.toString());
 
     if (newQty !== null && !isNaN(Number(newQty))) {
       const quantity = Number(newQty);
 
       if (quantity < 0) {
-        this.errorMessage = "La quantité ne peut pas être négative";
+        this.errorMessage = "Quantity cannot be negative";
         return;
       }
 
@@ -180,7 +143,7 @@ loadStock(): void {
         });
         this.loadStock();
       } catch (error: unknown) {
-        this.errorMessage = "Erreur lors de la mise à jour";
+        this.errorMessage = "Update error";
         console.error(error);
       }
     }
@@ -203,9 +166,9 @@ loadStock(): void {
       const history = produit.historiquePrix
         .map(entry => `${this.formatDate(entry.date)}: ${entry.prix.toFixed(3)} DT`)
         .join('\n');
-      alert(`Historique des prix pour ${produit.nomProduit}:\n\n${history}`);
+      alert(`Price history for ${produit.nomProduit}:\n\n${history}`);
     } else {
-      alert('Aucun historique de prix disponible');
+      alert('No price history available');
     }
   }
 
@@ -225,7 +188,7 @@ loadStock(): void {
 
   async savePrice(produit: StockItem): Promise<void> {
     if ((produit.prixDeVente || 0) <= 0) {
-      this.errorMessage = 'Le prix doit être positif';
+      this.errorMessage = 'Price must be positive';
       return;
     }
 
@@ -245,28 +208,28 @@ loadStock(): void {
       produit.editingPrice = false;
       this.loadStock();
     } catch (error) {
-      this.errorMessage = 'Erreur lors de la mise à jour';
+      this.errorMessage = 'Update error';
     }
   }
 
   private validateForm(): boolean {
     if ((this.selectedProduct.quantite || 0) < 0) {
-      this.errorMessage = 'La quantité ne peut pas être négative';
+      this.errorMessage = 'Quantity cannot be negative';
       return false;
     }
 
     if ((this.selectedProduct.prixUnitaireHT || 0) <= 0) {
-      this.errorMessage = 'Le prix unitaire doit être positif';
+      this.errorMessage = 'Unit price must be positive';
       return false;
     }
 
     if ((this.selectedProduct.prixDeVente || 0) <= 0) {
-      this.errorMessage = 'Le prix de vente doit être positif';
+      this.errorMessage = 'Sale price must be positive';
       return false;
     }
 
     if (!this.selectedProduct.nomProduit?.trim()) {
-      this.errorMessage = 'Le nom du produit est requis';
+      this.errorMessage = 'Product name is required';
       return false;
     }
 
@@ -319,7 +282,7 @@ loadStock(): void {
         this.stockService.updateStock(product.idProduit, {
           status: 'active',
           promotion: undefined
-        }).catch(err => console.error('Erreur mise à jour statut promo', err));
+        }).catch(err => console.error('Error updating promotion status', err));
       }
     });
   }
@@ -328,10 +291,10 @@ loadStock(): void {
     const ref = this.db.object<StockItem>(`${this.stockPath}/${productId}`);
     const snapshot = await firstValueFrom(ref.valueChanges());
 
-    if (!snapshot) throw new Error(`Produit ${productId} non trouvé`);
+    if (!snapshot) throw new Error(`Product ${productId} not found`);
 
     const newQuantity = snapshot.quantite + delta;
-    if (newQuantity < 0) throw new Error('Stock insuffisant');
+    if (newQuantity < 0) throw new Error('Insufficient stock');
 
     const newStatus = newQuantity === 0 ? 'out-of-stock' : snapshot.status === 'out-of-stock' ? 'active' : snapshot.status;
 
@@ -344,16 +307,39 @@ loadStock(): void {
     this.checkStockLevels(productId, newQuantity);
   }
 
-getStatusLabel(status: string): string {
-  const statusMap: {[key: string]: string} = {
-    'active': 'Actif',
-    'inactive': 'Inactif',
-    'promotion': 'Promo',
-    'out-of-stock': 'Rupture'
-  };
-  return statusMap[status] || status;
-}
+  private checkStockLevels(productId: string, newQuantity: number): void {
+    this.db.object<StockItem>(`${this.stockPath}/${productId}`).valueChanges()
+      .pipe(take(1))
+      .subscribe(product => {
+        if (product && newQuantity <= (product.seuil || 10)) {
+          this.createOutOfStockNotification(product);
+        }
+      });
+  }
 
+  private async createOutOfStockNotification(product: StockItem): Promise<void> {
+    const notification = {
+      type: 'stock-out',
+      productId: product.idProduit,
+      productName: product.nomProduit,
+      message: `Out of stock - ${product.nomProduit}`,
+      timestamp: new Date().toISOString(),
+      read: false,
+      priority: 'high'
+    };
+
+    await this.db.list('/notifications').push(notification);
+  }
+
+  getStatusLabel(status: string): string {
+    const statusMap: {[key: string]: string} = {
+      'active': 'Actif',
+      'inactive': 'Inactif',
+      'promotion': 'Promo',
+      'out-of-stock': 'Rupture'
+    };
+    return statusMap[status] || status;
+  }
 
   getStatusIcon(status: string): string {
     const iconMap: {[key: string]: string} = {
@@ -365,50 +351,67 @@ getStatusLabel(status: string): string {
     return iconMap[status] || 'fas fa-info-circle';
   }
 
-private checkStockLevels(productId: string, newQuantity: number): void {
-  this.db.object<StockItem>(`${this.stockPath}/${productId}`).valueChanges()
-    .pipe(take(1))
-    .subscribe(product => {
-      if (product && newQuantity <= (product.seuil || 10)) {
-        this.createOutOfStockNotification(product);
+  loadStock(): void {
+    this.loading = true;
+    combineLatest([
+      this.stockService.getStock(),
+      this.productService.getProducts()
+    ]).subscribe({
+      next: ([stock, products]) => {
+        this.stock = stock.map(item => {
+          const product = products.find(p => p.id === item.idProduit);
+          const seuil = item.seuil || 10; // Seuil par défaut
+
+          // Calcul du statut basé sur la quantité et le seuil
+          const status = item.quantite <= seuil ?
+            'out-of-stock' :
+            item.status === 'promotion' && this.isPromotionActive(item) ?
+              'promotion' :
+              'active';
+
+          return {
+            ...item,
+            status,
+            promotion: product?.promotion || item.promotion || undefined,
+            editingPrice: false,
+            originalPrice: item.prixDeVente || 0,
+            qrCode: item.qrCode || product?.qrCode || null,
+            imageUrl: item.imageUrl || product?.imageUrl || null,
+            description: item.description || product?.description || null,
+            seuil: item.seuil || 10 // Seuil par défaut
+          };
+        });
+        this.filteredStock = [...this.stock];
+        this.loading = false;
+      },
+      error: (err) => {
+        this.errorMessage = 'Erreur lors du chargement du stock';
+        this.loading = false;
+        console.error(err);
       }
     });
-}
-
-
-  private async createOutOfStockNotification(product: StockItem): Promise<void> {
-    const notification = {
-      type: 'stock-out',
-      productId: product.idProduit,
-      productName: product.nomProduit,
-      message: `Rupture de stock - ${product.nomProduit}`,
-      timestamp: new Date().toISOString(),
-      read: false,
-      priority: 'high'
-    };
-
-    await this.db.list('/notifications').push(notification);
   }
 
+  private async syncStockStatus(): Promise<void> {
+    try {
+      const stock = await firstValueFrom(this.stockService.getStock());
 
-private async syncStockStatus(): Promise<void> {
-  try {
-    const stock = await firstValueFrom(this.stockService.getStock());
-    
-    const updates = stock.map(async (item: StockItem) => {
-      const newStatus = item.quantite <= 0 ? 'out-of-stock' : 
-                       item.status === 'out-of-stock' ? 'active' : item.status;
+      const updates = stock.map(async (item: StockItem) => {
+        const seuil = item.seuil || 10; // Seuil par défaut à 10
+        const newStatus = item.quantite <= seuil ?
+          'out-of-stock' :
+          item.status === 'out-of-stock' ?
+            'active' :
+            item.status;
 
-      if (newStatus !== item.status) {
-        await this.stockService.updateStock(item.idProduit, { status: newStatus });
-      }
-    });
+        if (newStatus !== item.status) {
+          await this.stockService.updateStock(item.idProduit, { status: newStatus });
+        }
+      });
 
-    await Promise.all(updates);
-  } catch (error) {
-    console.error('Erreur lors de la synchronisation du statut:', error);
+      await Promise.all(updates);
+    } catch (error) {
+      console.error('Error syncing status:', error);
+    }
   }
-}
-
-
 }

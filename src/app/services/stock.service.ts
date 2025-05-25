@@ -136,7 +136,7 @@ export class StockService {
     try {
       if (!productId) throw new Error('ID produit manquant');
 
-      const ref = this.db.object<StockItem>(${this.stockPath}/${productId});
+      const ref = this.db.object<StockItem>(`${this.stockPath}/${productId}`);
       const snapshot = await firstValueFrom(ref.valueChanges());
 
       if (!snapshot) {
@@ -155,12 +155,12 @@ export class StockService {
         updateData,
         errorMessage
       });
-      throw new Error(Échec de la mise à jour: ${errorMessage});
+      throw new Error(`Échec de la mise à jour: ${errorMessage}`);
     }
   }
 
   getProductStockQuantity(productId: string): Observable<number> {
-    return this.db.object<StockItem>(${this.stockPath}/${productId})
+    return this.db.object<StockItem>(`${this.stockPath}/${productId}`)
       .valueChanges()
       .pipe(
         map((stock: StockItem | null) => stock?.quantite || 0),
@@ -178,7 +178,7 @@ export class StockService {
     description?: string | null;
   }): Promise<StockItem> {
     try {
-      const stockRef = this.db.object<StockItem>(${this.stockPath}/${commande.productId});
+      const stockRef = this.db.object<StockItem>(`${this.stockPath}/${commande.productId}`);
       const snapshot = await firstValueFrom(stockRef.snapshotChanges()) as SnapshotAction<StockItem>;
       const currentData = snapshot.payload.val() || {
         idProduit: commande.productId,
@@ -244,7 +244,7 @@ export class StockService {
 
   async deleteProduct(productId: string): Promise<void> {
     try {
-      await this.db.object(${this.stockPath}/${productId}).remove();
+      await this.db.object(`${this.stockPath}/${productId}`).remove();
     } catch (error) {
       console.error('Erreur suppression:', error);
       throw new Error('Échec de la suppression');
@@ -252,7 +252,7 @@ export class StockService {
   }
 
   getProduct(productId: string): Observable<StockItem | null> {
-    return this.db.object<StockItem>(${this.stockPath}/${productId}).valueChanges().pipe(
+    return this.db.object<StockItem>(`${this.stockPath}/${productId}`).valueChanges().pipe(
       map(stockItem => {
         console.log('Stock Item:', stockItem);
         return stockItem;
@@ -275,7 +275,7 @@ export class StockService {
   }
 
   getStockHistory(productId: string): Observable<StockItem[]> {
-    return this.db.list<StockItem>(${this.stockPath}/${productId}/historiquePrix)
+    return this.db.list<StockItem>(`${this.stockPath}/${productId}/historiquePrix`)
       .valueChanges();
   }
 
@@ -372,7 +372,7 @@ export class StockService {
       type: 'stock-out',
       productId: product.idProduit,
       productName: product.nomProduit,
-      message: Rupture de stock - ${product.nomProduit},
+      message: `Rupture de stock - ${product.nomProduit}`,
       timestamp: new Date().toISOString(),
       read: false,
       priority: 'high'
@@ -387,7 +387,7 @@ export class StockService {
     reason: string;
   }): Promise<void> {
     try {
-      const stockRef = this.db.object<StockItem>(${this.stockPath}/${commande.productId});
+      const stockRef = this.db.object<StockItem>(`${this.stockPath}/${commande.productId}`);
       const snapshot = await firstValueFrom(stockRef.snapshotChanges()) as SnapshotAction<StockItem>;
       const currentData = snapshot.payload.val();
 
@@ -421,7 +421,7 @@ export class StockService {
       if (newQuantity <= 0) {
         await this.notificationService.createNotification({
           title: 'Rupture de stock totale',
-          message: Le produit ${currentData.nomProduit} est complètement épuisé,
+          message: `Le produit ${currentData.nomProduit} est complètement épuisé`,
           type: 'stock-out',
           productId: currentData.idProduit,
           priority: 'high'
@@ -429,7 +429,7 @@ export class StockService {
       } else if (newQuantity <= seuil) {
         await this.notificationService.createNotification({
           title: 'Rupture de stock imminente',
-          message: Le produit ${currentData.nomProduit} est en rupture (${newQuantity} restants),
+          message: `Le produit ${currentData.nomProduit} est en rupture (${newQuantity} restants)`,
           type: 'stock-out',
           productId: currentData.idProduit,
           priority: 'medium'
@@ -443,7 +443,7 @@ export class StockService {
 
   private async checkStockLevels(productId: string, newQuantity: number): Promise<void> {
     const product = await firstValueFrom(
-      this.db.object<StockItem>(${this.stockPath}/${productId}).valueChanges()
+      this.db.object<StockItem>(`${this.stockPath}/${productId}`).valueChanges()
     );
 
     if (!product) return;
@@ -453,7 +453,7 @@ export class StockService {
     if (newQuantity <= 0) {
       await this.notificationService.createNotification({
         title: 'Rupture de stock totale',
-        message: Le produit ${product.nomProduit} est complètement épuisé,
+        message: `Le produit ${product.nomProduit} est complètement épuisé`,
         type: 'stock-out',
         productId: product.idProduit,
         priority: 'high'
@@ -461,7 +461,7 @@ export class StockService {
     } else if (newQuantity <= seuil) {
       await this.notificationService.createNotification({
         title: 'Rupture de stock imminente',
-        message: Le produit ${product.nomProduit} est en rupture (${newQuantity} restants),
+        message: `Le produit ${product.nomProduit} est en rupture (${newQuantity} restants)`,
         type: 'stock-out',
         productId: product.idProduit,
         priority: 'medium'
@@ -470,10 +470,10 @@ export class StockService {
   }
 
   async updateStockQuantity(productId: string, delta: number): Promise<void> {
-    const ref = this.db.object<StockItem>(${this.stockPath}/${productId});
+    const ref = this.db.object<StockItem>(`${this.stockPath}/${productId}`);
     const snapshot = await firstValueFrom(ref.valueChanges());
 
-    if (!snapshot) throw new Error(Produit ${productId} non trouvé);
+    if (!snapshot) throw new Error(`Produit ${productId} non trouvé`);
 
     const newQuantity = snapshot.quantite + delta;
     if (newQuantity < 0) throw new Error('Stock insuffisant');

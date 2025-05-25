@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, OnInit, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatCardModule } from '@angular/material/card';
@@ -38,8 +38,8 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';
 import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
 
-
 Chart.register(...registerables);
+
 interface AuthenticityStats {
   verified: number;
   suspicious: number;
@@ -53,6 +53,7 @@ interface StockMetrics {
   optimizationPotential: number;
   turnoverRate: number;
 }
+
 interface KpiCard {
   title: string;
   value: number;
@@ -111,28 +112,6 @@ interface LowStockProduct {
   };
 }
 
-interface Activity {
-  type: 'sales' | 'stock' | 'alerts' | 'system';
-  icon: string;
-  message: string;
-  time: Date;
-  user?: string;
-  location?: string;
-  product?: {
-    idProduit: string;
-    nomProduit: string; // Assurez-vous que cette propriété existe
-    // autres propriétés si nécessaire
-  };
-  amount?: number;
-  stockData?: {
-    totalProducts: number;
-    totalStock: number;
-  };
-  actions?: Array<{
-    label: string;
-    action: string;
-  }>;
-}
 interface OrderStats {
   pending: number;
   overdue: number;
@@ -164,13 +143,13 @@ interface OrderStats {
     MatButtonToggleModule,
     MatProgressSpinnerModule,
     ZXingScannerModule
-],
+  ],
   templateUrl: './responsable-dashboard.component.html',
   styleUrls: ['./responsable-dashboard.component.css'],
-  providers: [ DatePipe, ]
+  providers: [DatePipe]
 })
-export class ResponsableDashboardComponent implements OnInit {
-    @ViewChild(ZXingScannerComponent, { static: false }) scanner!: ZXingScannerComponent;
+export class ResponsableDashboardComponent implements OnInit, AfterViewInit, OnDestroy {
+  @ViewChild(ZXingScannerComponent, { static: false }) scanner!: ZXingScannerComponent;
   showScanner = false;
   supportedFormats = [BarcodeFormat.QR_CODE];
   scanMode: 'edit' | 'delete' | 'view' | null = null;
@@ -178,15 +157,15 @@ export class ResponsableDashboardComponent implements OnInit {
   public expensesChart?: Chart<'doughnut'>;
   currentDate = new Date();
   loading = false;
-  authenticityStats: AuthenticityStats = { 
-    verified: 0, 
-    suspicious: 0, 
+  authenticityStats: AuthenticityStats = {
+    verified: 0,
+    suspicious: 0,
     lastCheck: new Date(),
     verificationDetails: null
   };
-    //scan 
-    selectedDevice: MediaDeviceInfo | undefined;
-    allowedFormats = [ BarcodeFormat.QR_CODE ];
+
+  selectedDevice: MediaDeviceInfo | undefined;
+  allowedFormats = [BarcodeFormat.QR_CODE];
 
   stockMetrics: StockMetrics = {
     predictedStockouts: 0,
@@ -194,25 +173,21 @@ export class ResponsableDashboardComponent implements OnInit {
     optimizationPotential: 0,
     turnoverRate: 0
   };
-  
+
   selectedPeriod = '30';
   authenticityChart: any;
   stockPredictionChart: any;
 
-  // Statistiques commandes
-pendingOrders = 0;
-pendingOrdersMonthly = 0;
-overdueOrders = 0;
-overdueTrend = 0;
+  pendingOrders = 0;
+  pendingOrdersMonthly = 0;
+  overdueOrders = 0;
+  overdueTrend = 0;
 
-// Statistiques fournisseurs
-suppliersCount = 0;
-newSuppliers = 0;
-totalProducts = 0;
-totalStockItems = 0;
+  suppliersCount = 0;
+  newSuppliers = 0;
+  totalProducts = 0;
+  totalStockItems = 0;
 
-
-  // KPI Cards Data
   kpiCards: KpiCard[] = [
     {
       title: 'Ventes aujourd\'hui',
@@ -254,7 +229,7 @@ totalStockItems = 0;
     {
       title: 'Bénéfice',
       value: 0,
-      icon: 'coins', 
+      icon: 'coins',
       trend: 0,
       description: 'Marge bénéficiaire',
       color: 'success',
@@ -268,29 +243,25 @@ totalStockItems = 0;
       description: 'Nouveaux clients',
       color: 'primary',
       isCurrency: false,
-      
     }
   ];
-  // Charts
+
   salesTrendChart: any;
   productDistributionChart: any;
   categoryPerformanceChart: any;
 
-  // Performance Metrics
   monthlyRevenue = 0;
   monthlySales = 0;
   averageTicket = 0;
   revenueTrend = 0;
   salesTrend = 0;
   ticketTrend = 0;
-  // Recent Sales Table
+
   recentSales: RecentSale[] = [];
   displayedColumns: string[] = ['id', 'date', 'amount', 'paymentMethod', 'items'];
 
-  // Low Stock Products
   lowStockProducts: any[] = [];
 
-  // Quick Actions
   quickActions = [
     { icon: 'add', label: 'Nouvelle vente', action: 'newSale', color: 'primary' },
     { icon: 'exit_to_app', label: 'Nouvelle sortie', action: 'newExit', color: 'accent' },
@@ -298,11 +269,9 @@ totalStockItems = 0;
     { icon: 'notifications', label: 'Alertes', action: 'alerts', color: 'warn' },
     { icon: 'bar_chart', label: 'Rapports', action: 'reports', color: 'primary' }
   ];
+
   private stockSubscription: Subscription | undefined;
-  // Recent Activities
-
-
-   filteredActivities: Activity[] = [];
+  filteredActivities: Activity[] = [];
   recentActivities: Activity[] = [];
   activityStats = {
     sales: 0,
@@ -310,10 +279,12 @@ totalStockItems = 0;
     alerts: 0,
     system: 0
   };
-stockChart: any;
-salesChart: any;
-productChart: any;
+
+  stockChart: any;
+  salesChart: any;
+  productChart: any;
   activitiesSubscription: Subscription | undefined;
+
   constructor(
     private saleService: SaleService,
     private stockService: StockService,
@@ -324,7 +295,7 @@ productChart: any;
     private emailService: EmailService,
     private supplierService: SupplierService,
     private snackBar: MatSnackBar,
-      private dialog: MatDialog
+    private dialog: MatDialog
   ) {
     Chart.register(...registerables);
   }
@@ -335,37 +306,37 @@ productChart: any;
     this.initFinancialCharts();
     this.loadFinancialData();
     this.filteredActivities = [...this.recentActivities];
-       this.activitiesSubscription = this.activityService.getRecentActivities().subscribe(activities => {
+    this.activitiesSubscription = this.activityService.getRecentActivities().subscribe(activities => {
       this.filteredActivities = activities;
     });
     this.stockSubscription = this.stockService.getStock().subscribe(stockItems => {
-      console.log('Stock Items:', stockItems); // Log pour vérifier les données
+      console.log('Stock Items:', stockItems);
       this.createStockChart(stockItems);
     });
-        this.loadRecentActivities();
+    this.loadRecentActivities();
   }
 
-    refreshData(): void {
+  refreshData(): void {
     this.loading = true;
     this.loadSalesData();
     this.loadRecentActivities();
-    
+
     setTimeout(() => {
       this.snackBar.open('Données actualisées', 'Fermer', { duration: 2000 });
       this.loading = false;
     }, 1000);
   }
-private formatActivityTime(date: Date): string {
-  return new Date(date).toLocaleString('fr-FR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
-}
 
-  // Méthodes pour les activités
+  private formatActivityTime(date: Date): string {
+    return new Date(date).toLocaleString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
   loadRecentActivities(): void {
     this.activityService.getRecentActivities().subscribe({
       next: (activities) => {
@@ -387,13 +358,13 @@ private formatActivityTime(date: Date): string {
 
   filterActivities(type: string): void {
     if (type === 'alerts') {
-      this.filteredActivities = this.recentActivities.filter(activity => 
-        activity.type === 'alerts' || 
+      this.filteredActivities = this.recentActivities.filter(activity =>
+        activity.type === 'alerts' ||
         (activity.message.includes('stock') && activity.message.includes('rupture'))
       );
     } else {
-      this.filteredActivities = type === 'all' 
-        ? [...this.recentActivities] 
+      this.filteredActivities = type === 'all'
+        ? [...this.recentActivities]
         : this.recentActivities.filter(activity => activity.type === type);
     }
   }
@@ -417,19 +388,11 @@ private formatActivityTime(date: Date): string {
     };
   }
 
-
-
-
-
-
-
-
-
   ngAfterViewInit(): void {
     this.createSalesChart();
     this.createProductChart();
   }
-  
+
   loadDashboardData(): void {
     this.loading = true;
     this.loadSalesData();
@@ -449,10 +412,8 @@ private formatActivityTime(date: Date): string {
     this.createCaTrendChart();
     this.createExpensesChart();
   }
-  
 
-
-   loadSalesData(): void {
+  loadSalesData(): void {
     const today = new Date();
     const startOfDay = new Date(today.setHours(0, 0, 0, 0)).toISOString();
     const endOfDay = new Date(today.setHours(23, 59, 59, 999)).toISOString();
@@ -579,16 +540,16 @@ private formatActivityTime(date: Date): string {
       });
   }
 
- ngOnDestroy(): void {
+  ngOnDestroy(): void {
     if (this.activitiesSubscription) {
       this.activitiesSubscription.unsubscribe();
     }
-  if (this.stockSubscription) {
+    if (this.stockSubscription) {
       this.stockSubscription.unsubscribe();
     }
   }
 
- private calculateDailyTrends(todaySales: Sale[], yesterdaySales: Sale[]): void {
+  private calculateDailyTrends(todaySales: Sale[], yesterdaySales: Sale[]): void {
     const todayRevenue = todaySales.reduce((sum: number, sale: Sale) => sum + sale.totalAmount, 0);
     const todayProductsSold = todaySales.reduce((sum: number, sale: Sale) =>
       sum + sale.items.reduce((itemSum: number, item: { quantity: number }) => itemSum + item.quantity, 0), 0);
@@ -736,7 +697,7 @@ private formatActivityTime(date: Date): string {
   }
 
   onKpiClick(title: string): void {
-    console.log(KPI clicked: ${title});
+    console.log('KPI clicked:', title);
   }
 
   onTabChange(event: any): void {
@@ -774,16 +735,16 @@ private formatActivityTime(date: Date): string {
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(11);
-      doc.text(Généré le: ${this.datePipe.transform(new Date(), 'dd/MM/yyyy à HH:mm', 'fr-FR')},
+      doc.text(`Généré le: ${this.datePipe.transform(new Date(), 'dd/MM/yyyy à HH:mm', 'fr-FR')}`,
              doc.internal.pageSize.width - 15, 45, { align: 'right' });
 
       autoTable(doc, {
         head: [['Indicateur', 'Valeur', 'Description', 'Tendance']],
         body: this.kpiCards.map(card => [
           card.title,
-          card.isCurrency ? ${card.value.toFixed(2)} DT : card.value,
+          card.isCurrency ? `${card.value.toFixed(2)} DT` : card.value,
           card.description,
-          card.trend !== undefined ? ${card.trend > 0 ? '+' : ''}${card.trend}% : 'N/A'
+          card.trend !== undefined ? `${card.trend > 0 ? '+' : ''}${card.trend}%` : 'N/A'
         ]),
         startY: 50,
         headStyles: {
@@ -801,7 +762,7 @@ private formatActivityTime(date: Date): string {
         body: this.recentSales.map(sale => [
           sale.id,
           this.datePipe.transform(sale.date, 'dd/MM/yy HH:mm'),
-          ${sale.amount.toFixed(2)} DT,
+          `${sale.amount.toFixed(2)} DT`,
           this.getPaymentMethodLabel(sale.paymentMethod),
           sale.items
         ]),
@@ -820,7 +781,7 @@ private formatActivityTime(date: Date): string {
             product.nomProduit || 'Inconnu',
             product.quantite,
             product.seuil || 5,
-            ${(product.prixUnitaireHT || 0).toFixed(2)} DT
+            `${(product.prixUnitaireHT || 0).toFixed(2)} DT`
           ]),
           startY: (doc as any).lastAutoTable.finalY + 15,
           headStyles: {
@@ -843,25 +804,23 @@ private formatActivityTime(date: Date): string {
         doc.setFontSize(10);
         doc.setTextColor(100);
         doc.text(
-          QStocker - Zone touristique Mahdia - contact.qstocker@gmail.com - Page ${i}/${pageCount},
+          `QStocker - Zone touristique Mahdia - contact.qstocker@gmail.com - Page ${i}/${pageCount}`,
           doc.internal.pageSize.width / 2,
           doc.internal.pageSize.height - 10,
           { align: 'center' }
         );
       }
 
-      doc.save(QStocker_Rapport_${this.datePipe.transform(new Date(), 'yyyyMMdd', 'fr-FR')}.pdf);
+      doc.save(`QStocker_Rapport_${this.datePipe.transform(new Date(), 'yyyyMMdd', 'fr-FR')}.pdf`);
 
     } catch (error) {
       console.error('Erreur génération PDF:', error);
     } finally {
       this.loading = false;
     }
-    
   }
 
-  
-    private getPaymentMethodLabel(method: string): string {
+  private getPaymentMethodLabel(method: string): string {
     const methods: Record<string, string> = {
       'cash': 'Espèces',
       'card': 'Carte',
@@ -882,7 +841,7 @@ private formatActivityTime(date: Date): string {
     this.loadDashboardData();
   }
 
-async runAuthenticityCheck(): Promise<void> {
+  async runAuthenticityCheck(): Promise<void> {
     this.loading = true;
     try {
       const result = await this.productService.checkProductsAuthenticity();
@@ -900,8 +859,7 @@ async runAuthenticityCheck(): Promise<void> {
     this.loading = false;
   }
 
-
- private createAuthenticityChart(details: any): void {
+  private createAuthenticityChart(details: any): void {
     const ctx = document.getElementById('authenticityChart') as HTMLCanvasElement;
     if (!ctx) return;
 
@@ -1011,8 +969,6 @@ async runAuthenticityCheck(): Promise<void> {
     console.log('Afficher les produits suspects');
   }
 
-
-
   getStockProgressColor(product: any): string {
     const percentage = (product.quantite / product.seuil) * 100;
     if (percentage <= 15) return 'warn';
@@ -1020,24 +976,23 @@ async runAuthenticityCheck(): Promise<void> {
     return 'primary';
   }
 
-  
-contactSupplier(supplier: any) {
-  // Logique de contact
-}
+  contactSupplier(supplier: any) {
+    // Logique de contact
+  }
 
-quickReplenish(product: any) {
-  // Réapprovisionnement rapide
-}
+  quickReplenish(product: any) {
+    // Réapprovisionnement rapide
+  }
 
-adjustSafetyStock(product: any) {
-  // Ajustement du seuil
-}
-navigateToSupplierOrder() {
-  this.router.navigate(['/responsable/commandes-fournisseur']);
-}
+  adjustSafetyStock(product: any) {
+    // Ajustement du seuil
+  }
 
-//financiere 
- private createCaTrendChart(): void {
+  navigateToSupplierOrder() {
+    this.router.navigate(['/responsable/commandes-fournisseur']);
+  }
+
+  private createCaTrendChart(): void {
     const ctx = document.getElementById('caTrendChart') as HTMLCanvasElement;
 
     const config: ChartConfiguration<'line'> = {
@@ -1131,7 +1086,7 @@ navigateToSupplierOrder() {
     }
   }
 
- openScanner() {
+  openScanner() {
     this.showScanner = true;
     this.requestCameraPermissions();
   }
@@ -1168,7 +1123,7 @@ navigateToSupplierOrder() {
     this.router.navigate(['/responsable/commande-fournisseur']);
   }
 
- loadOrderStats(): void {
+  loadOrderStats(): void {
     this.emailService.getCommandes().subscribe(commandes => {
       const now = new Date();
       const lastMonth = new Date();
@@ -1198,7 +1153,7 @@ navigateToSupplierOrder() {
     });
   }
 
-    loadSupplierStats(): void {
+  loadSupplierStats(): void {
     this.supplierService.getAll().pipe(
       map(suppliers => {
         const now = new Date();
@@ -1215,8 +1170,7 @@ navigateToSupplierOrder() {
     ).subscribe();
   }
 
-
- private calculateTrend(previousValue: number, currentValue: number): number {
+  private calculateTrend(previousValue: number, currentValue: number): number {
     if (previousValue === 0) {
       return currentValue === 0 ? 0 : 100;
     }
@@ -1231,7 +1185,7 @@ navigateToSupplierOrder() {
     );
   }
 
-loadProductAndStockCounts(): void {
+  loadProductAndStockCounts(): void {
     combineLatest([
       this.productService.getProducts(),
       this.stockService.getStock()
@@ -1241,7 +1195,7 @@ loadProductAndStockCounts(): void {
         this.totalStockItems = stockItems.reduce((sum, item) => sum + item.quantite, 0);
 
         this.activityService.logActivity(
-          Stock mis à jour: ${this.totalProducts} produits, ${this.totalStockItems} unités en stock,
+          `Stock mis à jour: ${this.totalProducts} produits, ${this.totalStockItems} unités en stock`,
           'stock'
         );
       },
@@ -1251,9 +1205,6 @@ loadProductAndStockCounts(): void {
     });
   }
 
-
-
- 
   handleActivityAction(event: Event, activity: Activity, action: any): void {
     event.stopPropagation();
 
@@ -1269,7 +1220,7 @@ loadProductAndStockCounts(): void {
     }
   }
 
- private viewSaleDetails(activity: Activity): void {
+  private viewSaleDetails(activity: Activity): void {
     if (!activity.product) return;
     this.router.navigate(['/sales', activity.product.idProduit]);
   }
@@ -1279,36 +1230,28 @@ loadProductAndStockCounts(): void {
     this.router.navigate(['/stock', activity.product.idProduit, 'history']);
   }
 
-
-
-private getActivityIcon(type: string): string {
-  const icons: Record<string, string> = {
-    'sales': 'shopping_cart',
-    'stock': 'inventory',
-    'alerts': 'warning',
-    'system': 'settings'
-  };
-  return icons[type] || 'info';
-}
-
-
+  private getActivityIcon(type: string): string {
+    const icons: Record<string, string> = {
+      'sales': 'shopping_cart',
+      'stock': 'inventory',
+      'alerts': 'warning',
+      'system': 'settings'
+    };
+    return icons[type] || 'info';
+  }
 
   handleImageError(product: any): void {
     console.error('Erreur de chargement de l\'image pour le produit:', product.nomProduit, 'URL:', product.imageUrl);
     product.imageUrl = 'assets/default-product.png';
   }
 
-
- 
-
-    devices$: BehaviorSubject<MediaDeviceInfo[]> = new BehaviorSubject<MediaDeviceInfo[]>([]);
-scannerActive = false;
-hasPermission = false;
-currentDevice: MediaDeviceInfo | undefined;
+  devices$: BehaviorSubject<MediaDeviceInfo[]> = new BehaviorSubject<MediaDeviceInfo[]>([]);
+  scannerActive = false;
+  hasPermission = false;
+  currentDevice: MediaDeviceInfo | undefined;
   availableDevices: MediaDeviceInfo[] = [];
 
-
-toggleScanner(): void {
+  toggleScanner(): void {
     this.showScanner = !this.showScanner;
     if (this.showScanner) {
       this.checkCameraPermissions();
@@ -1394,7 +1337,7 @@ toggleScanner(): void {
     this.productService.getProductById(productId).subscribe({
       next: (product) => {
         if (product) {
-          this.snackBar.open(Produit ${product.name} sélectionné, 'Fermer', {
+          this.snackBar.open(`Produit ${product.name} sélectionné`, 'Fermer', {
             duration: 2000
           });
         } else {
@@ -1438,7 +1381,7 @@ toggleScanner(): void {
           duration: 3000,
           panelClass: 'success-snackbar'
         });
-        this.loadProducts(); // Rafraîchit la liste des produits
+        this.loadProducts();
       })
       .catch(error => {
         console.error('Erreur:', error);
@@ -1457,115 +1400,101 @@ toggleScanner(): void {
     this.router.navigate(['/responsable/product-details', id]);
   }
 
+  loadStockData(): void {
+    combineLatest([
+      this.stockService.getStock(),
+      this.productService.getProducts()
+    ]).subscribe({
+      next: ([stockItems, products]) => {
+        this.lowStockProducts = stockItems.map(stockItem => {
+          const product = products.find(p => p.id === stockItem.idProduit);
+          return {
+            ...stockItem,
+            ...product,
+            nomProduit: product?.name || stockItem.nomProduit,
+            category: product?.category || 'Non classé',
+            imageUrl: product?.imageUrl || 'assets/default-product.png'
+          };
+        }).filter(item => item.quantite <= item.seuil);
 
+        this.kpiCards = this.kpiCards.map(card =>
+          card.title === 'Produits en faible stock'
+            ? { ...card, value: this.lowStockProducts.length }
+            : card
+        );
 
-
-
-  // meriem
-loadStockData(): void {
-  combineLatest([
-    this.stockService.getStock(),
-    this.productService.getProducts()
-  ]).subscribe({
-    next: ([stockItems, products]) => {
-      // Fusionner les données de stock et de produits
-      this.lowStockProducts = stockItems.map(stockItem => {
-        const product = products.find(p => p.id === stockItem.idProduit);
-        return {
-          ...stockItem,
-          ...product,
-          nomProduit: product?.name || stockItem.nomProduit,
-          category: product?.category || 'Non classé',
-          imageUrl: product?.imageUrl || 'assets/default-product.png'
-        };
-      }).filter(item => item.quantite <= item.seuil); // Filtrer les produits en rupture de stock
-
-      // Mettre à jour la carte KPI
-      this.kpiCards = this.kpiCards.map(card =>
-        card.title === 'Produits en faible stock'
-          ? { ...card, value: this.lowStockProducts.length }
-          : card
-      );
-
-      // Calculer les jours jusqu'à la rupture de stock
-      this.calculateDaysUntilStockout();
-    },
-    error: err => {
-      console.error('Erreur de chargement du stock:', err);
-      this.snackBar.open('Erreur de chargement des données de stock', 'Fermer', {
-        duration: 3000,
-        panelClass: 'error-snackbar'
-      });
-    }
-  });
-}
-
-
-// Ajoutez cette méthode pour calculer les jours jusqu'à la rupture
-private calculateDaysUntilStockout(): void {
-  this.saleService.getSalesHistory('week').subscribe(sales => {
-    // Calculer la demande moyenne par produit
-    const demandMap = new Map<string, number>();
-
-    sales.forEach(sale => {
-      sale.items.forEach((item: any) => {
-        const current = demandMap.get(item.productId) || 0;
-        demandMap.set(item.productId, current + item.quantity);
-      });
+        this.calculateDaysUntilStockout();
+      },
+      error: err => {
+        console.error('Erreur de chargement du stock:', err);
+        this.snackBar.open('Erreur de chargement des données de stock', 'Fermer', {
+          duration: 3000,
+          panelClass: 'error-snackbar'
+        });
+      }
     });
-
-    // Mettre à jour les produits avec les jours estimés jusqu'à rupture
-    this.lowStockProducts = this.lowStockProducts.map(product => {
-      const weeklyDemand = demandMap.get(product.idProduit) || 1;
-      const dailyDemand = weeklyDemand / 7;
-      const daysLeft = dailyDemand > 0 ? Math.floor(product.quantite / dailyDemand) : 0;
-
-      return {
-        ...product,
-        daysUntilStockout: daysLeft,
-        lastSaleDate: this.getLastSaleDate(product.idProduit, sales)
-      };
-    });
-  });
-}
-
-private getLastSaleDate(productId: string, sales: any[]): string {
-  const productSales = sales.filter(sale =>
-    sale.items.some((item: any) => item.productId === productId)
-  );
-
-  if (productSales.length > 0) {
-    const lastSale = productSales.reduce((latest, sale) =>
-      new Date(sale.date) > new Date(latest.date) ? sale : latest
-    );
-    return lastSale.date;
   }
 
-  return new Date().toISOString();
-}
+  private calculateDaysUntilStockout(): void {
+    this.saleService.getSalesHistory('week').subscribe(sales => {
+      const demandMap = new Map<string, number>();
 
-// Modifiez votre méthode loadProducts() comme suit :
-loadProducts(): void {
-  this.productService.getProducts().subscribe({
-    next: (products) => {
-      // Cette méthode est maintenant principalement gérée par loadStockData()
-      console.log('Produits chargés:', products.length);
-    },
-    error: (err) => {
-      console.error('Erreur de chargement des produits:', err);
-      this.snackBar.open('Erreur de chargement des produits', 'Fermer', {
-        duration: 3000,
-        panelClass: 'error-snackbar'
+      sales.forEach(sale => {
+        sale.items.forEach((item: any) => {
+          const current = demandMap.get(item.productId) || 0;
+          demandMap.set(item.productId, current + item.quantity);
+        });
       });
-    }
-  });
-}
 
-viewProductDetails(productId: string): void {
-  this.router.navigate(['/responsable/product-details', productId]);
-}
-// meriem
-createProductDistributionChart(products: any[]): void {
+      this.lowStockProducts = this.lowStockProducts.map(product => {
+        const weeklyDemand = demandMap.get(product.idProduit) || 1;
+        const dailyDemand = weeklyDemand / 7;
+        const daysLeft = dailyDemand > 0 ? Math.floor(product.quantite / dailyDemand) : 0;
+
+        return {
+          ...product,
+          daysUntilStockout: daysLeft,
+          lastSaleDate: this.getLastSaleDate(product.idProduit, sales)
+        };
+      });
+    });
+  }
+
+  private getLastSaleDate(productId: string, sales: any[]): string {
+    const productSales = sales.filter(sale =>
+      sale.items.some((item: any) => item.productId === productId)
+    );
+
+    if (productSales.length > 0) {
+      const lastSale = productSales.reduce((latest, sale) =>
+        new Date(sale.date) > new Date(latest.date) ? sale : latest
+      );
+      return lastSale.date;
+    }
+
+    return new Date().toISOString();
+  }
+
+  loadProducts(): void {
+    this.productService.getProducts().subscribe({
+      next: (products) => {
+        console.log('Produits chargés:', products.length);
+      },
+      error: (err) => {
+        console.error('Erreur de chargement des produits:', err);
+        this.snackBar.open('Erreur de chargement des produits', 'Fermer', {
+          duration: 3000,
+          panelClass: 'error-snackbar'
+        });
+      }
+    });
+  }
+
+  viewProductDetails(productId: string): void {
+    this.router.navigate(['/responsable/product-details', productId]);
+  }
+
+  createProductDistributionChart(products: any[]): void {
     if (!products || products.length === 0) {
       console.error('No products data available');
       return;
@@ -1615,13 +1544,9 @@ createProductDistributionChart(products: any[]): void {
     });
   }
 
-
-
- createStockChart(stockItems: StockItem[]): void {
-    // Filtrer les catégories "Non classé"
+  createStockChart(stockItems: StockItem[]): void {
     const filteredStockItems = stockItems.filter(item => item.category !== 'Non classé');
 
-    // Vérifiez que les données de catégorie sont disponibles
     const categories = [...new Set(filteredStockItems.map(item => item.category || 'Non classé'))];
     const stockData = categories.map(category => {
       return filteredStockItems
@@ -1629,8 +1554,8 @@ createProductDistributionChart(products: any[]): void {
         .reduce((sum, item) => sum + item.quantite, 0);
     });
 
-    console.log('Categories:', categories); // Log pour vérifier les catégories
-    console.log('Stock Data:', stockData); // Log pour vérifier les données de stock
+    console.log('Categories:', categories);
+    console.log('Stock Data:', stockData);
 
     const ctx = document.getElementById('stockChart') as HTMLCanvasElement;
     if (!ctx) {
@@ -1677,6 +1602,7 @@ createProductDistributionChart(products: any[]): void {
       }
     });
   }
+
   createSalesChart(): void {
     const today = new Date();
     const startOfWeek = new Date(today);
@@ -1786,7 +1712,4 @@ createProductDistributionChart(products: any[]): void {
       });
     });
   }
-
-  
-
 }

@@ -42,16 +42,15 @@ export class ActivityService {
 
   getRecentActivities(): Observable<Activity[]> {
     return combineLatest([
-      this.saleService.getRecentSales().pipe(take(1)), // Limite à une seule émission
-      this.stockService.getStockMovements().pipe(take(1)), // Limite à une seule émission
-      this.getNotificationActivities().pipe(take(1)) // Limite à une seule émission
+      this.saleService.getRecentSales().pipe(take(1)),
+      this.stockService.getStockMovements().pipe(take(1)),
+      this.getNotificationActivities().pipe(take(1))
     ]).pipe(
       map(([sales, movements, notifications]) => {
-        // Convertir les ventes en activités
         const salesActivities = sales.map(sale => ({
           type: 'sales' as const,
           icon: 'shopping_cart',
-          message: Vente #${sale.invoiceNumber},
+          message: `Vente #${sale.invoiceNumber}`,
           time: new Date(sale.date),
           amount: sale.totalAmount,
           user: sale.customerName || 'Anonyme',
@@ -64,7 +63,6 @@ export class ActivityService {
           ]
         }));
 
-        // Convertir les mouvements de stock en activités
         const stockActivities = movements.map((movement: any) => ({
           type: 'stock' as const,
           icon: this.getStockMovementIcon(movement.type),
@@ -80,12 +78,11 @@ export class ActivityService {
           ]
         }));
 
-        // Combiner toutes les activités
         const allActivities = [...salesActivities, ...stockActivities, ...notifications];
 
         return allActivities
           .sort((a, b) => b.time.getTime() - a.time.getTime())
-          .slice(0, 50); // Augmentez la limite si nécessaire
+          .slice(0, 50);
       }),
       catchError(error => {
         console.error('Error in activity service:', error);
@@ -100,7 +97,7 @@ export class ActivityService {
         return notifications.map(notification => ({
           type: 'alerts' as const,
           icon: this.getNotificationIcon(notification.type),
-          message: ${notification.title}: ${notification.message},
+          message: `${notification.title}: ${notification.message}`,
           time: new Date(notification.timestamp),
           product: notification.productId ? {
             idProduit: notification.productId,
@@ -115,7 +112,6 @@ export class ActivityService {
   }
 
   private addActivity(activity: Activity): void {
-    // Ajouter l'activité à la base de données
     this.db.list('/activities').push(activity);
   }
 
@@ -178,7 +174,7 @@ export class ActivityService {
     const quantity = movement.quantity || 0;
     const unit = quantity > 1 ? 'unités' : 'unité';
 
-    return ${actions[movement.type] || 'Mouvement'} - ${productName} (${quantity} ${unit});
+    return `${actions[movement.type] || 'Mouvement'} - ${productName} (${quantity} ${unit})`;
   }
 
   logStockOutActivity(product: StockItem) {

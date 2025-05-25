@@ -100,81 +100,78 @@ export class HistoriqueCommandesComponent implements OnInit {
   }
 
   async updateStatus(commande: any, newStatus: string) {
-    const ancienStatus = commande.status;
-    const commandeKey = commande.key;
-  
-    if (!commandeKey) {
-      this.showErrorNotification('Clé Firebase invalide');
-      return;
-    }
-  
-    this.loading = true;
-    this.errorMessage = null;
-  
-    try {
-      if (newStatus === 'Bien Reçu') {
-        if (!commande.productId) {
-          throw new Error('ID produit manquant');
-        }
-        if (!commande.quantity || isNaN(Number(commande.quantity))) {
-          throw new Error('Quantité invalide');
-        }
-        if (!commande.unitPrice || isNaN(Number(commande.unitPrice))) {
-          throw new Error('Prix unitaire invalide');
-        }
+  const ancienStatus = commande.status;
+  const commandeKey = commande.key;
 
-        const stockData = {
-          productId: commande.productId,
-          productName: commande.productName || 'Produit sans nom',
-          quantity: Number(commande.quantity),
-          unitPrice: Number(commande.unitPrice),
-          qrCode: commande.qrCode || null,
-          imageUrl: commande.imageUrl || null,
-          description: commande.description || null
-        };
-
-        await this.stockService.ajouterAuStock(stockData);
-      }
-
-      const updateData: any = {
-        status: newStatus,
-        lastUpdated: new Date().toISOString()
-      };
-
-      if (newStatus === 'Bien Reçu') {
-        updateData.dateBienRecu = new Date().toISOString();
-        updateData.joursRetard = 0;
-      }
-
-      await this.emailService.updateCommande(commandeKey, updateData);
-
-      const updatedCommande = { 
-        ...commande, 
-        ...updateData
-      };
-      
-      this.commandes = this.commandes.map(c => 
-        c.key === commandeKey ? updatedCommande : c
-      );
-
-      this.showSuccessNotification(`Statut mis à jour : ${newStatus}`);
-    } catch (error) {
-      console.error('Erreur lors de la mise à jour:', error);
-      
-      let errorMessage = 'Erreur lors de la mise à jour';
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      } else if (typeof error === 'string') {
-        errorMessage = error;
-      }
-      
-      this.showErrorNotification(errorMessage);
-      this.miseAJourLocale({ ...commande, status: ancienStatus });
-    } finally {
-      this.loading = false;
-      this.changeDetector.detectChanges();
-    }
+  if (!commandeKey) {
+    this.showErrorNotification('Clé Firebase invalide');
+    return;
   }
+
+  this.loading = true;
+  this.errorMessage = null;
+
+  try {
+    if (newStatus === 'Bien Reçu') {
+      if (!commande.productId) {
+        throw new Error('ID produit manquant');
+      }
+      if (!commande.quantity || isNaN(Number(commande.quantity))) {
+        throw new Error('Quantité invalide');
+      }
+      if (!commande.unitPrice || isNaN(Number(commande.unitPrice))) {
+        throw new Error('Prix unitaire invalide');
+      }
+
+      // Ajout au stock avec la quantité exacte de la commande
+      await this.stockService.ajouterAuStock({
+        productId: commande.productId,
+        productName: commande.productName || 'Produit sans nom',
+        quantity: Number(commande.quantity),
+        unitPrice: Number(commande.unitPrice),
+        qrCode: commande.qrCode || null,
+        imageUrl: commande.imageUrl || null,
+        description: commande.description || null
+      });
+    }
+
+    const updateData: any = {
+      status: newStatus,
+      lastUpdated: new Date().toISOString()
+    };
+
+    if (newStatus === 'Bien Reçu') {
+      updateData.dateBienRecu = new Date().toISOString();
+      updateData.joursRetard = 0;
+    }
+
+    await this.emailService.updateCommande(commandeKey, updateData);
+
+    const updatedCommande = { 
+      ...commande, 
+      ...updateData
+    };
+    
+    this.commandes = this.commandes.map(c => 
+      c.key === commandeKey ? updatedCommande : c
+    );
+
+    this.showSuccessNotification(`Statut mis à jour : ${newStatus}`);
+  } catch (error) {
+    console.error('Erreur lors de la mise à jour:', error);
+    let errorMessage = 'Erreur lors de la mise à jour';
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    } else if (typeof error === 'string') {
+      errorMessage = error;
+    }
+    this.showErrorNotification(errorMessage);
+    this.miseAJourLocale({ ...commande, status: ancienStatus });
+  } finally {
+    this.loading = false;
+    this.changeDetector.detectChanges();
+  }
+}
   
   private async traiterReceptionStock(commande: any) {
     try {

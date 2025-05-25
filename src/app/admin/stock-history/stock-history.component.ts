@@ -2,6 +2,11 @@ import { Component, OnInit } from '@angular/core';
 import { StockService } from '../../services/stock.service';
 import { ProductService } from '../../services/product.service';
 import { Product } from '../../models/product';
+import { SupplierService } from '../../services/supplier.service';
+import { MatDialog } from '@angular/material/dialog';
+import { SupplierDialogComponent } from 'src/app/responsable/supplier-dialog/supplier-dialog.component';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { Supplier } from '../../models/supplier';
 
 @Component({
   selector: 'app-stock-history',
@@ -9,6 +14,7 @@ import { Product } from '../../models/product';
   styleUrls: ['./stock-history.component.css']
 })
 export class StockHistoryComponent implements OnInit {
+  // Variables pour le stock
   stockHistory: any[] = [];
   currentStock: any[] = [];
   combinedData: any[] = [];
@@ -18,9 +24,19 @@ export class StockHistoryComponent implements OnInit {
   searchTerm = '';
   products: Product[] = [];
 
+  // Variables pour les fournisseurs
+  showSuppliers = false;
+  suppliers: Supplier[] = [];
+  filteredSuppliers: Supplier[] = [];
+  suppliersLoading = false;
+  supplierSearchTerm = '';
+
   constructor(
     private stockService: StockService,
-    private productService: ProductService
+    private productService: ProductService,
+    private supplierService: SupplierService,
+    private dialog: MatDialog,
+    private snackBar: MatSnackBar
   ) {}
 
   ngOnInit(): void {
@@ -28,6 +44,12 @@ export class StockHistoryComponent implements OnInit {
     this.loadProducts();
   }
 
+  toggleSuppliersView(): void {
+    this.showSuppliers = !this.showSuppliers;
+    if (this.showSuppliers && this.suppliers.length === 0) {
+      this.loadSuppliers();
+    }
+  }
   loadProducts(): void {
     this.productService.getProducts().subscribe({
       next: (products) => {
@@ -102,29 +124,48 @@ export class StockHistoryComponent implements OnInit {
     });
   }
 
-  combineData(): void {
-    if (this.stockHistory && this.currentStock) {
-      const combinedMap = new Map<string, any>();
-      
-      this.stockHistory.forEach(record => {
-        const key = record.idProduit;
-        if (!combinedMap.has(key)) {
-          combinedMap.set(key, record);
-        }
+  private combineData(): void {
+  if (this.stockHistory && this.currentStock) {
+    const combinedMap = new Map<string, any>();
+    
+    // D'abord ajouter le stock actuel
+    this.currentStock.forEach(record => {
+      const product = this.products.find(p => p.id === record.idProduit);
+      combinedMap.set(record.idProduit, {
+        ...record,
+        nomProduit: product?.name || record.nomProduit,
+        qrCode: product?.qrCode || record.qrCode,
+        imageUrl: product?.imageUrl || record.imageUrl,
+        description: product?.description,
+        status: record.status || 'active',
+        promotion: product?.promotion,
+        isAuthentic: product?.isAuthentic
       });
+    });
 
-      this.currentStock.forEach(record => {
-        const key = record.idProduit;
-        combinedMap.set(key, record);
-      });
+    // Ensuite ajouter l'historique
+    this.stockHistory.forEach(record => {
+      if (!combinedMap.has(record.idProduit)) {
+        const product = this.products.find(p => p.id === record.idProduit);
+        combinedMap.set(record.idProduit, {
+          ...record,
+          nomProduit: product?.name || record.nomProduit,
+          qrCode: product?.qrCode,
+          imageUrl: product?.imageUrl,
+          description: product?.description,
+          status: 'historic', // Marquer comme historique
+          isAuthentic: product?.isAuthentic
+        });
+      }
+    });
 
-      this.combinedData = Array.from(combinedMap.values())
-        .sort((a, b) => new Date(b.dateMiseAJour).getTime() - new Date(a.dateMiseAJour).getTime());
-      
-      this.filteredData = [...this.combinedData];
-      this.loading = false;
-    }
+    this.combinedData = Array.from(combinedMap.values())
+      .sort((a, b) => new Date(b.dateMiseAJour).getTime() - new Date(a.dateMiseAJour).getTime());
+    
+    this.filteredData = [...this.combinedData];
+    this.loading = false;
   }
+}
 
   filterStock(): void {
     if (!this.searchTerm) {
@@ -139,5 +180,87 @@ export class StockHistoryComponent implements OnInit {
         (produit.nomProduit?.toLowerCase().includes(searchTermLower) || false)
       );
     });
+  }
+  // Méthodes existantes pour le stock...
+  // (garder toutes les méthodes existantes comme loadProducts, mergeProductInfo, etc.)
+
+  // Méthodes pour les fournisseurs
+  loadSuppliers(): void {
+    this.suppliersLoading = true;
+    this.supplierService.getAll().subscribe({
+      next: (suppliers) => {
+        this.suppliers = suppliers;
+        this.filteredSuppliers = [...suppliers];
+        this.suppliersLoading = false;
+      },
+      error: (err) => {
+        console.error('Erreur lors du chargement des fournisseurs', err);
+        this.suppliersLoading = false;
+        this.snackBar.open('Erreur lors du chargement des fournisseurs', 'OK', { duration: 3000 });
+      }
+    });
+  }
+
+  filterSuppliers(): void {
+    if (!this.supplierSearchTerm) {
+      this.filteredSuppliers = [...this.suppliers];
+      return;
+    }
+
+    const searchTermLower = this.supplierSearchTerm.toLowerCase().trim();
+    this.filteredSuppliers = this.suppliers.filter(supplier => {
+      return (
+        (supplier.name?.toLowerCase().includes(searchTermLower) ||
+        (supplier.email?.toLowerCase().includes(searchTermLower) ||
+        (supplier.phone?.toLowerCase().includes(searchTermLower) ||
+        (supplier.address?.toLowerCase().includes(searchTermLower) ||
+        (supplier.info?.toLowerCase().includes(searchTermLower))
+        )))));
+    });
+  }
+
+  openSupplierDialog(supplier?: Supplier): void {
+    const dialogRef = this.dialog.open(SupplierDialogComponent, {
+      width: '500px',
+      data: supplier ? { ...supplier } : null
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        supplier ? this.updateSupplier(supplier.id!, result) : this.addSupplier(result);
+      }
+    });
+  }
+
+  addSupplier(supplier: Supplier): void {
+    this.supplierService.create(supplier).then(() => {
+      this.snackBar.open('Fournisseur ajouté avec succès', 'OK', { duration: 3000 });
+      this.loadSuppliers();
+    }).catch(error => {
+      this.snackBar.open('Erreur lors de l\'ajout du fournisseur', 'OK', { duration: 3000 });
+      console.error(error);
+    });
+  }
+
+  updateSupplier(id: string, supplier: Supplier): void {
+    this.supplierService.update(id, supplier).then(() => {
+      this.snackBar.open('Fournisseur mis à jour avec succès', 'OK', { duration: 3000 });
+      this.loadSuppliers();
+    }).catch(error => {
+      this.snackBar.open('Erreur lors de la mise à jour du fournisseur', 'OK', { duration: 3000 });
+      console.error(error);
+    });
+  }
+
+  deleteSupplier(id: string): void {
+    if (confirm('Êtes-vous sûr de vouloir supprimer ce fournisseur ?')) {
+      this.supplierService.delete(id).then(() => {
+        this.snackBar.open('Fournisseur supprimé avec succès', 'OK', { duration: 3000 });
+        this.loadSuppliers();
+      }).catch(error => {
+        this.snackBar.open('Erreur lors de la suppression du fournisseur', 'OK', { duration: 3000 });
+        console.error(error);
+      });
+    }
   }
 }

@@ -10,11 +10,9 @@ import { PromotionDialogComponent } from '../promotion-dialog/promotion-dialog.c
 import { SelectionModel } from '@angular/cdk/collections';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ZXingScannerComponent } from '@zxing/ngx-scanner';
-import { ProductAddComponent } from '../product-add/product-add.component';
-import { ProductDetailsComponent } from '../product-details/product-details.component';
-import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
 import { BarcodeFormat } from '@zxing/library';
 import { BehaviorSubject } from 'rxjs';
+import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'app-product-list',
@@ -79,25 +77,25 @@ export class ProductListComponent implements OnInit, OnDestroy {
     this.types = [...new Set(products.map(p => p.type))].filter(t => t);
   }
 
- getStatusLabel(status: string): string {
-  const statusMap: {[key: string]: string} = {
-    'active': 'Actif',
-    'inactive': 'Inactif',
-    'promotion': 'Promo',
-    'out-of-stock': 'Rupture'
-  };
-  return statusMap[status] || status;
-}
+  getStatusLabel(status: string): string {
+    const statusMap: {[key: string]: string} = {
+      'active': 'Actif',
+      'inactive': 'Inactif',
+      'promotion': 'Promo',
+      'out-of-stock': 'Rupture'
+    };
+    return statusMap[status] || status;
+  }
 
-getStatusIcon(status: string): string {
-  const iconMap: {[key: string]: string} = {
-    'active': 'fas fa-check-circle',
-    'inactive': 'fas fa-times-circle',
-    'promotion': 'fas fa-tag',
-    'out-of-stock': 'fas fa-exclamation-triangle'
-  };
-  return iconMap[status] || 'fas fa-info-circle';
-} 
+  getStatusIcon(status: string): string {
+    const iconMap: {[key: string]: string} = {
+      'active': 'fas fa-check-circle',
+      'inactive': 'fas fa-times-circle',
+      'promotion': 'fas fa-tag',
+      'out-of-stock': 'fas fa-exclamation-triangle'
+    };
+    return iconMap[status] || 'fas fa-info-circle';
+  }
 
   filterProducts(): void {
     const searchLower = this.searchTerm.toLowerCase().trim();
@@ -489,36 +487,27 @@ private loadProducts(): void {
     takeUntil(this.destroy$),
     map(([products, stockItems]) => {
       const enrichedProducts = products.map(product => {
-        const stockItem = stockItems.find(item => item.idProduit === product.id);
-        const stockQuantity = stockItem ? stockItem.quantite : 0;
-        
-        // Mettre à jour le statut si la quantité est 0
-        const status = stockQuantity <= 0 ? 'out-of-stock' : product.status;
-
+        const stockItem = stockItems.find(item => item.idProduit === product.id); // Utilisez idProduit au lieu de productId
         return {
           ...product,
-          stockQuantity,
-          unitPrice: stockItem ? stockItem.prixDeVente : 0,
-          status // Mise à jour du statut
+          stockQuantity: stockItem ? stockItem.quantite : 0,
+          unitPrice: stockItem ? stockItem.prixDeVente : 0
         };
       });
-
-      this.extractFilters(enrichedProducts);
       return enrichedProducts;
     })
-    ).subscribe({
-      next: (products) => {
-        this.products = products;
-        this.filteredProducts = [...products];
-        this.loading = false;
-      },
-      error: (error) => {
-        console.error('Erreur de chargement:', error);
-        this.loading = false;
-      }
-    });
-  }
-
-
+  ).subscribe({
+    next: (enrichedProducts) => {
+      this.products = enrichedProducts;
+      this.filteredProducts = [...enrichedProducts];
+      this.extractFilters(enrichedProducts);
+      this.loading = false;
+    },
+    error: (error) => {
+      console.error('Erreur lors du chargement des produits:', error);
+      this.loading = false;
+    }
+  });
+}
 
 }

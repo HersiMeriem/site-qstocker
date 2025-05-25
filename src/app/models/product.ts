@@ -9,7 +9,9 @@ export interface Product {
   description: string;
   qrCode: string;
   imageUrl?: string;
+  logoImageUrl?: string; 
   unitPrice: number;
+   packagingImageUrl?: string; 
   costPrice: number;
   volume: string;
   type: string; 

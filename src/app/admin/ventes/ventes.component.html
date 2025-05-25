@@ -1,63 +1,112 @@
-
 <div class="ventes-container">
+    <!-- Icône de retour -->
+    <a class="back-icon" routerLink="/admin/products" title="Retour">
+        <i class="fas fa-arrow-left"></i>
+    </a>
+
+    <!-- En-tête -->
     <header class="ventes-header">
-      <h1><i class="fas fa-history"></i> Historique des Ventes</h1>
-      
-      <div class="ventes-controls">
-        <div class="search-box">
-          <input type="text" [(ngModel)]="searchTerm" (input)="applyFilters()" 
-                 placeholder="Rechercher...">
-          <i class="fas fa-search"></i>
-        </div>
+        <h1><i class="fas fa-cash-register"></i> Gestion des Ventes</h1>
         
-        <select [(ngModel)]="filterPeriod" (change)="loadSalesHistory()">
-          <option value="today">Aujourd'hui</option>
-          <option value="week">Cette semaine</option>
-          <option value="month">Ce mois</option>
-          <option value="">Toutes</option>
-        </select>
-      </div>
+        <div class="ventes-controls">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" 
+                       [(ngModel)]="searchTerm" 
+                       (input)="applySearchFilter()" 
+                       placeholder="Rechercher une vente...">
+            </div>
+            
+            <select [(ngModel)]="historyFilter" (change)="loadSalesHistory()">
+                <option value="today">Aujourd'hui</option>
+                <option value="week">Cette semaine</option>
+                <option value="month">Ce mois</option>
+                <option value="year">Cette année</option>
+                <option value="">Toutes les ventes</option>
+            </select>
+        </div>
     </header>
-  
-    <div class="ventes-content">
-      <div *ngIf="loading" class="loading">
-        <i class="fas fa-spinner fa-spin"></i> Chargement en cours...
-      </div>
-      
-      <div *ngIf="error" class="error">
-        <i class="fas fa-exclamation-triangle"></i> {{ error }}
-      </div>
-      
-      <table *ngIf="!loading && !error">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Date</th>
-            <th>N° Facture</th>
-            <th>Client</th>
-            <th>Total</th>
-            <th>Paiement</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let sale of filteredSales; let i = index">
-            <td>{{ i + 1 }}</td>
-            <td>{{ sale.date | date:'dd/MM/yyyy HH:mm' }}</td>
-            <td>{{ sale.invoiceNumber }}</td>
-            <td>{{ sale.customerName }}</td>
-            <td>{{ sale.totalAmount | number:'1.2-2' }} DT</td>
-            <td>{{ getPaymentMethodLabel(sale.paymentMethod) }}</td>
-            <td>
-              <button (click)="printInvoice(sale)" title="Imprimer">
-                <i class="fas fa-file-pdf"></i>
-              </button>
-            </td>
-          </tr>
-          <tr *ngIf="filteredSales.length === 0">
-            <td colspan="7">Aucune vente trouvée</td>
-          </tr>
-        </tbody>
-      </table>
+
+    <!-- Statistiques -->
+    <div class="stats-container">
+        <!-- Statistiques quotidiennes -->
+        <div class="stats-summary">
+            <div class="stat-card">
+                <div class="stat-value">{{ dailySalesCount }}</div>
+                <div class="stat-label">Ventes aujourd'hui</div>
+            </div>
+            <div class="stat-card accent">
+                <div class="stat-value">{{ dailyRevenue | number:'1.2-2' }} DT</div>
+                <div class="stat-label">CA aujourd'hui</div>
+            </div>
+        </div>
+
+        <!-- Statistiques par période -->
+        <div class="stats-summary">
+            <div class="stat-card period-stat">
+                <div class="stat-value">{{ periodRevenue | number:'1.2-2' }} DT</div>
+                <div class="stat-label">CA {{ periodLabel }}</div>
+                <div class="stat-count">
+                    {{ filteredSalesHistory.length }} vente{{ filteredSalesHistory.length !== 1 ? 's' : '' }}
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
+
+    <!-- Contenu principal -->
+    <main class="ventes-content">
+        <div *ngIf="loadingHistory" class="loading">
+            <i class="fas fa-spinner fa-spin"></i>
+            <span>Chargement de l'historique...</span>
+        </div>
+
+        <div *ngIf="historyError" class="error">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span>{{ historyError }}</span>
+        </div>
+
+        <table *ngIf="!loadingHistory && !historyError">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Date</th>
+                    <th>N° Facture</th>
+                    <th>Client</th>
+                    <th>ID Client</th>
+                    <th>Total</th>
+                    <th>Paiement</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let sale of filteredSalesHistory; let i = index">
+                    <td>{{ i + 1 }}</td>
+                    <td>{{ sale.date | date:'dd/MM/yyyy HH:mm' }}</td>
+                    <td>{{ sale.invoiceNumber }}</td>
+                    <td>{{ sale.customerName || 'Non spécifié' }}</td>
+                    <td class="monospace">{{ sale.customerId || 'N/A' }}</td>
+                    <td>{{ sale.totalAmount | number:'1.2-2' }} DT</td>
+                    <td>
+                        <span class="payment-method">
+                            <i [class]="getPaymentMethodIcon(sale.paymentMethod)"></i>
+                            {{ getPaymentMethodLabel(sale.paymentMethod) }}
+                        </span>
+                    </td>
+                    <td>
+                        <button (click)="printInvoice(sale)" title="Imprimer la facture">
+                            <i class="fas fa-file-pdf"></i>
+                        </button>
+                        <button (click)="showSaleDetails(sale)" title="Détails">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </td>
+                </tr>
+                <tr *ngIf="filteredSalesHistory.length === 0">
+                    <td colspan="8" class="no-results">
+                        <i class="fas fa-search-minus"></i> Aucune vente ne correspond aux critères
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </main>
+</div>

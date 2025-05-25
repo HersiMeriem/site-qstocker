@@ -374,10 +374,11 @@ export class DashboardFinancierComponent implements OnInit, AfterViewInit, OnDes
       commande.id.toLowerCase().includes(term) ||
       (commande.invoiceNumber?.toLowerCase() || '').includes(term) ||
       this.getProductName(commande).toLowerCase().includes(term) ||
-      commande.supplierName.toLowerCase().includes(term) 
+      commande.supplierName.toLowerCase().includes(term)
     );
   }
 
+  // Reste des méthodes existantes...
   toggleExpensesSection(): void {
     this.showExpensesSection = !this.showExpensesSection;
     if (this.showExpensesSection && this.expenses.length === 0) {

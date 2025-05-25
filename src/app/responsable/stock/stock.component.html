@@ -127,16 +127,15 @@
           <td class="fw-bold" [ngClass]="{'text-success': produit.quantite > 0, 'text-danger': produit.quantite === 0}">
             {{ calculateTotalValue(produit.prixUnitaireHT, produit.quantite) | number:'1.3-3' }} DT
           </td>
-     <td>
-    <span class="status-badge" [ngClass]="'status-' + produit.status">
-        <i [class]="getStatusIcon(produit.status)"></i>
-        {{ getStatusLabel(produit.status) }}
-        <span *ngIf="produit.status === 'promotion' && !isPromotionActive(produit)" class="expired-text">
-            (Expirée)
-        </span>
+       <td>
+  <span class="status-badge" [ngClass]="'status-' + produit.status">
+    <i [class]="getStatusIcon(produit.status)"></i>
+    {{ getStatusLabel(produit.status) }}
+    <span *ngIf="produit.status === 'promotion' && !isPromotionActive(produit)" class="expired-text">
+      (Expirée)
     </span>
+  </span>
 </td>
-
 
           <td>{{ produit.dateMiseAJour | date:'dd/MM/yy HH:mm' }}</td>
           <td>

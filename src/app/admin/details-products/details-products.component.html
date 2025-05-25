@@ -1,86 +1,196 @@
+<!-- details-products.component.html -->
 <div class="product-details-container">
-    <!-- État de chargement -->
-    <div *ngIf="loading" class="loading-state">
-      <div class="spinner"></div>
-      <p>Chargement en cours...</p>
-    </div>
-  
-    <!-- Message d'erreur -->
-    <div *ngIf="error" class="error-message">
-      <i class="fas fa-exclamation-triangle"></i>
-      <p>{{error}}</p>
+  <!-- État de chargement -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner-border text-primary" role="status"></div>
+    <p>Chargement en cours...</p>
+  </div>
+
+  <!-- Message d'erreur -->
+  <div *ngIf="error" class="error-message">
+    <i class="fas fa-exclamation-triangle"></i>
+    <p>{{error}}</p>
+    <button class="back-button" (click)="goBack()">
+      <i class="fas fa-arrow-left"></i> Retour
+    </button>
+  </div>
+
+  <!-- Carte des détails du produit -->
+  <div *ngIf="product && !loading" class="product-card">
+    <div class="card-header">
       <button class="back-button" (click)="goBack()">
-        <i class="fas fa-arrow-left"></i> Retour
+        <i class="fas fa-arrow-left"></i>
       </button>
+      <h2>Détails du Produit</h2>
+      <span class="product-ref">REF-{{product.id | slice:0:8}}</span>
     </div>
-  
-    <!-- Carte des détails du produit -->
-    <div *ngIf="product && !loading" class="product-card">
-      <div class="card-header">
-        <button class="back-button" (click)="goBack()">
-          <i class="fas fa-arrow-left"></i>
-        </button>
-        <h2>Détails du Produit</h2>
-        <span class="product-ref">REF-{{product.id | slice:0:8}}</span>
-      </div>
-  
-      <div class="card-body">
-        <div class="product-media">
-          <div class="main-image">
-            <img [src]="product.imageUrl || product.imageBase64 || 'assets/default-product.png'" 
-                 alt="Image du produit">
+
+    <div class="card-body">
+      <div class="row">
+        <!-- Colonne gauche (Image + QR Code) -->
+        <div class="col-md-4">
+          <div class="product-image-container">
+            <img
+              [src]="product.imageUrl || 'assets/default-product.png'"
+              alt="Image produit"
+            />
           </div>
-          
-          <div class="qr-code-container" *ngIf="product.qrCode">
-            <h4><i class="fas fa-qrcode"></i> Code QR</h4>
-            <img [src]="product.qrCode" alt="QR Code">
-            <p>Scanner pour plus d'infos</p>
+
+          <!-- Section QR Code -->
+          <div class="qr-section">
+            <h5><i class="fas fa-qrcode"></i> QR Code du produit</h5>
+            <div *ngIf="qrCodeUrl" class="qr-code-wrapper">
+              <img [src]="qrCodeUrl" alt="QR Code" />
+              <p>Scannez ce code pour plus d'informations</p>
+            </div>
+            <div *ngIf="!qrCodeUrl" class="qr-code-missing">
+              <i class="fas fa-exclamation-triangle"></i>
+              QR Code non disponible
+            </div>
           </div>
         </div>
-  
-        <div class="product-info">
-            <div class="product-title">
-                <h1>{{product.nomProduit || product.name}}</h1>
-                <div class="badges">
-                  <span class="type-badge">{{product.type}}</span>
-                  <span class="category-badge">{{product.category}}</span>
-                  <span class="status-badge" [ngClass]="'status-' + (product.status || 'active')">
-                    {{getStatusLabel(product.status)}}
-                  </span>
+
+        <!-- Colonne droite (Détails) -->
+        <div class="col-md-8 product-info">
+          <h1 class="product-name">{{ product.name }}</h1>
+
+          <!-- Badges principaux -->
+          <div class="badges-container">
+            <span class="badge olfactive-family">
+              {{ product.olfactiveFamily }}
+            </span>
+            <span class="badge category">{{ product.category }}</span>
+
+            <span class="badge status" [ngClass]="product.status">
+              <i class="fas fa-circle"></i>
+              {{ getStatusLabel(product.status) }}
+            </span>
+
+            <!-- Badge de promotion si applicable -->
+            <span *ngIf="product.status === 'promotion' && product.promotion"
+                  class="badge promotion">
+              <i class="fas fa-tag"></i>
+              PROMO -{{ product.promotion.discountPercentage }}%
+              <span *ngIf="!isPromotionActive()">(Expirée)</span>
+            </span>
+
+            <!-- Badge d'authenticité -->
+            <span class="badge authenticity" [ngClass]="{ 'authentic': product.isAuthentic }">
+              <i class="fas" [ngClass]="{
+                'fa-check-circle': product.isAuthentic,
+                'fa-times-circle': !product.isAuthentic
+              }"></i>
+              {{ product.isAuthentic ? 'Authentique' : 'Contrefaçon' }}
+            </span>
+
+            <!-- Badge de stock -->
+            <span class="badge stock" *ngIf="realStockQuantity !== null" 
+                  [ngClass]="{ 'in-stock': realStockQuantity > 0, 'out-of-stock': realStockQuantity <= 0 }">
+              <i class="fas" [ngClass]="{
+                'fa-check-circle': realStockQuantity > 0,
+                'fa-times-circle': realStockQuantity <= 0
+              }"></i>
+              {{ realStockQuantity > 0 ? 'En stock' : 'Rupture' }}
+            </span>
+            <span class="badge stock-unknown" *ngIf="realStockQuantity === null">
+              <i class="fas fa-question-circle"></i>
+              Stock inconnu
+            </span>
+          </div>
+
+          <!-- Informations du produit -->
+          <div class="product-meta-info">
+            <p><strong>Marque:</strong> {{ product.brand }}</p>
+            <p><strong>Type de parfum:</strong> {{ product.perfumeType }}</p>
+            <p><strong>Origine:</strong> {{ product.origin }}</p>
+          </div>
+
+          <!-- Section des Prix -->
+          <div class="prices-section">
+            <!-- Prix d'achat -->
+            <div class="price purchase-price">
+              <h5><i class="fas fa-money-bill-wave"></i> Prix d'achat (HT)</h5>
+              <div class="price-value">
+                {{ stockItem?.prixUnitaireHT | number:'1.3-3' }} DT
+                <span>Prix Unitaire HT</span>
+              </div>
+              <small>Moyenne pondérée (PMP)</small>
+            </div>
+
+            <!-- Prix de vente -->
+            <div class="price sale-price">
+              <h5><i class="fas fa-tag"></i> Prix de vente</h5>
+              <div *ngIf="product.status !== 'promotion' || !isPromotionActive()" class="price-value">
+                {{ stockItem?.prixDeVente | number:'1.3-3' }} DT
+                <span>TTC</span>
+              </div>
+              <div *ngIf="product.status === 'promotion' && isPromotionActive()" class="promo-price">
+                <span class="original-price">
+                  {{ stockItem?.prixDeVente | number:'1.3-3' }} DT
+                </span>
+                <span class="discounted-price">
+                  {{ calculateDiscountedPrice() | number:'1.3-3' }} DT
+                </span>
+                <span class="discount-percent">-{{ product.promotion?.discountPercentage }}%</span>
+                <div class="savings">
+                  Économie: {{ calculateSavings() | number:'1.3-3' }} DT
                 </div>
               </div>
-  
-          <div class="stock-info">
-            <div class="stock-quantity" [class.low-stock]="realStockQuantity !== null && realStockQuantity < 5">
-              <i class="fas fa-boxes"></i>
-              <span *ngIf="stockLoading">Chargement...</span>
-              <span *ngIf="!stockLoading">
-                {{realStockQuantity !== null ? realStockQuantity + ' en stock' : 'Stock indisponible'}}
-              </span>
-            </div>
-  
-            <div class="price-info">
-              <i class="fas fa-tag"></i>
-              <span>{{(product.unitPrice || product.prixDeVente || 0) | number:'1.2-2'}} DT</span>
             </div>
           </div>
-  
+
+          <!-- Informations sur le stock -->
+          <div class="stock-section">
+            <h5><i class="fas fa-boxes"></i> Stock disponible</h5>
+            <div *ngIf="stockLoading" class="stock-loading">
+              <div class="spinner-border spinner-border-sm"></div>
+              <span>Chargement du stock...</span>
+            </div>
+            <div *ngIf="!stockLoading" class="stock-value">
+              {{ realStockQuantity !== null ? realStockQuantity + ' unités' : 'Stock indisponible' }}
+            </div>
+          </div>
+
+          <!-- Description du produit -->
           <div class="description-section">
-            <h3><i class="fas fa-align-left"></i> Description</h3>
-            <p>{{product.description || 'Aucune description disponible'}}</p>
+            <h5><i class="fas fa-align-left"></i> Description</h5>
+            <p>{{ product.description || 'Aucune description disponible' }}</p>
           </div>
-  
-          <div class="meta-info">
-            <div class="meta-item">
-              <i class="fas fa-calendar-plus"></i>
-              <span>Créé le: {{(product.createdAt || product.dateCreation) | date:'dd/MM/yyyy'}}</span>
+
+          <!-- Détails de la promotion -->
+          <div *ngIf="product.status === 'promotion' && product.promotion" class="promotion-details">
+            <h5><i class="fas fa-tag"></i> Détails de la promotion</h5>
+            <div class="promo-details-grid">
+              <div>
+                <p><strong>Remise:</strong> {{ product.promotion.discountPercentage }}%</p>
+                <p><strong>Prix original:</strong> {{ stockItem?.prixDeVente | number:'1.2-2' }} DT</p>
+                <p><strong>Prix promotionnel:</strong> {{ calculateDiscountedPrice() | number:'1.2-2' }} DT</p>
+              </div>
+              <div>
+                <p><strong>Début:</strong> {{ product.promotion.startDate | date:'dd/MM/yyyy' }}</p>
+                <p><strong>Fin:</strong> {{ product.promotion.endDate | date:'dd/MM/yyyy' }}</p>
+                <p><strong>Statut après promotion:</strong> {{ product.postPromoStatus || 'active' | titlecase }}</p>
+              </div>
             </div>
-            <div class="meta-item">
-              <i class="fas fa-calendar-check"></i>
-              <span>Modifié le: {{(product.updatedAt || product.dateMiseAJour) | date:'dd/MM/yyyy'}}</span>
+            <div *ngIf="!isPromotionActive()" class="promo-expired">
+              <i class="fas fa-exclamation-triangle"></i>
+              Cette promotion est expirée
+            </div>
+          </div>
+
+          <!-- Métadonnées du produit -->
+          <div class="metadata-section">
+            <div>
+              <i class="fas fa-calendar-plus"></i>
+              Ajouté le: {{ product.createdAt | date:'dd/MM/yyyy' }}
+            </div>
+            <div>
+              <i class="fas fa-sync-alt"></i>
+              Dernière mise à jour: {{ product.updatedAt | date:'dd/MM/yyyy' }}
             </div>
           </div>
         </div>
       </div>
     </div>
   </div>
+</div>

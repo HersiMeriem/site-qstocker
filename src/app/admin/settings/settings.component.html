@@ -1,7 +1,7 @@
 <br><br>
 
 <div class="settings-container">
-  <h2>{{ 'Admin' | translate }}</h2>
+  <h2>Paramètres Admin</h2>
 
   <form [formGroup]="settingsForm" (ngSubmit)="saveSettings()" class="admin-settings-form">
     <!-- Thème -->
@@ -13,33 +13,30 @@
       <div class="form-hint">{{ 'Theme' | translate }}: <strong>{{ settingsForm.get('theme')?.value | translate }}</strong></div>
     </div>
   
-    <!-- Notifications -->
     <div class="form-group">
       <div class="form-check">
         <input type="checkbox" id="notifications" formControlName="notifications" class="form-check-input">
-        <label for="notifications" class="form-check-label">{{ ' notifications' | translate }}</label>
-      </div>
-      <div class="form-hint">
-        {{ 'notificationsStatus' | translate }}: 
-        <strong [class.text-success]="settingsForm.get('notifications')?.value"
-                [class.text-danger]="!settingsForm.get('notifications')?.value">
-          {{ settingsForm.get('notifications')?.value ? ('enabled' | translate) : ('disabled' | translate) }}
-        </strong>
+        <label for="notifications" class="form-check-label">Activer les notifications</label>
       </div>
     </div>
-  
+
     <!-- Notifications par email -->
     <div class="form-group" *ngIf="settingsForm.get('notifications')?.value">
       <div class="form-check">
         <input type="checkbox" id="emailNotifications" formControlName="emailNotifications" class="form-check-input">
-        <label for="emailNotifications" class="form-check-label">{{ ' emailNotifications' | translate }}</label>
+        <label for="emailNotifications" class="form-check-label">Notifications par email</label>
       </div>
-      <div class="form-hint">
-        {{ 'emailNotificationsStatus' | translate }}: 
-        <strong [class.text-success]="settingsForm.get('emailNotifications')?.value"
-                [class.text-danger]="!settingsForm.get('emailNotifications')?.value">
-          {{ settingsForm.get('emailNotifications')?.value ? ('enabled' | translate) : ('disabled' | translate) }}
-        </strong>
+      <div class="form-group" *ngIf="settingsForm.get('emailNotifications')?.value">
+        <label for="adminEmail">Email admin</label>
+        <input type="email" id="adminEmail" formControlName="adminEmail" class="form-control">
+      </div>
+    </div>
+
+    <!-- Notifications web -->
+    <div class="form-group" *ngIf="settingsForm.get('notifications')?.value">
+      <div class="form-check">
+        <input type="checkbox" id="webNotifications" formControlName="webNotifications" class="form-check-input">
+        <label for="webNotifications" class="form-check-label">Notifications sur le site web</label>
       </div>
     </div>
   
@@ -88,8 +85,8 @@
     <!-- Boutons d'action -->
     <div class="form-actions">
       <button type="submit" [disabled]="!settingsForm.valid || isLoading" class="btn btn-save">
-        <span *ngIf="isLoading" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-        {{ isLoading ? ('saving' | translate) : ('saveButton' | translate) }}
+        <span *ngIf="isLoading" class="spinner"></span>
+        {{ isLoading ? 'Sauvegarde...' : 'Sauvegarder' }}
       </button>
       
       <button type="button" (click)="exportSettings()" class="btn btn-export">

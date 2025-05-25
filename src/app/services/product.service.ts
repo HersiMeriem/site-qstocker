@@ -57,7 +57,7 @@ export class ProductService {
         }
       }
 
-      // 🔒 Ajout de la validation de l’authenticité
+      // Ajout de la validation de l’authenticité
       if (product.isAuthentic === undefined) {
         throw new Error('Le champ d\'authenticité est requis');
       }
@@ -80,11 +80,11 @@ export class ProductService {
     }
   }
 
-  private cleanProductFields(product: Product): Partial<Product> {
+private cleanProductFields(product: Product): Partial<Product> {
     // Enlève les champs inutiles pour Firebase
     const { id, promotion, ...cleanProduct } = product;
     return cleanProduct;
-  }
+}
 
   private getUserFriendlyError(error: unknown): string {
     const message = (error as Error).message;
@@ -136,7 +136,7 @@ export class ProductService {
   async updateProduct(id: string, product: Partial<Product>): Promise<void> {
     try {
       if (!id) throw new Error('ID produit manquant');
-      
+
       // Validation de l'authenticité
       if (product.isAuthentic === undefined) {
         throw new Error('Le champ d\'authenticité est requis');

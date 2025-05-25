@@ -1,15 +1,45 @@
 <div class="main-container">
   <section>
     <div class="dashboard-container" [ngClass]="{'dark-mode': isDarkMode}">
-      <div class="theme-toggle">
-        <button (click)="toggleTheme()">
-          <span class="material-icons">{{ isDarkMode ? 'wb_sunny' : 'brightness_3' }}</span>
-        </button>
+      <!-- Barre d'actions supérieure -->
+      <div class="action-bar">
+        <div class="theme-toggle">
+          <button (click)="toggleTheme()">
+            <span class="material-icons">{{ isDarkMode ? 'wb_sunny' : 'brightness_3' }}</span>
+          </button>
+        </div>
+        
+        <div class="action-buttons">
+          <button class="action-btn refresh-btn" (click)="refreshData()">
+            <i class="fas fa-sync-alt"></i> Actualiser
+          </button>
+          <button class="action-btn pdf-btn" (click)="exportToPDF()">
+            <i class="fas fa-file-pdf"></i> Exporter PDF
+          </button>
+          <button class="action-btn scan-btn" (click)="toggleScanner()">
+            <i class="fas fa-qrcode"></i> Scanner Produit
+          </button>
+        </div>
       </div>
-  
-      <div class="search-bar">
-        <input type="text" placeholder="Rechercher un produit ou un utilisateur..." 
-               [(ngModel)]="searchQuery" (input)="onSearch()">
+
+      <!-- Scanner -->
+      <div class="scanner-container" *ngIf="scannerActive">
+        <zxing-scanner
+          [enable]="scannerActive"
+          [formats]="supportedFormats"
+          (scanSuccess)="onScanSuccess($event)"
+          (scanError)="onScanError($event)"
+          class="scanner-viewport">
+        </zxing-scanner>
+        
+        <div class="scanner-overlay">
+          <div class="scan-frame"></div>
+          <p class="scan-instructions">Scannez le QR code du produit</p>
+        </div>
+        
+        <button mat-flat-button (click)="scannerActive = false" class="close-scanner-btn">
+          <i class="fas fa-times"></i> Fermer
+        </button>
       </div>
   
       <div class="stats-container">
@@ -43,34 +73,178 @@
       <div class="charts-container">
         <div class="chart-card">
           <h3>Ventes par Produit</h3>
-          <canvas id="salesChart"></canvas>
+          <div class="chart-container-large">
+            <canvas id="salesChart"></canvas>
+          </div>
         </div>
         <div class="chart-card">
           <h3>Répartition des Stocks</h3>
-          <canvas id="stockChart"></canvas>
+          <div class="chart-container-small">
+            <canvas id="stockChart"></canvas>
+          </div>
         </div>
       </div>
   
       <!-- Section Calendrier + Top Parfums -->
       <div class="calendar-perfume-container">
-        <div class="calendar-card">
-          <h3>Calendrier des Événements</h3>
-          <full-calendar [options]="calendarOptions"></full-calendar>
-        </div>
+<div class="calendar-card">
+  <h3>Calendrier des Événements</h3>
+  <div class="calendar-container">
+    <full-calendar [options]="calendarOptions"></full-calendar>
+  </div>
+</div>
         <div class="perfume-chart-card">
           <h3>Top Parfums</h3>
-          <canvas id="topPerfumesChart"></canvas>
+          <div class="chart-container-small">
+            <canvas id="topPerfumesChart"></canvas>
+          </div>
         </div>
       </div>
-  
-      <!-- Alertes -->
-      <div class="alerts-container">
-        <h3>Alertes en Temps Réel</h3>
-        <div class="alert-card" *ngFor="let alert of alerts">
-          <p>{{ alert.message }}</p>
-          <span class="alert-time">{{ alert.time }}</span>
+
+      <!-- Section Produits en Rupture + Journal des Événements -->
+      <div class="row-section side-by-side">
+        <!-- Produits en Rupture -->
+        <div class="stock-section mat-elevation-z1">
+          <div class="section-header">
+            <h2>
+              <mat-icon>warning</mat-icon>
+              Produits en Rupture Imminente
+            </h2>
+          </div>
+
+          <mat-table [dataSource]="lowStockProducts" class="stock-table">
+            <!-- Colonne Produit -->
+            <ng-container matColumnDef="product">
+              <mat-header-cell *matHeaderCellDef>Produit</mat-header-cell>
+              <mat-cell *matCellDef="let product">
+                <div class="product-info">
+                  <img [src]="product.imageUrl || 'assets/default-product.png'"
+                       class="product-image"
+                       alt="Image produit"
+                       (error)="handleImageError(product)">
+                  <div class="product-details">
+                    <div class="product-name">{{product.nomProduit || product.name}}</div>
+                    <div class="product-reference">Réf. {{product.idProduit}}</div>
+                    <div class="product-category">{{product.category || 'Non classé'}}</div>
+                  </div>
+                </div>
+              </mat-cell>
+            </ng-container>
+
+            <!-- Colonne Caractéristiques -->
+            <ng-container matColumnDef="characteristics">
+              <mat-header-cell *matHeaderCellDef>Caractéristiques</mat-header-cell>
+              <mat-cell *matCellDef="let product">
+                <div class="product-characteristics">
+                  <div><strong>Marque:</strong> {{ product.brand }}</div>
+                  <div><strong>Type:</strong> {{ product.perfumeType }}</div>
+                  <div><strong>Origine:</strong> {{ product.origin }}</div>
+                </div>
+              </mat-cell>
+            </ng-container>
+
+            <!-- Colonne Stock -->
+            <ng-container matColumnDef="stock">
+              <mat-header-cell *matHeaderCellDef>Niveau de Stock</mat-header-cell>
+              <mat-cell *matCellDef="let product">
+                <div class="stock-progress">
+                  <div class="stock-numbers">
+                    {{product.quantite}} / {{product.seuil || 5}}
+                    <span class="stock-alert" *ngIf="product.quantite === 0">RUPTURE!</span>
+                  </div>
+                  <mat-progress-bar mode="determinate"
+                                    [value]="(product.quantite / (product.seuil || 5)) * 100"
+                                    [color]="getStockProgressColor(product)">
+                  </mat-progress-bar>
+                  <div class="stock-days">
+                    <mat-icon>schedule</mat-icon>
+                    J-{{product.daysUntilStockout || 0}} ({{product.lastSaleDate | date:'dd/MM'}})
+                  </div>
+                </div>
+              </mat-cell>
+            </ng-container>
+
+            <!-- Colonne Détails -->
+            <ng-container matColumnDef="details">
+              <mat-header-cell *matHeaderCellDef>Détails</mat-header-cell>
+              <mat-cell *matCellDef="let product">
+                <button mat-icon-button color="primary" (click)="viewProductDetails(product.id)">
+                  <mat-icon>visibility</mat-icon>
+                </button>
+              </mat-cell>
+            </ng-container>
+
+            <mat-header-row *matHeaderRowDef="['product', 'characteristics', 'stock', 'details']"></mat-header-row>
+            <mat-row *matRowDef="let row; columns: ['product', 'characteristics', 'stock', 'details'];"></mat-row>
+          </mat-table>
+        </div>
+
+        <!-- Journal des Événements -->
+        <div class="activity-section mat-elevation-z1">
+          <div class="section-header">
+            <h2>
+              <mat-icon>timeline</mat-icon>
+              Journal des Événements
+            </h2>
+            <div class="header-actions">
+              <button mat-icon-button (click)="filterActivities('all')" matTooltip="Tout voir">
+                <mat-icon>list</mat-icon>
+              </button>
+              <button mat-icon-button (click)="refreshActivities()" matTooltip="Actualiser">
+                <mat-icon>refresh</mat-icon>
+              </button>
+            </div>
+          </div>
+
+          <div class="activity-filters">
+            <mat-button-toggle-group #filters="matButtonToggleGroup"
+                                    (change)="filterActivities(filters.value)"
+                                    value="all">
+              <mat-button-toggle value="all">Tout</mat-button-toggle>
+              <mat-button-toggle value="sales">Ventes</mat-button-toggle>
+              <mat-button-toggle value="stock">Stock</mat-button-toggle>
+              <mat-button-toggle value="alerts">Alertes</mat-button-toggle>
+            </mat-button-toggle-group>
+          </div>
+
+          <div class="activity-list">
+            <div class="activity-item"
+                 *ngFor="let activity of filteredActivities"
+                 [class]="activity.type"
+                 (click)="onActivityClick(activity)">
+              <div class="activity-icon-container">
+                <mat-icon class="activity-icon">{{activity.icon}}</mat-icon>
+                <div class="activity-type-badge">{{activity.type | titlecase}}</div>
+              </div>
+
+              <div class="activity-content">
+                <div class="activity-message">
+                  <span *ngIf="activity.user" class="highlight-text">{{activity.user}}</span>
+                  {{activity.message}}
+                  <span *ngIf="activity.product" class="product-link">
+                    {{activity.product.nomProduit}} ({{activity.product.idProduit}})
+                  </span>
+                  <span *ngIf="activity.amount" class="amount">
+                    {{activity.amount | currency:'TND':'symbol':'1.2-2'}}
+                  </span>
+                </div>
+
+                <div class="activity-details">
+  <div class="activity-time">
+  <mat-icon>schedule</mat-icon>
+  {{activity.time | date:'short'}}
+</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="no-activities" *ngIf="filteredActivities.length === 0">
+              <mat-icon>info</mat-icon>
+              <p>Aucun événement à afficher</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </section>
-  </div>
+</div>

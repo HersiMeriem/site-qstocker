@@ -2,8 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { OrderService } from '../../services/order.service';
 import { Order, CartItem } from 'src/app/models/order';
 import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { map } from 'rxjs/operators';
-
+import { Observable } from 'rxjs';
 @Component({
   selector: 'app-livraison',
   templateUrl: './livraison.component.html',
@@ -11,6 +12,7 @@ import { map } from 'rxjs/operators';
 })
 export class LivraisonComponent implements OnInit {
   orders: Order[] = [];
+  filteredOrders: Order[] = [];
   selectedOrder: Order | null = null;
   selectedStatus: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled' = 'pending';
   isLoading: boolean = false;
@@ -29,6 +31,35 @@ export class LivraisonComponent implements OnInit {
   ngOnInit(): void {
     this.loadOrders();
   }
+
+loadOrders(): void {
+  this.isLoading = true;
+  this.orderService.getOrdersByStatus(this.selectedStatus)
+    .pipe(
+      map((orders: Order[]) => orders.map(order => ({
+        ...order,
+        customerName: order.customerName || 'Non spécifié',
+        customerPhone: order.customerPhone || 'Non spécifié',
+        items: order.items || [],
+        totalAmount: order.totalAmount || 0,
+        shippingFee: order.shippingFee || 0,
+        grandTotal: order.grandTotal || 0,
+        orderDate: order.orderDate || new Date().toISOString()
+      })))
+    )
+    .subscribe({
+      next: (orders: Order[]) => {
+        this.orders = orders;
+        this.filteredOrders = [...orders];
+        this.isLoading = false;
+      },
+      error: (err) => {
+        console.error('Erreur de chargement:', err);
+        this.isLoading = false;
+        this.showErrorAlert('Erreur de chargement des commandes');
+      }
+    });
+}
 
   onStatusChange(status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled'): void {
     this.selectedStatus = status;
@@ -109,157 +140,95 @@ export class LivraisonComponent implements OnInit {
     }
 
     const doc = new jsPDF();
-    const logoUrl = await this.getDataUrlFromImage('assets/images/qstocker.png');
-
-    // Dimensions utiles
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const leftMargin = 20;
-    const rightMargin = 190;
-
-    // === En-tête ===
-    if (logoUrl) {
-      doc.addImage(logoUrl, 'PNG', leftMargin, 15, 20, 12);
+    
+    // En-tête
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(20);
+    doc.setTextColor('#1e4868');
+    doc.text('QStocker', 15, 20);
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(12);
+    doc.text('Facture', 15, 30);
+    doc.text(`N°: ${this.selectedOrder.id.substring(0, 8)}`, 15, 35);
+    doc.text(`Date: ${new Date(this.selectedOrder.orderDate).toLocaleDateString()}`, 15, 40);
+    
+    // Informations client
+    doc.setFontSize(14);
+    doc.text('Client:', 15, 55);
+    doc.setFontSize(12);
+    doc.text(`Nom: ${this.selectedOrder.customerName}`, 15, 60);
+    doc.text(`Téléphone: ${this.selectedOrder.customerPhone}`, 15, 65);
+    if (this.selectedOrder.customerAddress) {
+      doc.text(`Adresse: ${this.selectedOrder.customerAddress}`, 15, 70);
     }
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
-    doc.setTextColor('#1e4868');
-    doc.text('Q', leftMargin, 30);
-    doc.setTextColor('#548CB8');
-    doc.text('Stocker', leftMargin + 4, 30);
-
-    // Coordonnées magasin à droite
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    doc.setTextColor('#000000');
-    doc.text('Email: contact.qstocker@gmail.com', rightMargin - 70, 20);
-    doc.text('Téléphone: +1234567890', rightMargin - 70, 28);
-    doc.text('Adresse: Sfax', rightMargin - 70, 36);
-
-    // Titre "FACTURE"
-    doc.setFontSize(24);
-    doc.setTextColor('#1e4868');
-    doc.text('FACTURE', pageWidth / 2, 55, { align: 'center' });
-
-    // Ligne de séparation
-    doc.setDrawColor('#548CB8');
-    doc.setLineWidth(1);
-    doc.line(leftMargin, 60, rightMargin, 60);
-
-    // Informations de commande
-    doc.setFontSize(12);
-    doc.setTextColor('#000');
-    doc.text(`Commande #: ${this.selectedOrder.id.substring(0, 8)}`, leftMargin, 70);
-    doc.text(`Date: ${new Date(this.selectedOrder.orderDate).toLocaleDateString()}`, leftMargin, 80);
-    doc.text(`Client: ${this.selectedOrder.customerName}`, leftMargin, 90);
-    doc.text(`Téléphone: ${this.selectedOrder.customerPhone}`, leftMargin, 100);
-
-    // Ligne de séparation
-    doc.setDrawColor('#eeeeee');
-    doc.line(leftMargin, 105, rightMargin, 105);
-
-    // En-tête tableau produits
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(13);
-    doc.setTextColor('#1e4868');
-    doc.text('Articles', leftMargin, 115);
-
-    // Tableau entête
-    doc.setFillColor('#f0f7fc');
-    doc.rect(leftMargin, 120, 170, 8, 'F');
-    doc.setDrawColor('#cccccc');
-    doc.rect(leftMargin, 120, 170, 8, 'D');
-
-    doc.setFontSize(11);
-    doc.setTextColor('#000000');
-    doc.text('Produit', leftMargin + 2, 126);
-    doc.text('Qté', 90, 126);
-    doc.text('Prix', 120, 126);
-    doc.text('Total', 160, 126);
-
-    let y = 135;
-
-    // Liste des articles
-    this.selectedOrder.items.forEach((item, index) => {
-      if (y > 270) {
-        doc.addPage();
-        y = 20;
+    
+    // Tableau des articles
+    const headers = [['Article', 'Qté', 'Prix unitaire', 'Total']];
+    const data = this.selectedOrder.items.map(item => [
+      item.productName,
+      item.quantity.toString(),
+      `${(item.totalPrice / item.quantity).toFixed(3)} DT`,
+      `${item.totalPrice.toFixed(3)} DT`
+    ]);
+    
+    autoTable(doc, {
+      startY: 80,
+      head: headers,
+      body: data,
+      theme: 'grid',
+      headStyles: {
+        fillColor: '#1e4868',
+        textColor: '#ffffff'
       }
-
-      // Alternance de couleur pour chaque ligne
-      if (index % 2 === 0) {
-        doc.setFillColor(245, 245, 245);
-        doc.rect(leftMargin, y - 5, 170, 8, 'F');
-      }
-
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor('#000');
-      doc.text(item.productName, leftMargin + 2, y);
-      doc.text(`${item.quantity}`, 90, y);
-      doc.text(`${(item.totalPrice / item.quantity).toFixed(2)} DT`, 120, y);
-      doc.text(`${item.totalPrice.toFixed(2)} DT`, 160, y);
-
-      y += 10;
     });
-
-    // Ligne de séparation avant les totaux
-    doc.setDrawColor('#dddddd');
-    doc.line(leftMargin, y, rightMargin, y);
-    y += 10;
-
+    
     // Totaux
-    doc.setFont('helvetica', 'normal');
+    const finalY = (doc as any).lastAutoTable.finalY + 10;
     doc.setFontSize(12);
-    doc.setTextColor('#000');
-    doc.text(`Sous-total:`, rightMargin - 60, y);
-    doc.text(`${this.selectedOrder.totalAmount.toFixed(2)} DT`, rightMargin - 10, y, { align: 'right' });
-    y += 10;
-
-    doc.text(`Frais de livraison:`, rightMargin - 60, y);
-    doc.text(`${this.selectedOrder.shippingFee.toFixed(2)} DT`, rightMargin - 10, y, { align: 'right' });
-    y += 10;
-
+    doc.text(`Sous-total: ${this.selectedOrder.totalAmount.toFixed(3)} DT`, 140, finalY);
+    doc.text(`Frais de livraison: ${this.selectedOrder.shippingFee.toFixed(3)} DT`, 140, finalY + 5);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
-    doc.setTextColor('#1e4868');
-    doc.text(`Total:`, rightMargin - 60, y);
-    doc.text(`${this.selectedOrder.grandTotal.toFixed(2)} DT`, rightMargin - 10, y, { align: 'right' });
-    y += 20;
-
-    // Message final
+    doc.text(`Total: ${this.selectedOrder.grandTotal.toFixed(3)} DT`, 140, finalY + 10);
+    
+    // Pied de page
     doc.setFont('helvetica', 'italic');
-    doc.setFontSize(11);
-    doc.setTextColor('#548CB8');
-    doc.text('Merci pour votre confiance !', pageWidth / 2, y, { align: 'center' });
-
-    // Sauvegarder le PDF
+    doc.setFontSize(10);
+    doc.setTextColor('#666666');
+    doc.text('Merci pour votre confiance !', 105, finalY + 20, { align: 'center' });
+    
     doc.save(`facture-${this.selectedOrder.id}.pdf`);
   }
 
   private getDataUrlFromImage(imagePath: string): Promise<string> {
     return new Promise((resolve, reject) => {
-      fetch(imagePath)
-        .then(response => response.blob())
-        .then(blob => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.readAsDataURL(blob);
-        })
-        .catch(error => {
-          console.error('Erreur lors du chargement de l\'image:', error);
-          reject(error);
-        });
+      const img = new Image();
+      img.crossOrigin = 'Anonymous';
+      img.src = imagePath;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0);
+          resolve(canvas.toDataURL('image/png'));
+        } else {
+          reject(new Error('Could not get canvas context'));
+        }
+      };
+      img.onerror = () => reject(new Error('Image loading error'));
     });
   }
 
   filterBySearch(): void {
     if (this.searchQuery) {
-      this.orders = this.orders.filter(order =>
+      this.filteredOrders = this.orders.filter(order =>
         order.customerName.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
         order.id.toLowerCase().includes(this.searchQuery.toLowerCase())
       );
     } else {
-      this.loadOrders();
+      this.filteredOrders = [...this.orders];
     }
   }
 
@@ -285,36 +254,4 @@ export class LivraisonComponent implements OnInit {
       default: return status;
     }
   }
-
-
-//livraison 
-
-loadOrders(): void {
-  this.isLoading = true;
-  this.orderService.getOrdersByStatusWithSnapshots(this.selectedStatus) // Changé ici
-    .pipe(
-      map(orders => orders.map(order => ({
-        ...order,
-        customerName: order.customerName || 'Non spécifié',
-        customerPhone: order.customerPhone || 'Non spécifié',
-        items: order.items || [],
-        totalAmount: order.totalAmount || 0,
-        shippingFee: order.shippingFee || 0,
-        grandTotal: order.grandTotal || 0
-      })))
-    )
-    .subscribe({
-      next: (orders) => {
-        this.orders = orders;
-        this.isLoading = false;
-      },
-      error: (err) => {
-        console.error('Erreur de chargement:', err);
-        this.isLoading = false;
-        this.showErrorAlert('Erreur de chargement des commandes');
-      }
-    });
-} 
-
-
 }

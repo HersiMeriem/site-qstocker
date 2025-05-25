@@ -29,6 +29,9 @@
           <a class="nav-link" routerLink="/admin/report">📑 Rapports</a>
         </li>
         <li class="nav-item">
+          <a class="nav-link" routerLink="/admin/livraison-view">🚚 Livraison</a>
+        </li>
+        <li class="nav-item">
           <a class="nav-link" routerLink="/admin/analyse-financier">🧾 Analyse Financier</a>
         </li>
       </ul>
@@ -41,20 +44,8 @@
             </button>
           </div>
         </li>
-
-        <li class="nav-item dropdown me-3">
-          <a class="nav-link dropdown-toggle notification-link" href="#" id="alertsDropdown" role="button" data-bs-toggle="dropdown">
-            <i class="fas fa-bell"></i>
-            <span class="badge bg-danger notification-badge">3+</span>
-          </a>
-          <ul class="dropdown-menu dropdown-menu-end dropdown-notifications">
-            <li><h6 class="dropdown-header">Centre d'alertes</h6></li>
-            <li><a class="dropdown-item" href="#">Stock faible - Produit 1</a></li>
-            <li><a class="dropdown-item" href="#">Produit épuisé</a></li>
-            <li><a class="dropdown-item" href="#">Erreur lors de l'ajout</a></li>
-            <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item text-center view-all" href="#">Voir toutes les alertes</a></li>
-          </ul>
+        <li class="nav-item notification-item">
+          <app-notifications (click)="handleNotificationClick($event)"></app-notifications>
         </li>
 
 

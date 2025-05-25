@@ -1,0 +1,180 @@
+/* ========== BASE STYLES ========== */
+.container-fluid {
+  padding: 1.5rem;
+  background-color: #f8f9fa;
+  min-height: calc(100vh - 56px);
+}
+
+/* ========== CARD STYLES ========== */
+.card {
+  border: none;
+  border-radius: 0.75rem;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+  font-weight: 600;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* ========== LIST GROUP STYLES ========== */
+.list-group-item {
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 0.5rem;
+  margin-bottom: 0.75rem;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  padding: 1.25rem 1.5rem;
+}
+
+.list-group-item:hover {
+  transform: translateX(5px);
+  box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.05);
+}
+
+.list-group-item.active {
+  border-left: 4px solid #0d6efd;
+  background-color: #f8f9fa;
+}
+
+/* ========== STATUS BADGES ========== */
+.badge {
+  font-weight: 500;
+  padding: 0.5em 0.75em;
+  font-size: 0.8em;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* ========== TABLE STYLES ========== */
+.table-responsive {
+  max-height: 400px;
+  overflow-y: auto;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+  box-shadow: 0 0 0.5rem rgba(0, 0, 0, 0.03);
+}
+
+.table {
+  margin-bottom: 0;
+}
+
+.table th {
+  position: sticky;
+  top: 0;
+  background-color: #f8f9fa;
+  white-space: nowrap;
+  font-weight: 600;
+  padding: 1rem;
+}
+
+.table td {
+  vertical-align: middle;
+  padding: 0.75rem 1rem;
+}
+
+.table img {
+  object-fit: cover;
+  border-radius: 0.25rem;
+}
+
+/* ========== BUTTON STYLES ========== */
+.btn {
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn i {
+  font-size: 1.1em;
+}
+
+.btn-success {
+  background-color: #198754;
+  border-color: #198754;
+}
+
+.btn-success:hover {
+  background-color: #157347;
+  border-color: #146c43;
+}
+
+/* ========== ALERT STYLES ========== */
+.alert {
+  border-radius: 0.5rem;
+  padding: 1rem 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+/* ========== FORM CONTROLS ========== */
+.form-control {
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid #ced4da;
+  transition: border-color 0.2s ease;
+}
+
+.form-control:focus {
+  border-color: #86b7fe;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+/* ========== TYPOGRAPHY ========== */
+h4, h5 {
+  font-weight: 600;
+}
+
+.text-muted {
+  color: #6c757d !important;
+}
+
+/* ========== LOADING SPINNER ========== */
+.spinner-border {
+  width: 2rem;
+  height: 2rem;
+  border-width: 0.2em;
+}
+
+/* ========== RESPONSIVE ADJUSTMENTS ========== */
+@media (max-width: 992px) {
+  .container-fluid {
+    padding: 1rem;
+  }
+  
+  .card-body {
+    padding: 1.25rem;
+  }
+  
+  .list-group-item {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .row {
+    flex-direction: column;
+  }
+  
+  .col-md-6 {
+    width: 100%;
+    margin-bottom: 1.5rem;
+  }
+  
+  .btn-group {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+}

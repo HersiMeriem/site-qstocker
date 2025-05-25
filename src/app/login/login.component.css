@@ -317,3 +317,18 @@ input.invalid {
 input.invalid:focus {
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
 }
+.field-error {
+  color: #ef4444;
+  font-size: 0.8rem;
+  margin-top: 5px;
+  padding-left: 5px;
+}
+
+input.invalid {
+  border-color: #ef4444 !important;
+  background-color: #fef2f2 !important;
+}
+
+input.invalid:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
+}

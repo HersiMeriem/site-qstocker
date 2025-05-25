@@ -3,93 +3,20 @@ import { AngularFireDatabase } from '@angular/fire/compat/database';
 import { map } from 'rxjs/operators';
 import { CartItem, Order } from '../models/order';
 import { StockService } from './stock.service';
+import { NotificationService } from './notification.service';
 import { Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class OrderService {
-  constructor(private db: AngularFireDatabase, private stockService: StockService) {}
+  constructor(
+    private db: AngularFireDatabase,
+    private stockService: StockService,
+    private notificationService: NotificationService
+  ) {}
 
-  getOrdersByStatusWithSnapshots(status: string) {
-    return this.db.list<Order>('orders', ref =>
-      ref.orderByChild('status').equalTo(status)
-    ).snapshotChanges().pipe(
-      map(changes =>
-        changes
-          .filter(c => c.payload.key !== null && c.payload.val() !== null)
-          .map(c => {
-            const val = c.payload.val()!;
-            // Remove the id from val to avoid duplication
-            const { id, ...rest } = val;
-            return {
-              id: c.payload.key!,
-              ...rest,
-              customerName: val.customerName || '',
-              customerPhone: val.customerPhone || '',
-              items: val.items || [],
-              totalAmount: val.totalAmount || 0,
-              shippingFee: val.shippingFee || 0,
-              grandTotal: val.grandTotal || 0,
-              orderDate: val.orderDate || new Date().toISOString(),
-              status: val.status || 'pending',
-              paymentMethod: val.paymentMethod || 'on_delivery',
-              userId: val.userId || ''
-            };
-          })
-      )
-    );
-  }
-
-  async updateOrderStatus(orderId: string, newStatus: string): Promise<void> {
-    if (!orderId) {
-        throw new Error('ID de commande invalide');
-    }
-
-    try {
-        const snapshot = await this.db.object(`orders/${orderId}`).query.once('value');
-        const order = snapshot.val();
-
-        if (!order) {
-            throw new Error('Commande non trouvée');
-        }
-
-        const previousStatus = order.status;
-
-        // Si la commande passe à "livré", on diminue le stock
-        if (newStatus === 'delivered' && previousStatus !== 'delivered') {
-            for (const item of order.items) {
-                await this.stockService.updateStockQuantity(item.productId, -item.quantity);
-            }
-        }
-        // Si une commande livrée est annulée, on réajoute le stock
-        else if (newStatus === 'cancelled' && previousStatus === 'delivered') {
-            for (const item of order.items) {
-                await this.stockService.updateStockQuantity(item.productId, item.quantity);
-            }
-        }
-        // Si une commande annulée est relivrée (cas rare), on diminue à nouveau le stock
-        else if (newStatus === 'delivered' && previousStatus === 'cancelled') {
-            for (const item of order.items) {
-                await this.stockService.updateStockQuantity(item.productId, -item.quantity);
-            }
-        }
-
-        // Mise à jour du statut de la commande
-        await this.db.object(`orders/${orderId}/status`).set(newStatus);
-        await this.db.object(`orders/${orderId}/lastUpdated`).set(new Date().toISOString());
-    } catch (error) {
-        console.error('Erreur lors de la mise à jour:', error);
-        throw error;
-    }
-  }
-
-  deleteOrder(orderId: string): Promise<void> {
-    return this.db.object(`orders/${orderId}`).remove();
-  }
-
-  //dashboard-fin
-  getOrdersByStatus(status: string): Observable<Order[]> {
+ getOrdersByStatus(status: string): Observable<Order[]> {
     return this.db.list<Order>('orders', ref =>
       ref.orderByChild('status').equalTo(status)
     ).valueChanges().pipe(
@@ -99,5 +26,83 @@ export class OrderService {
       })))
     );
   }
-  
+
+  async updateOrderStatus(orderId: string, newStatus: string): Promise<void> {
+    if (!orderId) {
+      throw new Error('ID de commande invalide');
+    }
+
+    try {
+      const snapshot = await this.db.object(`orders/${orderId}`).query.once('value');
+      const order = snapshot.val();
+
+      if (!order) {
+        throw new Error('Commande non trouvée');
+      }
+
+      const previousStatus = order.status;
+
+      // Diminuer le stock seulement quand le statut passe à "livré"
+      if (newStatus === 'delivered' && previousStatus !== 'delivered') {
+        for (const item of order.items) {
+          await this.stockService.retirerDuStock({
+            productId: item.productId,
+            quantity: item.quantity,
+            reason: 'order_delivery'
+          });
+        }
+
+        // Envoyer une notification de livraison
+        await this.notificationService.createNotification({
+          title: 'Commande livrée',
+          message: `La commande #${orderId.substring(0, 8)} a été livrée avec succès au client ${order.customerName}`,
+          type: 'success',
+          priority: 'high'
+        });
+      }
+
+      // Si la commande était livrée et est annulée, remettre le stock
+      if (newStatus === 'cancelled' && previousStatus === 'delivered') {
+        for (const item of order.items) {
+          await this.stockService.ajouterAuStock({
+            productId: item.productId,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice
+          });
+        }
+      }
+
+      if (newStatus !== previousStatus) {
+        const statusText = this.getStatusText(newStatus);
+        await this.notificationService.createNotification({
+          title: `Statut de commande mis à jour`,
+          message: `La commande #${orderId.substring(0, 8)} est maintenant "${statusText}"`,
+          type: 'info',
+          priority: 'medium'
+        });
+      }
+
+      // Mise à jour du statut
+      await this.db.object(`orders/${orderId}/status`).set(newStatus);
+      await this.db.object(`orders/${orderId}/lastUpdated`).set(new Date().toISOString());
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour:', error);
+      throw error;
+    }
+  }
+
+  deleteOrder(orderId: string): Promise<void> {
+    return this.db.object(`orders/${orderId}`).remove();
+  }
+
+  private getStatusText(status: string): string {
+    switch(status) {
+      case 'pending': return 'En attente';
+      case 'processing': return 'En traitement';
+      case 'shipped': return 'Expédiée';
+      case 'delivered': return 'Livrée';
+      case 'cancelled': return 'Annulée';
+      default: return status;
+    }
+  }
 }

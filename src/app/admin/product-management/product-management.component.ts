@@ -1,11 +1,9 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { AngularFireDatabase } from '@angular/fire/compat/database';
-import { SnapshotAction } from '@angular/fire/compat/database';
+import { ProductService } from '../../services/product.service';
 import { StockService } from 'src/app/services/stock.service';
-import { combineLatest, Subject } from 'rxjs';
+import { Subject, combineLatest } from 'rxjs';
 import { takeUntil, map } from 'rxjs/operators';
 import { Router } from '@angular/router';
-
 
 @Component({
   selector: 'app-product-management',
@@ -16,82 +14,40 @@ export class ProductManagementComponent implements OnInit, OnDestroy {
   products: any[] = [];
   filteredProducts: any[] = [];
   searchQuery: string = '';
-  loading: boolean = true;
   selectedCategory: string = '';
-selectedType: string = '';
+  selectedStatus: string = '';
+  categories: string[] = [];
+  loading: boolean = true;
   private destroy$ = new Subject<void>();
 
   constructor(
-    private db: AngularFireDatabase,
+    private productService: ProductService,
     private stockService: StockService,
     private router: Router
   ) {}
 
-  ngOnInit() {
+  ngOnInit(): void {
     this.loadProducts();
   }
 
-  ngOnDestroy() {
+  ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
   }
 
-    // Nouvelle méthode pour naviguer vers la gestion du stock
-    goToStock() {
-      this.router.navigate(['/admin/stock-history']);
-    }
-  
-    // Nouvelle méthode pour naviguer vers la gestion des ventes
-    goToSales() {
-      this.router.navigate(['/admin/ventes']);
-    }
-  getUniqueCategories(): string[] {
-    return [...new Set(this.products.map(p => p.category))].filter(c => c);
-  }
-  
-  getUniqueTypes(): string[] {
-    return [...new Set(this.products.map(p => p.type))].filter(t => t);
-  }
-  
-  filterByCategory(): void {
-    if (!this.selectedCategory) {
-      this.filteredProducts = [...this.products];
-    } else {
-      this.filteredProducts = this.products.filter(
-        p => p.category === this.selectedCategory
-      );
-    }
-  }
-  
-  filterByType(): void {
-    if (!this.selectedType) {
-      this.filteredProducts = [...this.products];
-    } else {
-      this.filteredProducts = this.products.filter(
-        p => p.type === this.selectedType
-      );
-    }
-  }
-
-  loadProducts() {
+  private loadProducts(): void {
     combineLatest([
-      this.db.list('products').snapshotChanges(),
+      this.productService.getProducts(),
       this.stockService.getStock()
     ]).pipe(
       takeUntil(this.destroy$),
       map(([products, stockItems]) => {
         return products.map(product => {
-          const productData = product.payload.val() as any;
-          const stockItem = stockItems.find(item => item.idProduit === product.key);
-          
-          // Fusion des données produit et stock
+          const stockItem = stockItems.find(item => item.idProduit === product.id);
           return {
-            id: product.key,
-            ...productData,
-            ...(stockItem || {}),
-            nomProduit: stockItem?.nomProduit || productData.name,
-            quantite: stockItem?.quantite || productData.quantity,
-            prixDeVente: stockItem?.prixDeVente || productData.price
+            ...product,
+            unitPrice: stockItem ? stockItem.prixDeVente : 0,
+            stockQuantity: stockItem ? stockItem.quantite : 0
           };
         });
       })
@@ -99,6 +55,7 @@ selectedType: string = '';
       next: (products) => {
         this.products = products;
         this.filteredProducts = [...products];
+        this.extractCategories();
         this.loading = false;
       },
       error: (error) => {
@@ -108,47 +65,58 @@ selectedType: string = '';
     });
   }
 
-  applySearch() {
+  private extractCategories(): void {
+    this.categories = [...new Set(this.products.map(p => p.category))].filter(c => c);
+  }
+
+  applySearch(): void {
     const query = this.searchQuery.toLowerCase().trim();
-    if (!query) {
-      this.filteredProducts = [...this.products];
-      return;
-    }
-
+    
     this.filteredProducts = this.products.filter(product => {
-      return (
-        (product.nomProduit?.toLowerCase().includes(query) || 
-         product.name?.toLowerCase().includes(query)) ||
-        (product.type?.toLowerCase().includes(query)) ||
-        (product.category?.toLowerCase().includes(query)) ||
-        (product.id?.toLowerCase().includes(query)));
+      const matchesSearch = 
+        product.name?.toLowerCase().includes(query) ||
+        product.id?.toLowerCase().includes(query) ||
+        product.category?.toLowerCase().includes(query);
+      
+      const matchesCategory = !this.selectedCategory || 
+        product.category === this.selectedCategory;
+      
+      const matchesStatus = !this.selectedStatus || 
+        product.status === this.selectedStatus;
+      
+      return matchesSearch && matchesCategory && matchesStatus;
     });
   }
 
-  getStatusLabel(status: string): string {
-    const statusMap: {[key: string]: string} = {
-      'active': 'Actif',
-      'inactive': 'Inactif',
-      'critical': 'Critique',
-      'normal': 'Normal',
-      'promotion': 'En promotion'
-    };
-    return statusMap[status] || status;
+  filterProducts(): void {
+    this.applySearch();
   }
 
-  viewDetails(product: any) {
-    this.router.navigate(['/admin/details-products', product.id]);
+  viewDetails(productId: string): void {
+    this.router.navigate(['/admin/details-products', productId]);
   }
 
-  markAsCritical(productId: string) {
-    this.db.object(`products/${productId}/status`).set('critical').then(() => {
-      alert("✅ Produit marqué comme critique !");
-      this.loadProducts(); // Rafraîchir la liste
-    }).catch(error => {
-      console.error('Erreur:', error);
-      alert(`❌ Erreur: ${error.message}`);
-    });
+  isPromotionActive(product: any): boolean {
+    if (!product.promotion) return false;
+    const now = new Date();
+    const start = new Date(product.promotion.startDate);
+    const end = new Date(product.promotion.endDate);
+    return now >= start && now <= end;
   }
 
+  calculateDiscountedPrice(product: any): number {
+    if (!this.isPromotionActive(product)) return product.unitPrice;
+    const discount = product.promotion?.discountPercentage || 0;
+    return product.unitPrice * (1 - discount / 100);
+  }
+
+      // Nouvelle méthode pour naviguer vers la gestion du stock
+    goToStock() {
+      this.router.navigate(['/admin/stock-history']);
+    }
   
+    // Nouvelle méthode pour naviguer vers la gestion des ventes
+    goToSales() {
+      this.router.navigate(['/admin/ventes']);
+    }
 }

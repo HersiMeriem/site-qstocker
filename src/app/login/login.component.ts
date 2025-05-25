@@ -10,9 +10,10 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 })
 export class LoginComponent {
   loginForm: FormGroup;
-  loading: boolean = false;
-  isLoginVisible: boolean = true;
-  errorMessage: string = '';
+  loading = false;
+  isLoginVisible = true;
+  errorMessage = '';
+  fieldErrors: { email?: string; password?: string } = {};
 
   constructor(
     private authService: AuthService, 
@@ -24,45 +25,79 @@ export class LoginComponent {
       password: ['', [
         Validators.required,
         Validators.minLength(8),
-        Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%?&])[A-Za-z\d@$!%?&]+$/)
       ]]
     });
   }
 
-async login() {
-  if (this.loginForm.invalid) {
-    this.markFormGroupTouched(this.loginForm);
-    return;
-  }
+  async login() {
+    // Réinitialisation des messages d'erreur
+    this.errorMessage = '';
+    this.fieldErrors = {};
 
-  this.errorMessage = '';
-  this.loading = true;
-
-  try {
-    const { email, password } = this.loginForm.value;
-    const response = await this.authService.login(email, password);
-
-    if (!response) {
-      this.errorMessage = 'Erreur inattendue lors de la connexion';
+    // Vérification de la validité du formulaire
+    if (this.loginForm.invalid) {
+      this.markFormGroupTouched(this.loginForm);
+      this.setFieldErrors();
       return;
     }
 
-    // Debug: Afficher les informations utilisateur
-    console.log('Utilisateur connecté:', {
-      uid: response.user.uid,
-      role: response.role,
-      email: response.user.email
-    });
+    this.loading = true;
 
-  } catch (error: any) {
-    this.errorMessage = error.message;
-    console.error('Erreur de connexion complète:', error);
-  } finally {
-    this.loading = false;
+    try {
+      const { email, password } = this.loginForm.value;
+      const response = await this.authService.login(email, password);
+
+      if (!response) {
+        this.errorMessage = 'Une erreur est survenue lors de la connexion';
+        return;
+      }
+
+      // Redirection après connexion réussie
+      this.router.navigate(['/dashboard']);
+
+    } catch (error: any) {
+      this.handleLoginError(error);
+    } finally {
+      this.loading = false;
+    }
   }
-}
 
-  private markFormGroupTouched(formGroup: FormGroup) {
+  private setFieldErrors(): void {
+    const emailControl = this.loginForm.get('email');
+    const passwordControl = this.loginForm.get('password');
+
+    if (emailControl?.errors?.['required']) {
+      this.fieldErrors.email = 'L\'email est obligatoire';
+    } else if (emailControl?.errors?.['email']) {
+      this.fieldErrors.email = 'L\'adresse email est invalide';
+    }
+
+    if (passwordControl?.errors?.['required']) {
+      this.fieldErrors.password = 'Le mot de passe est obligatoire';
+    } else if (passwordControl?.errors?.['minlength']) {
+      this.fieldErrors.password = 'Minimum 8 caractères requis';
+    }
+  }
+
+  private handleLoginError(error: any): void {
+    console.error('Erreur de connexion:', error);
+    
+    switch (error.code) {
+      case 'auth/user-not-found':
+        this.fieldErrors.email = 'Aucun compte associé à cet email';
+        break;
+      case 'auth/wrong-password':
+        this.fieldErrors.password = 'Mot de passe incorrect';
+        break;
+      case 'auth/too-many-requests':
+        this.errorMessage = 'Trop de tentatives. Veuillez réessayer plus tard.';
+        break;
+      default:
+        this.errorMessage = error.message || 'Une erreur est survenue lors de la connexion';
+    }
+  }
+
+  private markFormGroupTouched(formGroup: FormGroup): void {
     Object.values(formGroup.controls).forEach(control => {
       control.markAsTouched();
 
@@ -72,7 +107,10 @@ async login() {
     });
   }
 
-  toggleView() {
+  toggleView(): void {
     this.isLoginVisible = !this.isLoginVisible;
+    this.errorMessage = '';
+    this.fieldErrors = {};
+    this.loginForm.reset();
   }
-} 
+}

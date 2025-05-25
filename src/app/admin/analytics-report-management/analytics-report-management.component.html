@@ -1,10 +1,11 @@
 <div class="report-container">
 
-  <div class="notification-container" *ngIf="notification$ | async as notification">
-    <div class="notification" [ngClass]="notification.type">
-      {{ notification.message }}
-    </div>
+<!-- Modifier cette partie -->
+<div class="notification-container" *ngIf="notification$ | async as notification">
+  <div class="notification" [ngClass]="notification.type">
+    {{ notification.message }}
   </div>
+</div>
 
   <section class="report-controls card">
     <header class="report-header">
@@ -112,15 +113,15 @@
     <div class="tab-content">
       <div *ngIf="activeTab === 'chart'" class="chart-container">
         <canvas #reportChart></canvas>
-        <div class="chart-controls" *ngIf="selectedReport">
-          <label for="chartType">Type de graphique:</label>
-          <select id="chartType" [(ngModel)]="currentChartType" (ngModelChange)="renderChart(selectedReport)">
-            <option value="bar">Barres</option>
-            <option value="line">Ligne</option>
-            <option value="pie" *ngIf="selectedReport.type === 'users' || selectedReport.type === 'inventory'">Camembert</option>
-            <option value="doughnut" *ngIf="selectedReport.type === 'users' || selectedReport.type === 'inventory'">Anneau</option>
-          </select>
-        </div>
+<div class="chart-controls" *ngIf="selectedReport">
+  <label for="chartType">Type de graphique:</label>
+  <select id="chartType" [(ngModel)]="currentChartType" (ngModelChange)="renderChart(selectedReport)">
+    <option value="bar">Barres</option>
+    <option value="line">Ligne</option>
+    <option value="pie">Camembert</option>
+    <option value="doughnut">Anneau</option>
+  </select>
+</div>
       </div>
 
       <div *ngIf="activeTab === 'table'" class="table-container">

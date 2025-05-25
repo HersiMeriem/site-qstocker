@@ -344,3 +344,34 @@ img[alt="Produit"] {
   background-color: #ffedd5;
   color: #f97316;
 }
+
+.status-badge {
+  padding: 0.25em 0.5em;
+  border-radius: 0.25rem;
+  font-size: 0.875em;
+}
+
+.status-active {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.status-inactive {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.status-promotion {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.status-out-of-stock {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.expired-text {
+  font-size: 0.75em;
+  color: #6c757d;
+}

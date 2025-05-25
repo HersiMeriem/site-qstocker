@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { AngularFireAuth } from '@angular/fire/compat/auth';
 import { AngularFireDatabase } from '@angular/fire/compat/database';
 import { BehaviorSubject } from 'rxjs';
-
+import { ProfileImageService } from './profile-image.service';
 @Injectable({
   providedIn: 'root'
 })
@@ -11,14 +11,15 @@ export class StockManagerProfileService {
 
   constructor(
     private afAuth: AngularFireAuth,
-    private db: AngularFireDatabase
+    private db: AngularFireDatabase,
+    private profileImageService: ProfileImageService
   ) { }
 
   private profilePhotoSource = new BehaviorSubject<string>('assets/images/responsable.png');
   currentProfilePhoto = this.profilePhotoSource.asObservable();
 
-  updateProfilePhoto(photoUrl: string) {
-    this.profilePhotoSource.next(photoUrl);
+  updateProfilePhoto(imageUrl: string) {
+    this.profileImageService.changeProfileImage(imageUrl);
   }
 
   async getStockManagerProfile(userId: string): Promise<any> {

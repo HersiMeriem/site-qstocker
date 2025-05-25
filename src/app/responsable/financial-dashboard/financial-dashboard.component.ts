@@ -53,7 +53,7 @@ interface CommandeInvoice {
 export class FinancialDashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   private subscriptions = new Subscription();
   private lineChart?: Chart<'line', number[], string>;
-private combinedCAChart?: Chart<'line', number[], string>;
+  private combinedCAChart?: Chart<'line', number[], string>;
 
   // Facturation commande
   showCommandInvoices = false;
@@ -420,37 +420,34 @@ private combinedCAChart?: Chart<'line', number[], string>;
     });
   }
 
-//depenses 
-openExpenseModal(): void {
-  this.showExpenseModal = true;
-}
+  //depenses
+  openExpenseModal(): void {
+    this.showExpenseModal = true;
+  }
 
-closeExpenseModal(): void {
-  this.showExpenseModal = false;
-  this.newExpense = {
-    date: format(new Date(), 'yyyy-MM-dd'),
-    amount: 0,
-    category: '',
-    description: '',
-    paymentMethod: 'Carte'
-  };
-}
+  closeExpenseModal(): void {
+    this.showExpenseModal = false;
+    this.newExpense = {
+      date: format(new Date(), 'yyyy-MM-dd'),
+      amount: 0,
+      category: '',
+      description: '',
+      paymentMethod: 'Carte'
+    };
+  }
 
-submitExpense(): void {
-  this.addingExpense = true;
-  this.expenseService.addExpense(this.newExpense).then(() => {
-    this.loadExpenses();
-    this.closeExpenseModal();
-  }).catch(error => {
-    this.errorMessage = 'Erreur lors de l\'ajout de la dépense';
-    console.error(error);
-  }).finally(() => {
-    this.addingExpense = false;
-  });
-}
-
-
-
+  submitExpense(): void {
+    this.addingExpense = true;
+    this.expenseService.addExpense(this.newExpense).then(() => {
+      this.loadExpenses();
+      this.closeExpenseModal();
+    }).catch(error => {
+      this.errorMessage = 'Erreur lors de l\'ajout de la dépense';
+      console.error(error);
+    }).finally(() => {
+      this.addingExpense = false;
+    });
+  }
 
   deleteExpense(id: string): void {
     if (confirm('Êtes-vous sûr de vouloir supprimer cette dépense ?')) {
@@ -675,8 +672,6 @@ submitExpense(): void {
     }
   }
 
-
-
   private groupSalesByDay(): { labels: string[]; values: number[] } {
     const groupedData: Record<string, number> = {};
 
@@ -695,8 +690,6 @@ submitExpense(): void {
       values: Object.values(groupedData)
     };
   }
-
-
 
   private determineCategory(productId: string): string {
     if (!productId) return 'Non catégorisé';
@@ -881,160 +874,159 @@ submitExpense(): void {
     this.initCombinedCAChart(); // <-- Ajoutez cette ligne
   }
 
-private initCombinedCAChart(): void {
-  const ctx = document.getElementById('combinedCAChart') as HTMLCanvasElement;
-  if (!ctx) return;
+  private initCombinedCAChart(): void {
+    const ctx = document.getElementById('combinedCAChart') as HTMLCanvasElement;
+    if (!ctx) return;
 
-  if (this.combinedCAChart) this.combinedCAChart.destroy();
+    if (this.combinedCAChart) this.combinedCAChart.destroy();
 
-  const dailySalesData = this.groupSalesByDay();
-  const dailyOrdersData = this.groupDeliveredOrdersByDay();
+    const dailySalesData = this.groupSalesByDay();
+    const dailyOrdersData = this.groupDeliveredOrdersByDay();
 
-  const allDates = Array.from(new Set([
-    ...dailySalesData.labels,
-    ...dailyOrdersData.labels
-  ])).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+    const allDates = Array.from(new Set([
+      ...dailySalesData.labels,
+      ...dailyOrdersData.labels
+    ])).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
 
-  const salesValues = allDates.map(date =>
-    dailySalesData.labels.includes(date)
-      ? dailySalesData.values[dailySalesData.labels.indexOf(date)]
-      : 0
-  );
+    const salesValues = allDates.map(date =>
+      dailySalesData.labels.includes(date)
+        ? dailySalesData.values[dailySalesData.labels.indexOf(date)]
+        : 0
+    );
 
-  const ordersValues = allDates.map(date =>
-    dailyOrdersData.labels.includes(date)
-      ? dailyOrdersData.values[dailyOrdersData.labels.indexOf(date)]
-      : 0
-  );
+    const ordersValues = allDates.map(date =>
+      dailyOrdersData.labels.includes(date)
+        ? dailyOrdersData.values[dailyOrdersData.labels.indexOf(date)]
+        : 0
+    );
 
-  const totalValues = allDates.map((_, i) => salesValues[i] + ordersValues[i]);
+    const totalValues = allDates.map((_, i) => salesValues[i] + ordersValues[i]);
 
-  const config: ChartConfiguration<'line', number[], string> = {
-    type: 'line',
-    data: {
-      labels: allDates,
-      datasets: [
-        {
-          label: 'CA Global',
-          data: totalValues,
-          borderColor: '#4ade80',
-          backgroundColor: 'rgba(74, 222, 128, 0.1)',
-          borderWidth: 3,
-          pointRadius: 4,
-          pointHoverRadius: 6,
-          pointBackgroundColor: '#4ade80',
-          fill: true,
-          tension: 0.4
-        },
-        {
-          label: 'Transactions',
-          data: salesValues,
-          borderColor: '#3b82f6',
-          backgroundColor: 'rgba(59, 130, 246, 0.1)',
-          borderWidth: 2,
-          borderDash: [6, 3],
-          pointRadius: 4,
-          pointHoverRadius: 6,
-          pointBackgroundColor: '#3b82f6',
-          fill: false,
-          tension: 0.4
-        },
-        {
-          label: 'Commandes Livrées',
-          data: ordersValues,
-          borderColor: '#facc15',
-          backgroundColor: 'rgba(250, 204, 21, 0.1)',
-          borderWidth: 2,
-          pointRadius: 4,
-          pointHoverRadius: 6,
-          pointBackgroundColor: '#facc15',
-          fill: false,
-          tension: 0.4
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      animation: {
-        duration: 1000,
-        easing: 'easeOutQuart'
+    const config: ChartConfiguration<'line', number[], string> = {
+      type: 'line',
+      data: {
+        labels: allDates,
+        datasets: [
+          {
+            label: 'CA Global',
+            data: totalValues,
+            borderColor: '#4ade80',
+            backgroundColor: 'rgba(74, 222, 128, 0.1)',
+            borderWidth: 3,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            pointBackgroundColor: '#4ade80',
+            fill: true,
+            tension: 0.4
+          },
+          {
+            label: 'Transactions',
+            data: salesValues,
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            borderWidth: 2,
+            borderDash: [6, 3],
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            pointBackgroundColor: '#3b82f6',
+            fill: false,
+            tension: 0.4
+          },
+          {
+            label: 'Commandes Livrées',
+            data: ordersValues,
+            borderColor: '#facc15',
+            backgroundColor: 'rgba(250, 204, 21, 0.1)',
+            borderWidth: 2,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            pointBackgroundColor: '#facc15',
+            fill: false,
+            tension: 0.4
+          }
+        ]
       },
-      plugins: {
-        legend: {
-          position: 'bottom',
-          labels: {
-            font: {
-              size: 13
-            },
-            usePointStyle: true
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: {
+          duration: 1000,
+          easing: 'easeOutQuart'
+        },
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              font: {
+                size: 13
+              },
+              usePointStyle: true
+            }
+          },
+          tooltip: {
+            backgroundColor: '#ffffff',
+            titleColor: '#111827',
+            bodyColor: '#374151',
+            borderColor: '#e5e7eb',
+            borderWidth: 1,
+            callbacks: {
+              label: (context) => {
+                const label = context.dataset.label || '';
+                const value = context.raw as number;
+                return `${label}: ${value.toFixed(2)} DT`;
+              }
+            }
           }
         },
-        tooltip: {
-          backgroundColor: '#ffffff',
-          titleColor: '#111827',
-          bodyColor: '#374151',
-          borderColor: '#e5e7eb',
-          borderWidth: 1,
-          callbacks: {
-            label: (context) => {
-              const label = context.dataset.label || '';
-              const value = context.raw as number;
-              return `${label}: ${value.toFixed(2)} DT`;
+        layout: {
+          padding: { top: 10, left: 10, right: 10, bottom: 10 }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              color: '#374151',
+              font: { size: 12 },
+              callback: (value) => `${value} DT`
+            },
+            grid: {
+              color: '#e5e7eb',
+              drawBorder: false
+            },
+            title: {
+              display: true,
+              text: 'Montant (DT)',
+              font: {
+                size: 14,
+                weight: 'bold'
+              },
+              color: '#111827'
+            }
+          },
+          x: {
+            ticks: {
+              color: '#374151',
+              font: { size: 12 }
+            },
+            grid: {
+              display: false
+            },
+            title: {
+              display: true,
+              text: 'Date',
+              font: {
+                size: 14,
+                weight: 'bold'
+              },
+              color: '#111827'
             }
           }
         }
-      },
-      layout: {
-        padding: { top: 10, left: 10, right: 10, bottom: 10 }
-      },
-      scales: {
-        y: {
-          beginAtZero: true,
-          ticks: {
-            color: '#374151',
-            font: { size: 12 },
-            callback: (value) => `${value} DT`
-          },
-          grid: {
-            color: '#e5e7eb',
-            drawBorder: false
-          },
-          title: {
-            display: true,
-            text: 'Montant (DT)',
-            font: {
-              size: 14,
-              weight: 'bold'
-            },
-            color: '#111827'
-          }
-        },
-        x: {
-          ticks: {
-            color: '#374151',
-            font: { size: 12 }
-          },
-          grid: {
-            display: false
-          },
-          title: {
-            display: true,
-            text: 'Date',
-            font: {
-              size: 14,
-              weight: 'bold'
-            },
-            color: '#111827'
-          }
-        }
       }
-    }
-  };
+    };
 
-  this.combinedCAChart = new Chart(ctx, config);
-}
-
+    this.combinedCAChart = new Chart(ctx, config);
+  }
 
   private groupDeliveredOrdersByDay(): { labels: string[]; values: number[] } {
     const groupedData: Record<string, number> = {};
@@ -1060,22 +1052,18 @@ private initCombinedCAChart(): void {
   }
 
   retryFiltering(): void {
-  this.errorMessage = null; // Réinitialiser le message d'erreur
-  this.applyPeriodFilter(); // Réappliquer le filtre
-}
-
-
-private destroyCharts(): void {
-  if (this.lineChart) {
-    this.lineChart.destroy();
-    this.lineChart = undefined;
+    this.errorMessage = null; // Réinitialiser le message d'erreur
+    this.applyPeriodFilter(); // Réappliquer le filtre
   }
-  if (this.combinedCAChart) {
-    this.combinedCAChart.destroy();
-    this.combinedCAChart = undefined;
+
+  private destroyCharts(): void {
+    if (this.lineChart) {
+      this.lineChart.destroy();
+      this.lineChart = undefined;
+    }
+    if (this.combinedCAChart) {
+      this.combinedCAChart.destroy();
+      this.combinedCAChart = undefined;
+    }
   }
-}
-
-
-
 }

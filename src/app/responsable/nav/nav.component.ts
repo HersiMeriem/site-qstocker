@@ -1,17 +1,30 @@
 import { Component } from '@angular/core';
 import { AuthService } from '../../services/auth.service'; 
 import { Router } from '@angular/router'; 
-
+import { ProfileImageService } from '../../services/profile-image.service';
+import { Subscription } from 'rxjs';
 @Component({
   selector: 'app-nav',
   templateUrl: './nav.component.html',
   styleUrls: ['./nav.component.css']
 })
 export class NavComponent {
+profileImageUrl: string = 'assets/images/responsable.png';
+private imageSubscription: Subscription = new Subscription();
+  constructor(private authService: AuthService, private router: Router,  private profileImageService: ProfileImageService ) { }
 
-  constructor(private authService: AuthService, private router: Router) { }
+// Ajoutez ngOnInit et ngOnDestroy
+ngOnInit() {
+  this.imageSubscription = this.profileImageService.currentProfileImage.subscribe(imageUrl => {
+    this.profileImageUrl = imageUrl;
+  });
+}
 
-
+ngOnDestroy() {
+  if (this.imageSubscription) {
+    this.imageSubscription.unsubscribe();
+  }
+}
     // Déconnexion
     logout() {
       this.authService.logout().then(() => {
@@ -22,5 +35,9 @@ export class NavComponent {
       });
     }
   
-
+// meriem
+  handleNotificationClick(event: MouseEvent) {
+    event.stopPropagation(); // Empêche la propagation de l'événement
+    // Vous pouvez ajouter d'autres logiques ici si nécessaire
+  }
 }

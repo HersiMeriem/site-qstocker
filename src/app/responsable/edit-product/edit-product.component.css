@@ -531,3 +531,9 @@ del {
   margin-bottom: 10px;
   color: #aaa;
 }
+
+
+/* Assurez-vous qu'aucun overlay n'est appliqué */
+.modal-overlay {
+  display: none !important; /* Désactive l'overlay */
+}

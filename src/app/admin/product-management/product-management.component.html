@@ -1,105 +1,125 @@
-<div class="main-container">
-<section>
+<div class="product-list-container">
   <header class="list-header">
-    <div class="header-content">
-      <h1 class="title">📋 Liste des Produits</h1>
-      
-      <!-- Nouveaux boutons alignés à droite -->
-      <div class="header-actions">
-        <button class="btn btn-secondary" (click)="goToStock()">
-          <i class="fas fa-boxes"></i> Stock
-        </button>
-        
-        <button class="btn btn-primary" (click)="goToSales()">
-          <i class="fas fa-chart-line"></i> Ventes
-        </button>
-      </div>
-    </div>    
+    <div class="header-top">
+      <h1 class="title">📋 Gestion des Produits</h1>
+             <div class="header-actions">
+          <button class="btn btn-secondary" (click)="goToStock()">
+            <i class="fas fa-boxes"></i> Stock
+          </button>
+          
+          <button class="btn btn-primary" (click)="goToSales()">
+            <i class="fas fa-chart-line"></i> Ventes
+          </button>
+        </div>
+    </div>
     <div class="controls">
       <div class="search-box">
-        <input type="text" 
-               [(ngModel)]="searchQuery" 
+        <input type="text"
+               [(ngModel)]="searchQuery"
                (input)="applySearch()"
                placeholder="Rechercher par nom, ID, type ou catégorie..."
                class="search-input">
         <i class="fas fa-search search-icon"></i>
       </div>
-  
+
       <div class="filters">
-        <select [(ngModel)]="selectedCategory" (change)="filterByCategory()" class="form-select">
+        <select [(ngModel)]="selectedCategory" (change)="filterProducts()" class="form-select">
           <option value="">Toutes catégories</option>
-          <option *ngFor="let cat of getUniqueCategories()" [value]="cat">{{cat}}</option>
+          <option *ngFor="let cat of categories" [value]="cat">{{cat}}</option>
         </select>
-  
-        <select [(ngModel)]="selectedType" (change)="filterByType()" class="form-select">
-          <option value="">Tous types</option>
-          <option *ngFor="let type of getUniqueTypes()" [value]="type">{{type}}</option>
+
+        <select [(ngModel)]="selectedStatus" (change)="filterProducts()" class="form-select">
+          <option value="">Tous statuts</option>
+          <option value="active">Actif</option>
+          <option value="promotion">En promotion</option>
+          <option value="inactive">Inactif</option>
         </select>
       </div>
     </div>
   </header>
 
-  <br>
-
-  <!-- Grille de produits -->
   <div class="product-grid">
-    <div *ngFor="let product of filteredProducts" class="product-card">
-      
-      <!-- Image du produit -->
-      <div class="product-image-container">
-        <img 
-          [src]="product.imageUrl || product.imageBase64 || 'assets/default-image.jpg'" 
-          alt="Image du produit" 
-          class="product-image">
-      </div>
+    <div *ngIf="loading" class="loading-state">
+      <div class="spinner"></div>
+      <p>Chargement des produits...</p>
+    </div>
 
-      <!-- Informations du produit -->
-      <div class="product-info">
-        <h3 class="product-name">{{ product.nomProduit || product.name }}</h3>
-        <div class="badge-group">
-          <span class="type-badge">{{ product.type }}</span>
-          <span class="category-badge">{{ product.category }}</span>
+    <div *ngFor="let product of filteredProducts" class="product-card">
+      <div class="card-content">
+        <div class="image-section">
+          <img
+            [src]="product.imageUrl || 'assets/default-product.png'"
+            alt="Image produit"
+            class="product-image"
+          />
+
+          <div class="product-identifier">
+            <div class="qr-wrapper">
+              <img [src]="product.qrCode" alt="QR Code" class="qr-code" *ngIf="product.qrCode" />
+            </div>
+            <span class="product-id">REF-{{ product.id | slice:0:8 }}</span>
+          </div>
         </div>
 
+        <div class="product-details">
+          <div *ngIf="product.status === 'promotion'" class="promotion-badge">
+            <i class="fas fa-tag"></i> PROMO -{{ product.promotion?.discountPercentage }}%
+            <span *ngIf="!isPromotionActive(product)" class="expired-text">(Expirée)</span>
+          </div>
 
-        <div class="product-meta">
-          <div class="meta-item">
-            <i class="fas fa-tag"></i>
-            <span>{{ (product.prixDeVente || product.price) | number:'1.2-2' }} DT</span>
-          </div>
-          
-          <div class="meta-item">
-            <i class="fas fa-box"></i>
-            <span>{{ product.quantite || product.stockQuantity || 0 }} en stock</span>
-          </div>
-          
-          <div class="meta-item">
-            <i class="fas fa-info-circle"></i>
-            <span class="status-badge" [ngClass]="'status-' + (product.status || 'active')">
-              {{ getStatusLabel(product.status) }}
+          <div class="badge-group">
+            <span class="category-badge">{{ product.category }}</span>
+            <span class="authenticity-badge" [ngClass]="{
+              'authentic': product.isAuthentic,
+              'counterfeit': !product.isAuthentic
+            }">
+              <i class="fas" [class.fa-check-circle]="product.isAuthentic" [class.fa-exclamation-triangle]="!product.isAuthentic"></i>
+              {{ product.isAuthentic ? 'Authentique' : 'Contrefaçon' }}
+            </span>
+            <span class="olfactive-family-badge">
+              {{ product.olfactiveFamily }}
             </span>
           </div>
+
+          <h3 class="product-name">{{ product.name }}</h3>
+
+          <p class="product-brand"><strong>Marque:</strong> {{ product.brand }}</p>
+          <p class="product-perfume-type"><strong>Type de parfum:</strong> {{ product.perfumeType }}</p>
+          <p class="product-origin"><strong>Origine:</strong> {{ product.origin }}</p>
+          
+          <div class="price-section">
+            <p class="product-price">
+              <strong>Prix: </strong>
+              <span *ngIf="product.status === 'promotion' && isPromotionActive(product)">
+                <span class="original-price">{{ product.unitPrice | number:'1.3-3' }} DT</span>
+                <span class="discounted-price">{{ calculateDiscountedPrice(product) | number:'1.3-3' }} DT</span>
+                <span class="discount-percent">(-{{ product.promotion?.discountPercentage }}%)</span>
+              </span>
+              <span *ngIf="product.status !== 'promotion' || !isPromotionActive(product)">
+                {{ product.unitPrice | number:'1.3-3' }} DT
+              </span>
+            </p>
+          </div>
+
+          <div class="promotion-details" *ngIf="product.status === 'promotion' && product.promotion">
+            <p><strong>Période promotionnelle:</strong></p>
+            <p>{{ product.promotion.startDate | date:'dd/MM/yyyy' }} - {{ product.promotion.endDate | date:'dd/MM/yyyy' }}</p>
+          </div>
+
+          <button
+            class="action-btn info"
+            (click)="viewDetails(product.id)"
+            matTooltip="Voir plus de détails"
+          >
+            <i class="fas fa-eye"></i> Détails
+          </button>
         </div>
       </div>
+    </div>
 
-      <!-- QR Code du produit -->
-      <div *ngIf="product.qrCode" class="qr-code-container">
-        <h4>QR Code :</h4>
-        <img [src]="product.qrCode" alt="QR Code du Produit" class="qr-code">
-        <p class="product-id">REF-{{ product.id | slice:0:8 }}</p>
-      </div>
-
-      <!-- Actions du produit -->
-      <div class="product-actions">
-        <button (click)="viewDetails(product)" class="btn btn-details">
-          <i class="fas fa-eye"></i> Détails
-        </button>
-      </div>
+    <div *ngIf="!loading && filteredProducts.length === 0" class="empty-state">
+      <i class="fas fa-box-open"></i>
+      <p>Aucun produit trouvé</p>
     </div>
   </div>
-
-  <div *ngIf="!loading && filteredProducts.length === 0" class="empty-state">
-    <i class="fas fa-box-open"></i>
-    <p>Aucun produit trouvé</p>
-  </div>
-</section></div>
+</div>

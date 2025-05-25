@@ -1,10 +1,9 @@
 export interface Supplier {
-  id?: string | null;
+  id: string;
   name: string;
   email: string;
   phone: string;
   address: string;
-  info?: string;
-  creationDate?: string;
-
+  info: string;
+  creationDate: string;
 }

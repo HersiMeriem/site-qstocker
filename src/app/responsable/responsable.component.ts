@@ -13,11 +13,7 @@ export class ResponsableComponent implements OnInit {
   constructor(private db: AngularFireDatabase, private authService: AuthService, private router: Router) {}
   
   ngOnInit(): void {
-    this.initializeComponent();
-  }
-    initializeComponent() {
-    // Initialisation du composant
-    console.log('ResponsableComponent initialized');
+    throw new Error('Method not implemented.');
   }
 
 }

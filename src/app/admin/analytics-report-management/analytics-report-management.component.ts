@@ -4,13 +4,13 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { saveAs } from 'file-saver';
 import { debounceTime, Subject, Subscription, Observable, combineLatest } from 'rxjs';
-import { ReportService } from 'src/app/services/report.service';
-import { NotificationService, Notification } from 'src/app/services/notification.service';
+import { AppNotification } from 'src/app/services/notification.service';
 import { Report, ReportType, ReportData } from 'src/app/models/report';
-import { UserService } from '../../services/user.service';
+import { ReportService } from '../../services/report.service';
+import { NotificationService } from '../../services/notification.service';
+import { UserService } from 'src/app/services/user.service';
 import { StockService } from '../../services/stock.service';
 import { SaleService } from '../../services/sale.service';
-
 Chart.register(...registerables);
 
 @Component({
@@ -56,7 +56,7 @@ export class AnalyticsReportManagementComponent implements OnInit, OnDestroy {
     }[];
   } | null = null;
 
-  public notification$: Observable<Notification>;
+public notification$: Observable<AppNotification>;
 
   private subscriptions = new Subscription();
 
@@ -83,22 +83,22 @@ export class AnalyticsReportManagementComponent implements OnInit, OnDestroy {
     }
   }
 
-  renderChart(report: Report): void {
-    if (this.chartInstance) {
-      this.chartInstance.destroy();
-    }
-  
-    const ctx = this.chartCanvas?.nativeElement.getContext('2d');
-    if (!ctx) return;
-  
-    const chartData = this.prepareChartData(report);
-  
-    this.chartInstance = new Chart(ctx, {
-      type: this.currentChartType,
-      data: chartData,
-      options: this.getChartOptions(report.type)
-    });
+renderChart(report: Report): void {
+  if (this.chartInstance) {
+    this.chartInstance.destroy();
   }
+
+  const ctx = this.chartCanvas?.nativeElement.getContext('2d');
+  if (!ctx) return;
+
+  const chartData = this.prepareChartData(report);
+
+  this.chartInstance = new Chart(ctx, {
+    type: this.currentChartType,
+    data: chartData,
+    options: this.getChartOptions(report.type)
+  });
+}
 
   private prepareChartData(report: Report): { labels: string[]; datasets: ChartDataset[] } {
     switch (report.type) {
@@ -113,39 +113,103 @@ export class AnalyticsReportManagementComponent implements OnInit, OnDestroy {
     }
   }
 
-  private prepareSalesChartData(data: ReportData[]): { labels: string[]; datasets: ChartDataset[] } {
-    const labels: string[] = [];
-    const salesData: number[] = [];
-    const revenueData: number[] = [];
-  
-    data.forEach(item => {
-      if (item['période'] && item['période'] !== 'Moyenne/vente') {
-        labels.push(String(item['période']));
-        salesData.push(Number(item['ventes'] || 0));
-        revenueData.push(Number(item['revenu'] || 0));
-      }
-    });
-  
+ private prepareSalesChartData(data: ReportData[]): { labels: string[]; datasets: ChartDataset[] } {
+  // Données pour les graphiques barres/ligne
+  if (this.currentChartType === 'bar' || this.currentChartType === 'line') {
+    // Filtrer les données pour n'avoir que les périodes (exclure Totaux et Moyennes)
+    const periodData = data.filter(item => 
+      item['période'] && 
+      item['période'] !== 'Total' && 
+      item['période'] !== 'Moyenne/vente'
+    );
+
+    if (periodData.length > 0) {
+      // Cas normal avec données par période
+      return {
+        labels: periodData.map(item => String(item['période'])),
+        datasets: [
+          {
+            label: 'Nombre de ventes',
+            data: periodData.map(item => Number(item['ventes'] || 0)),
+            backgroundColor: '#36A2EB',
+            borderColor: '#2980B9',
+            yAxisID: 'y'
+          },
+          {
+            label: 'Revenu (DT)',
+            data: periodData.map(item => Number(item['revenu'] || 0)),
+            backgroundColor: '#2ECC71',
+            borderColor: '#27AE60',
+            yAxisID: 'y1'
+          }
+        ]
+      };
+    } else {
+      // Fallback si pas de données par période
+      const totalItem = data.find(item => item['période'] === 'Total');
+      const avgItem = data.find(item => item['période'] === 'Moyenne/vente');
+      
+      return {
+        labels: ['Total', 'Moyenne'],
+        datasets: [
+          {
+            label: 'Ventes',
+            data: [
+              totalItem ? Number(totalItem['ventes'] || 0) : 0,
+              avgItem ? Number(avgItem['ventes'] || 0) : 0
+            ],
+            backgroundColor: '#36A2EB',
+            borderColor: '#2980B9',
+            yAxisID: 'y'
+          },
+          {
+            label: 'Revenu (DT)',
+            data: [
+              totalItem ? Number(totalItem['revenu'] || 0) : 0,
+              avgItem ? Number(avgItem['revenu'] || 0) : 0
+            ],
+            backgroundColor: '#2ECC71',
+            borderColor: '#27AE60',
+            yAxisID: 'y1'
+          }
+        ]
+      };
+    }
+  }
+
+  // Données pour les graphiques camembert/anneau
+  const paymentData = data.filter(item => item['méthode']);
+  if (paymentData.length > 0) {
+    // Utiliser les méthodes de paiement si disponibles
     return {
-      labels,
-      datasets: [
-        {
-          label: 'Nombre de ventes',
-          data: salesData,
-          backgroundColor: '#36A2EB',
-          borderColor: '#2980B9',
-          yAxisID: 'y'
-        },
-        {
-          label: 'Revenu (DT)',
-          data: revenueData,
-          backgroundColor: '#2ECC71',
-          borderColor: '#27AE60',
-          yAxisID: 'y1'
-        }
-      ]
+      labels: paymentData.map(item => String(item['méthode'])),
+      datasets: [{
+        label: 'Méthodes de paiement',
+        data: paymentData.map(item => Number(item['count'] || 0)),
+        backgroundColor: [
+          '#FF6384', '#36A2EB', '#FFCE56', 
+          '#4BC0C0', '#9966FF', '#FF9F40'
+        ]
+      }]
+    };
+  } else {
+    // Fallback: utiliser Total vs Moyenne
+    const totalItem = data.find(item => item['période'] === 'Total');
+    const avgItem = data.find(item => item['période'] === 'Moyenne/vente');
+    
+    return {
+      labels: ['Total', 'Moyenne'],
+      datasets: [{
+        label: 'Comparaison',
+        data: [
+          totalItem ? Number(totalItem['ventes'] || 0) : 0,
+          avgItem ? Number(avgItem['ventes'] || 0) : 0
+        ],
+        backgroundColor: ['#36A2EB', '#FFCE56']
+      }]
     };
   }
+}
   
   private prepareInventoryChartData(data: ReportData[]): { labels: string[]; datasets: ChartDataset[] } {
     const labels = data.map(item => String(item['métrique']));
@@ -676,10 +740,10 @@ deleteReport(report: Report): void {
   }
 
   previewReport(report: Report): void {
-    this.selectedReport = report;
-    this.prepareTableData(report);
-    this.renderChart(report);
-    
+  this.selectedReport = report;
+  this.prepareTableData(report);
+  this.renderChart(report);
+  this.prepareKPIData(report.data, report.type);
     switch(report.type) {
       case 'sales':
         this.prepareSalesKPIData(report.data);
@@ -903,50 +967,70 @@ deleteReport(report: Report): void {
     }
   }
 
-  prepareKPIData(reportData: any, type: ReportType): void {
-    if (!reportData) return;
-  
-    switch(type) {
-      case 'sales':
-        this.kpiData = {
-          title: '💰 Ventes',
-          mainValue: `${reportData.totalRevenue?.toFixed(2) || '0'} DT`,
-          mainLabel: 'CA Total',
-          items: [
-            { value: reportData.totalSales || 0, label: 'Ventes' },
-            { value: `${reportData.todayRevenue?.toFixed(2) || '0'} DT`, label: 'Aujourd\'hui' },
-            { value: `${reportData.avgSale?.toFixed(2) || '0'} DT`, label: 'Moyenne' }
-          ]
-        };
-        break;
+private prepareKPIData(reportData: any, type: ReportType): void {
+  if (!reportData) return;
+
+  switch(type) {
+    case 'sales':
+      // Use different variable names for sales data
+      const salesTotalItem = reportData.find((item: any) => item.statut === 'Total' || item.période === 'Total');
+      const salesAvgItem = reportData.find((item: any) => item.statut === 'Moyenne' || item.période === 'Moyenne/vente');
       
-      case 'inventory':
-        this.kpiData = {
-          title: '📦 Stock',
-          mainValue: reportData.totalProducts || 0,
-          mainLabel: 'Produits',
-          items: [
-            { value: reportData.totalItems || 0, label: 'Articles' },
-            { value: `${reportData.totalValue?.toFixed(2) || '0'} DT`, label: 'Valeur' },
-            { value: reportData.lowStock || 0, label: 'Stock bas', warning: true }
-          ]
-        };
-        break;
-      
-      case 'users':
-        this.kpiData = {
-          title: '👥 Utilisateurs',
-          mainValue: reportData.total || 0,
-          mainLabel: 'Total',
-          items: [
-            { value: reportData.byStatus?.approved || 0, label: 'Approuvés' },
-            { value: reportData.byStatus?.pending || 0, label: 'En attente' },
-            { value: reportData.byStatus?.blocked || 0, label: 'Bloqués' }
-          ]
-        };
-        break;
-    }
+      this.kpiData = {
+        title: '💰 Ventes',
+        mainValue: `${(salesTotalItem?.revenu || salesTotalItem?.valeur || 0).toFixed(2)} DT`,
+        mainLabel: 'CA Total',
+        items: [
+          { value: salesTotalItem?.ventes || salesTotalItem?.count || 0, label: 'Ventes' },
+          { value: `${(salesTotalItem?.revenu || salesTotalItem?.valeur || 0).toFixed(2)} DT`, label: 'Total' },
+          { value: `${(salesAvgItem?.revenu || salesAvgItem?.valeur || 0).toFixed(2)} DT`, label: 'Moyenne' }
+        ]
+      };
+      break;
+    
+    case 'inventory':
+      // Use different variable names for inventory data
+      const inventoryProductsItem = reportData.find((item: any) => item.métrique === 'Produits');
+      const inventoryItemsItem = reportData.find((item: any) => item.métrique === 'Articles');
+      const inventoryValueItem = reportData.find((item: any) => item.métrique === 'Valeur totale');
+      const inventoryLowStockItem = reportData.find((item: any) => item.métrique === 'Stock bas');
+
+      this.kpiData = {
+        title: '📦 Stock',
+        mainValue: inventoryProductsItem?.valeur || 0,
+        mainLabel: 'Produits',
+        items: [
+          { value: inventoryItemsItem?.valeur || 0, label: 'Articles' },
+          { value: `${(inventoryValueItem?.valeur || 0).toFixed(2)} DT`, label: 'Valeur' },
+          { 
+            value: inventoryLowStockItem?.valeur || 0, 
+            label: 'Stock bas', 
+            warning: (inventoryLowStockItem?.valeur || 0) > 0 
+          }
+        ]
+      };
+      break;
+    
+    case 'users':
+      // Use different variable names for users data
+      const usersApprovedItem = reportData.find((item: any) => item.statut === 'Approuvés');
+      const usersPendingItem = reportData.find((item: any) => item.statut === 'En attente');
+      const usersBlockedItem = reportData.find((item: any) => item.statut === 'Bloqués');
+      const usersTotalItem = reportData.find((item: any) => item.statut === 'Total');
+
+      this.kpiData = {
+        title: '👥 Utilisateurs',
+        mainValue: usersTotalItem?.count || 0,
+        mainLabel: 'Total',
+        items: [
+          { value: usersApprovedItem?.count || 0, label: 'Approuvés' },
+          { value: usersPendingItem?.count || 0, label: 'En attente' },
+          { value: usersBlockedItem?.count || 0, label: 'Bloqués' }
+        ]
+      };
+      break;
   }
+}
 
   private prepareTableData(report: Report): void {
     if (report.data.length === 0) {

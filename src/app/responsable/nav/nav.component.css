@@ -288,3 +288,34 @@ body {
   color: #A5D8FF;
   transform: translateX(-2px); /* Effet de décalage */
 }
+
+
+
+
+
+
+
+
+
+/* meriem */
+/* Styles pour les notifications */
+.notification-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-left: 1rem;
+}
+
+/* Pour le dark mode */
+.dark-mode .notifications-wrapper i {
+  color: #adb5bd;
+}
+
+/* Styles spécifiques pour la navbar responsable */
+.qstock-navbar .notification-icon-container {
+  color: white;
+}
+
+.qstock-navbar .notification-badge {
+  border-color: #0d6efd;
+}

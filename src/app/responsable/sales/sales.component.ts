@@ -12,6 +12,7 @@ import { BarcodeFormat } from '@zxing/library';
 import { v4 as uuidv4 } from 'uuid';
 import { HttpClient } from '@angular/common/http';
 import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
+import { NotificationService } from '../../services/notification.service';
 
 @Component({
   selector: 'app-sales',
@@ -53,32 +54,9 @@ export class SalesComponent implements OnInit {
     userId: 'current-user-id',
     date: new Date().toISOString()
   };
+  db: any;
+  dbPath: any;
 
-  generateCustomerId(customerName: string): string {
-    const normalizedName = customerName.trim().toLowerCase();
-    const today = new Date().toISOString().slice(0, 10);
-
-    // Vérifiez si le client a déjà un identifiant dans l'historique des ventes
-    const existingSale = this.salesHistory.find(sale => {
-      const saleDate = new Date(sale.date).toISOString().slice(0, 10);
-      return sale.customerName.toLowerCase() === normalizedName
-        && saleDate === today;
-    });
-
-    // Si un identifiant existe déjà, utilisez-le
-    if (existingSale) {
-      return existingSale.customerId;
-    }
-
-    // Sinon, générez un nouvel identifiant
-    return this.createNewCustomerId();
-  }
-
-  private createNewCustomerId(): string {
-    const timestamp = new Date().getTime().toString().slice(-6);
-    const random = Math.floor(100 + Math.random() * 900);
-    return `CLI-${timestamp}-${random}`;
-  }
 
   // Données
   salesHistory: Sale[] = [];
@@ -97,7 +75,8 @@ export class SalesComponent implements OnInit {
     private stockService: StockService,
     private saleService: SaleService,
     private customerService: CustomerService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private notificationService: NotificationService
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -129,6 +108,28 @@ export class SalesComponent implements OnInit {
     this.loadSalesHistory();
     this.loadDailyStats();
   }
+  generateCustomerId(customerName: string): string {
+    const normalizedName = customerName.trim().toLowerCase();
+    const today = new Date().toISOString().slice(0, 10);
+
+    const existingSale = this.salesHistory.find(sale => {
+      const saleDate = new Date(sale.date).toISOString().slice(0, 10);
+      return sale.customerName.toLowerCase() === normalizedName
+        && saleDate === today;
+    });
+
+    if (existingSale) {
+      return existingSale.customerId;
+    }
+
+    return this.createNewCustomerId();
+  }
+
+   private createNewCustomerId(): string {
+    const timestamp = new Date().getTime().toString().slice(-6);
+    const random = Math.floor(100 + Math.random() * 900);
+    return `CLI-${timestamp}-${random}`;
+  }
 
   private loadCustomers(): void {
     this.customerService.getCustomers().subscribe({
@@ -137,7 +138,7 @@ export class SalesComponent implements OnInit {
     });
   }
 
-  private loadDailyStats(): void {
+   private loadDailyStats(): void {
     this.loadingStats = true;
     this.statsError = null;
 
@@ -164,17 +165,13 @@ export class SalesComponent implements OnInit {
 
     this.saleService.getSalesHistory(this.historyFilter).subscribe({
       next: (sales: Sale[]) => {
-        console.log('Données brutes:', sales);
         this.salesHistory = sales
           .filter(s => s.items && s.items.length > 0)
           .sort((a, b) =>
             new Date(b.date).getTime() - new Date(a.date).getTime()
           );
-
         this.filteredSalesHistory = [...this.salesHistory];
         this.loadingHistory = false;
-
-        console.log('Ventes traitées:', this.salesHistory);
       },
       error: (err: any) => {
         console.error('Erreur complète:', err);
@@ -307,11 +304,7 @@ export class SalesComponent implements OnInit {
       this.stockService.getProduct(this.selectedProductId).subscribe({
         next: (product) => {
           this.selectedProduct = product || null;
-          console.log('Détails du produit:', {
-            nom: this.selectedProduct?.nomProduit,
-            imageUrl: this.selectedProduct?.imageUrl,
-            qrCode: this.selectedProduct?.qrCode
-          });
+          this.selectedQuantity = 1;
         },
         error: (err) => console.error('Erreur chargement produit:', err)
       });
@@ -320,8 +313,9 @@ export class SalesComponent implements OnInit {
     }
   }
 
-  incrementQuantity(): void {
-    if (this.selectedProduct && this.selectedQuantity < this.selectedProduct.quantite) {
+
+ incrementQuantity(): void {
+    if (this.selectedProduct) {
       this.selectedQuantity++;
     }
   }
@@ -341,10 +335,9 @@ export class SalesComponent implements OnInit {
     }
   }
 
-  get canAddToCart(): boolean {
+ get canAddToCart(): boolean {
     return !!this.selectedProduct &&
-           this.selectedQuantity > 0 &&
-           this.selectedQuantity <= (this.selectedProduct.quantite || 0);
+           this.selectedQuantity > 0;
   }
 
   addToCart(): void {
@@ -375,37 +368,23 @@ export class SalesComponent implements OnInit {
 
     this.updateCartTotals();
     this.clearSelection();
+    
+    // Notification pour produit à faible stock
+    if (this.selectedProduct.quantite <= 10) {
+      this.notificationService.createNotification({
+        title: 'Stock faible',
+        message: `Le produit ${this.selectedProduct.nomProduit} a été vendu alors qu'il reste ${this.selectedProduct.quantite} unités`,
+        type: 'low-stock',
+        productId: this.selectedProduct.idProduit,
+        priority: 'medium'
+      });
+    }
   }
 
   get canFinalize(): boolean {
     return this.currentSale.items.length > 0 &&
            this.currentSale.totalAmount > 0 &&
            !!this.currentSale.customerName.trim();
-  }
-
-  async finalizeSale(): Promise<void> {
-    if (!this.canFinalize) return;
-
-    this.currentSale.customerId = this.generateCustomerId(this.currentSale.customerName);
-    try {
-      const createdSale = await this.saleService.createSale(this.currentSale);
-      this.salesHistory.unshift(createdSale);
-      this.filteredSalesHistory = [...this.salesHistory];
-      this.printInvoice(createdSale);
-      this.resetSale();
-      this.loadDailyStats();
-
-      await this.loadStock();
-    } catch (error) {
-      console.error('Erreur lors de la vente:', error);
-      let errorMessage = 'Erreur inconnue';
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      } else if (typeof error === 'string') {
-        errorMessage = error;
-      }
-      alert(`Échec de la vente : ${errorMessage}`);
-    }
   }
 
   resetSale(): void {
@@ -678,15 +657,12 @@ export class SalesComponent implements OnInit {
     return 0;
   }
 
-  updateCartTotals(): void {
-    this.currentSale.subTotal = this.currentSale.items.reduce((sum, item) => sum + item.totalPrice, 0);
-    this.updateDiscount();
-  }
 
-  updateDiscount(): void {
-    this.currentSale.discountAmount = this.currentSale.subTotal * (this.currentSale.discount / 100);
-    this.currentSale.totalAmount = this.currentSale.subTotal - this.currentSale.discountAmount;
-  }
+
+updateDiscount(): void {
+  this.currentSale.discountAmount = this.currentSale.subTotal * (this.currentSale.discount / 100);
+  this.currentSale.totalAmount = this.currentSale.subTotal - this.currentSale.discountAmount;
+}
 
   removeItem(index: number): void {
     this.currentSale.items.splice(index, 1);
@@ -698,4 +674,66 @@ export class SalesComponent implements OnInit {
     this.selectedProduct = null;
     this.selectedQuantity = 1;
   }
+
+
+
+
+
+  //meriem
+  async finalizeSale(): Promise<void> {
+    if (!this.canFinalize) return;
+
+    this.currentSale.customerId = this.generateCustomerId(this.currentSale.customerName);
+
+    try {
+      const saleData: Omit<Sale, 'id'> = {
+        items: this.currentSale.items,
+        subTotal: this.currentSale.subTotal,
+        discount: this.currentSale.discount,
+        discountAmount: this.currentSale.discountAmount,
+        totalAmount: this.currentSale.totalAmount,
+        paymentMethod: this.currentSale.paymentMethod,
+        customerName: this.currentSale.customerName,
+        customerId: this.currentSale.customerId,
+        userId: 'current-user-id',
+        date: new Date().toISOString(),
+        invoiceNumber: ''
+      };
+
+      const createdSale = await this.saleService.createSale(saleData);
+      this.salesHistory.unshift(createdSale);
+      this.filteredSalesHistory = [...this.salesHistory];
+      this.printInvoice(createdSale);
+      this.resetSale();
+      this.loadDailyStats();
+      await this.loadStock();
+    } catch (error) {
+      console.error('Erreur finale:', error);
+    }
+  }
+  
+private async validateSaleData(saleData: any): Promise<void> {
+  if (!saleData.items || saleData.items.length === 0) {
+    throw new Error('Le panier est vide');
+  }
+
+  if (saleData.totalAmount <= 0) {
+    throw new Error('Le montant total doit être positif');
+  }
+
+  if (!saleData.paymentMethod) {
+    throw new Error('Méthode de paiement non spécifiée');
+  }
+}
+
+private async processSaleTransaction(saleData: any): Promise<string> {
+  const saleRef = this.db.list(this.dbPath).push(saleData);
+  return saleRef.key || '';
+}
+
+  updateCartTotals(): void {
+    this.currentSale.subTotal = this.currentSale.items.reduce((sum, item) => sum + item.totalPrice, 0);
+    this.updateDiscount();
+  }
+
 }

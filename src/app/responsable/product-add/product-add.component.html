@@ -1,4 +1,3 @@
-<br>
 <div class="form-container">
   <h1 class="form-title">➕ Nouveau Produit</h1>
 
@@ -51,6 +50,7 @@
             <option [ngValue]="false">Contrefaçon</option>
           </select>
         </div>
+        
         <!-- Section Caractéristiques -->
         <div class="form-section">
           <h2 class="section-title">Caractéristiques</h2>
@@ -214,6 +214,27 @@
 
     <!-- Section Médias -->
     <div class="media-section">
+      <!-- ... autres champs média existants ... -->
+
+      <div class="media-group">
+        <label class="media-label">
+          <span class="label-text">Logo de la Marque</span>
+          <input type="file" id="logoImage" (change)="onLogoFileSelected($event)"
+                 accept="image/*" hidden>
+          <div class="upload-box" [class.active]="logoImagePreview">
+            <div *ngIf="!logoImagePreview" class="upload-placeholder">
+              <i class="fas fa-cloud-upload-alt"></i>
+              <p>Glisser-déposer ou cliquer pour uploader le logo</p>
+            </div>
+            <img *ngIf="logoImagePreview" [src]="logoImagePreview"
+                 alt="Aperçu du logo" class="image-preview">
+          </div>
+          <div class="validation-hint" *ngIf="showLogoFileError">
+            Veuillez sélectionner une image valide pour le logo
+          </div>
+        </label>
+      </div>
+
       <div class="media-group">
         <label class="media-label">
           <span class="label-text">Image du Produit <span class="required">*</span></span>
@@ -235,6 +256,25 @@
 
       <div class="media-group">
         <label class="media-label">
+          <span class="label-text">Image de l'emballage</span>
+          <input type="file" id="packagingImage" (change)="onPackagingFileSelected($event)"
+                 accept="image/*" hidden>
+          <div class="upload-box" [class.active]="packagingImagePreview">
+            <div *ngIf="!packagingImagePreview" class="upload-placeholder">
+              <i class="fas fa-cloud-upload-alt"></i>
+              <p>Glisser-déposer ou cliquer pour uploader l'emballage</p>
+            </div>
+            <img *ngIf="packagingImagePreview" [src]="packagingImagePreview"
+                 alt="Aperçu de l'emballage" class="image-preview">
+          </div>
+          <div class="validation-hint" *ngIf="showPackagingFileError">
+            Veuillez sélectionner une image valide pour l'emballage
+          </div>
+        </label>
+      </div>
+
+      <div class="media-group">
+        <label class="media-label">
           <span class="label-text">QR Code Généré</span>
           <div class="qr-container" [class.generated]="qrCodeImage">
             <div *ngIf="!qrCodeImage" class="qr-placeholder">
@@ -247,6 +287,7 @@
         </label>
       </div>
     </div>
+
 
     <!-- Section Description -->
     <div class="form-section">

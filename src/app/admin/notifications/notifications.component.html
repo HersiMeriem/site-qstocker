@@ -1,0 +1,57 @@
+<div class="notifications-wrapper">
+  <div class="notification-icon-container" (click)="toggleNotifications()">
+    <i class="fas fa-bell notification-icon"></i>
+    <span class="notification-badge" *ngIf="unreadCount > 0">{{unreadCount}}</span>
+  </div>
+
+  <div class="notifications-panel" [class.show]="showNotifications" @slideInOut>
+    <div class="notifications-header">
+      <h4>Notifications</h4>
+      <div class="header-actions">
+        <span class="badge" *ngIf="unreadCount > 0">{{unreadCount}} non lues</span>
+        <button class="btn btn-sm btn-link" (click)="markAllAsRead(); $event.stopPropagation()"
+                *ngIf="unreadCount > 0">
+          Tout marquer comme lu
+        </button>
+        <button class="btn btn-sm btn-link text-danger" (click)="clearAll(); $event.stopPropagation()">
+          Tout effacer
+        </button>
+      </div>
+    </div>
+
+    <div class="notifications-list">
+    <div *ngFor="let notif of notifications" class="notification-item" [class.unread]="!notif.read">
+    <div class="notification-type-icon">
+      <i [class]="getNotificationIcon(notif.type)"></i>
+    </div>
+
+    <div class="notification-content" (click)="handleNotificationClick(notif)">
+      <div class="notification-header">
+        <h5>{{ notif.title }}</h5>
+        <div class="notification-actions">
+          <button class="btn btn-sm btn-link mark-as-read" 
+                  (click)="$event.stopPropagation(); markAsRead(notif.id)"
+                  *ngIf="!notif.read"
+                  title="Marquer comme lu">
+            <i class="fas fa-check-circle"></i>
+          </button>
+          <button class="btn btn-sm btn-link text-danger delete-notification" 
+                  (click)="$event.stopPropagation(); deleteNotification(notif.id)"
+                  title="Supprimer">
+            <i class="fas fa-times-circle"></i>
+          </button>
+        </div>
+      </div>
+      <p>{{ notif.message }}</p>
+      <small>{{ notif.timestamp | date:'medium' }}</small>
+    </div>
+  </div>
+
+
+      <div *ngIf="notifications.length === 0" class="empty-notifications">
+        <i class="fas fa-bell-slash"></i>
+        <p>Aucune notification</p>
+      </div>
+    </div>
+  </div>
+</div>

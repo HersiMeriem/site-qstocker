@@ -307,3 +307,15 @@ body {
     text-align: center;
   }
 }
+/* navbar.component.css */
+.notification-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-left: 1rem;
+}
+
+/* Pour le dark mode */
+.dark-mode .notifications-wrapper i {
+  color: #adb5bd;
+}

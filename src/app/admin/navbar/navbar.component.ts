@@ -10,7 +10,10 @@ import { ProfileService } from '../../services/profile.service';
   styleUrls: ['./navbar.component.css']
 })
 export class NavbarComponent {
-
+  handleNotificationClick(event: MouseEvent) {
+    event.stopPropagation(); // Empêche la propagation de l'événement
+    // Vous pouvez ajouter d'autres logiques ici si nécessaire
+  }
   profilePhoto$ = this.profileService.profilePhoto$;
   constructor(private authService: AuthService, private router: Router, private themeService: ThemeService,private profileService: ProfileService) {
     this.isDarkMode = this.themeService.isDarkModeEnabled();

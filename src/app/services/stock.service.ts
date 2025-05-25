@@ -3,8 +3,9 @@ import { AngularFireDatabase } from '@angular/fire/compat/database';
 import { firstValueFrom } from 'rxjs';
 import { SnapshotAction } from '@angular/fire/compat/database/interfaces';
 import { Observable, of } from 'rxjs';
-import { map, catchError, take } from 'rxjs/operators';
+import { map, catchError } from 'rxjs/operators';
 import { ProductService } from './product.service';
+import { NotificationService } from './notification.service';
 
 export interface StockItem {
   originalPrice: number;
@@ -27,6 +28,7 @@ export interface StockItem {
   description?: string | null;
   status: 'active' | 'inactive' | 'promotion' | 'out-of-stock';
   promotion?: Promotion | null;
+  category?: string;
 }
 
 export interface Promotion {
@@ -42,7 +44,11 @@ export class StockService {
   private stockPath = '/stock';
   private movementsPath = '/stock-movements';
 
-  constructor(private db: AngularFireDatabase, private productService: ProductService) {}
+  constructor(
+    private db: AngularFireDatabase,
+    private productService: ProductService,
+    private notificationService: NotificationService
+  ) {}
 
   async processSupplierOrder(order: any): Promise<void> {
     try {
@@ -64,14 +70,19 @@ export class StockService {
     }
   }
 
-  async logStockMovement(movement: {
+  private async logStockMovement(movement: {
     productId: string;
     type: 'ajout' | 'retrait' | 'ajustement';
     quantity: number;
     previousQuantity: number;
     date: string;
+    reason: string;
   }): Promise<void> {
-    await this.db.list('/stock-movements').push(movement);
+    try {
+      await this.db.list(this.movementsPath).push(movement);
+    } catch (error) {
+      console.error('Erreur lors de l\'enregistrement du mouvement:', error);
+    }
   }
 
   getStockMovements(): Observable<any[]> {
@@ -125,7 +136,7 @@ export class StockService {
     try {
       if (!productId) throw new Error('ID produit manquant');
 
-      const ref = this.db.object<StockItem>(`${this.stockPath}/${productId}`);
+      const ref = this.db.object<StockItem>(${this.stockPath}/${productId});
       const snapshot = await firstValueFrom(ref.valueChanges());
 
       if (!snapshot) {
@@ -144,12 +155,12 @@ export class StockService {
         updateData,
         errorMessage
       });
-      throw new Error(`Échec de la mise à jour: ${errorMessage}`);
+      throw new Error(Échec de la mise à jour: ${errorMessage});
     }
   }
 
   getProductStockQuantity(productId: string): Observable<number> {
-    return this.db.object<StockItem>(`${this.stockPath}/${productId}`)
+    return this.db.object<StockItem>(${this.stockPath}/${productId})
       .valueChanges()
       .pipe(
         map((stock: StockItem | null) => stock?.quantite || 0),
@@ -159,106 +170,89 @@ export class StockService {
 
   async ajouterAuStock(commande: {
     productId: string;
-    productName?: string;
     quantity: number;
     unitPrice: number;
+    productName?: string;
     qrCode?: string | null;
     imageUrl?: string | null;
     description?: string | null;
   }): Promise<StockItem> {
     try {
-      const stockRef = this.db.object<StockItem>(`${this.stockPath}/${commande.productId}`);
+      const stockRef = this.db.object<StockItem>(${this.stockPath}/${commande.productId});
       const snapshot = await firstValueFrom(stockRef.snapshotChanges()) as SnapshotAction<StockItem>;
-
       const currentData = snapshot.payload.val() || {
         idProduit: commande.productId,
         nomProduit: commande.productName || 'Nouveau produit',
         quantite: 0,
         prixUnitaireHT: 0,
-        prixDeVente: 0,
+        prixDeVente: commande.unitPrice * 1.2,
         dateMiseAJour: new Date().toISOString(),
         historiquePrix: [],
-        qrCode: null,
-        imageUrl: null,
-        description: null
+        qrCode: commande.qrCode || null,
+        imageUrl: commande.imageUrl || null,
+        description: commande.description || null,
+        seuil: 10,
+        status: 'active',
+        originalPrice: commande.unitPrice * 1.2,
+        editingPrice: false,
+        promotion: undefined
       };
 
+      // Calcul du nouveau prix moyen pondéré
+      const ancienTotalValeur = currentData.prixUnitaireHT * currentData.quantite;
+      const nouvelleValeurAjoutee = commande.unitPrice * commande.quantity;
+      const nouvelleQuantiteTotale = currentData.quantite + commande.quantity;
+      const nouveauPrixMoyen = nouvelleQuantiteTotale > 0
+        ? (ancienTotalValeur + nouvelleValeurAjoutee) / nouvelleQuantiteTotale
+        : commande.unitPrice;
+
+      // Création de l'entrée historique
       const newEntry = {
         date: new Date().toISOString(),
         prix: commande.unitPrice,
         quantiteAjoutee: commande.quantity
       };
 
-      const historique = [...(currentData.historiquePrix || []), newEntry];
-
-      const totalQuantite = historique.reduce((sum, e) => sum + e.quantiteAjoutee, 0);
-      const totalValeur = historique.reduce((sum, e) => sum + (e.prix * e.quantiteAjoutee), 0);
-      const nouveauPMP = totalQuantite > 0 ? totalValeur / totalQuantite : 0;
-
+      // Mise à jour des données
       const updatedData: StockItem = {
         ...currentData,
-        idProduit: commande.productId,
-        nomProduit: commande.productName || currentData.nomProduit || 'Nouveau produit',
-        quantite: totalQuantite,
-        prixUnitaireHT: nouveauPMP,
-        prixDeVente: commande.unitPrice * 1.2,
+        quantite: nouvelleQuantiteTotale,
+        prixUnitaireHT: nouveauPrixMoyen,
         dateMiseAJour: new Date().toISOString(),
-        historiquePrix: historique,
-        qrCode: commande.qrCode || null,
-        imageUrl: commande.imageUrl || null,
-        description: commande.description || null,
-        editingPrice: false,
-        originalPrice: commande.unitPrice * 1.2,
-        seuil: (currentData as StockItem).seuil || 10,
-        status: (currentData as StockItem).status || 'active'
+        historiquePrix: [...(currentData.historiquePrix || []), newEntry],
+        status: nouvelleQuantiteTotale <= currentData.seuil ? 'out-of-stock' : 'active'
       };
 
-      Object.keys(updatedData).forEach(key => {
-        if (updatedData[key as keyof StockItem] === undefined) {
-          delete updatedData[key as keyof StockItem];
-        }
+      await stockRef.set(updatedData);
+
+      // Log du mouvement de stock
+      await this.logStockMovement({
+        productId: commande.productId,
+        type: 'ajout',
+        quantity: commande.quantity,
+        previousQuantity: currentData.quantite,
+        date: new Date().toISOString(),
+        reason: 'stock_replenishment'
       });
 
-      await stockRef.set(updatedData);
       return updatedData;
     } catch (error) {
-      console.error('Erreur détaillée:', error);
-      throw new Error('Échec de la mise à jour du stock');
+      console.error('Erreur lors de l\'ajout au stock:', error);
+      throw error;
     }
   }
 
   async deleteProduct(productId: string): Promise<void> {
     try {
-      await this.db.object(`${this.stockPath}/${productId}`).remove();
+      await this.db.object(${this.stockPath}/${productId}).remove();
     } catch (error) {
       console.error('Erreur suppression:', error);
       throw new Error('Échec de la suppression');
     }
   }
 
-  async retirerDuStock(commande: any): Promise<void> {
-    try {
-      const stockRef = this.db.object<StockItem>(`${this.stockPath}/${commande.productId}`);
-      const snapshot = await firstValueFrom(stockRef.snapshotChanges()) as SnapshotAction<StockItem>;
-      const currentData = snapshot.payload.val();
-
-      if (!currentData) throw new Error('Produit non trouvé');
-
-      const updatedStock: StockItem = {
-        ...currentData,
-        quantite: Math.max(currentData.quantite - commande.quantity, 0),
-        dateMiseAJour: new Date().toISOString()
-      };
-
-      await stockRef.update(updatedStock);
-    } catch (error) {
-      console.error('Erreur retrait:', error);
-      throw error;
-    }
-  }
-
   getProduct(productId: string): Observable<StockItem | null> {
-    return this.db.object<StockItem>(`${this.stockPath}/${productId}`).valueChanges().pipe(
+    return this.db.object<StockItem>(${this.stockPath}/${productId}).valueChanges().pipe(
       map(stockItem => {
         console.log('Stock Item:', stockItem);
         return stockItem;
@@ -281,7 +275,7 @@ export class StockService {
   }
 
   getStockHistory(productId: string): Observable<StockItem[]> {
-    return this.db.list<StockItem>(`${this.stockPath}/${productId}/historiquePrix`)
+    return this.db.list<StockItem>(${this.stockPath}/${productId}/historiquePrix)
       .valueChanges();
   }
 
@@ -373,22 +367,12 @@ export class StockService {
     );
   }
 
-  private checkStockLevels(productId: string, newQuantity: number): void {
-    this.db.object<StockItem>(`${this.stockPath}/${productId}`).valueChanges()
-      .pipe(take(1))
-      .subscribe(product => {
-        if (product && newQuantity <= (product.seuil || 10)) {
-          this.createOutOfStockNotification(product);
-        }
-      });
-  }
-
   private async createOutOfStockNotification(product: StockItem): Promise<void> {
     const notification = {
       type: 'stock-out',
       productId: product.idProduit,
       productName: product.nomProduit,
-      message: `Rupture de stock - ${product.nomProduit}`,
+      message: Rupture de stock - ${product.nomProduit},
       timestamp: new Date().toISOString(),
       read: false,
       priority: 'high'
@@ -397,20 +381,105 @@ export class StockService {
     await this.db.list('/notifications').push(notification);
   }
 
+  async retirerDuStock(commande: {
+    productId: string;
+    quantity: number;
+    reason: string;
+  }): Promise<void> {
+    try {
+      const stockRef = this.db.object<StockItem>(${this.stockPath}/${commande.productId});
+      const snapshot = await firstValueFrom(stockRef.snapshotChanges()) as SnapshotAction<StockItem>;
+      const currentData = snapshot.payload.val();
 
+      if (!currentData) {
+        throw new Error('Produit non trouvé dans le stock');
+      }
 
-  //
+      const newQuantity = Math.max(currentData.quantite - commande.quantity, 0);
+      const seuil = currentData.seuil || 10;
+
+      const updatedStock: StockItem = {
+        ...currentData,
+        quantite: newQuantity,
+        dateMiseAJour: new Date().toISOString(),
+        status: newQuantity <= seuil ? 'out-of-stock' : currentData.status
+      };
+
+      await stockRef.update(updatedStock);
+
+      // Log du mouvement de stock
+      await this.logStockMovement({
+        productId: commande.productId,
+        type: 'retrait',
+        quantity: commande.quantity,
+        previousQuantity: currentData.quantite,
+        date: new Date().toISOString(),
+        reason: commande.reason
+      });
+
+      // Notification si nécessaire
+      if (newQuantity <= 0) {
+        await this.notificationService.createNotification({
+          title: 'Rupture de stock totale',
+          message: Le produit ${currentData.nomProduit} est complètement épuisé,
+          type: 'stock-out',
+          productId: currentData.idProduit,
+          priority: 'high'
+        });
+      } else if (newQuantity <= seuil) {
+        await this.notificationService.createNotification({
+          title: 'Rupture de stock imminente',
+          message: Le produit ${currentData.nomProduit} est en rupture (${newQuantity} restants),
+          type: 'stock-out',
+          productId: currentData.idProduit,
+          priority: 'medium'
+        });
+      }
+    } catch (error) {
+      console.error('Erreur lors du retrait du stock:', error);
+      throw error;
+    }
+  }
+
+  private async checkStockLevels(productId: string, newQuantity: number): Promise<void> {
+    const product = await firstValueFrom(
+      this.db.object<StockItem>(${this.stockPath}/${productId}).valueChanges()
+    );
+
+    if (!product) return;
+
+    const seuil = product.seuil || 10; // Seuil par défaut à 10
+
+    if (newQuantity <= 0) {
+      await this.notificationService.createNotification({
+        title: 'Rupture de stock totale',
+        message: Le produit ${product.nomProduit} est complètement épuisé,
+        type: 'stock-out',
+        productId: product.idProduit,
+        priority: 'high'
+      });
+    } else if (newQuantity <= seuil) {
+      await this.notificationService.createNotification({
+        title: 'Rupture de stock imminente',
+        message: Le produit ${product.nomProduit} est en rupture (${newQuantity} restants),
+        type: 'stock-out',
+        productId: product.idProduit,
+        priority: 'medium'
+      });
+    }
+  }
 
   async updateStockQuantity(productId: string, delta: number): Promise<void> {
-    const ref = this.db.object<StockItem>(`${this.stockPath}/${productId}`);
+    const ref = this.db.object<StockItem>(${this.stockPath}/${productId});
     const snapshot = await firstValueFrom(ref.valueChanges());
 
-    if (!snapshot) throw new Error(`Produit ${productId} non trouvé`);
+    if (!snapshot) throw new Error(Produit ${productId} non trouvé);
 
     const newQuantity = snapshot.quantite + delta;
     if (newQuantity < 0) throw new Error('Stock insuffisant');
 
-    const newStatus = newQuantity === 0 ? 'out-of-stock' : snapshot.status === 'out-of-stock' ? 'active' : snapshot.status;
+    const seuil = snapshot.seuil || 10; // Utilise le seuil défini ou 10 par défaut
+    const newStatus = newQuantity <= seuil ? 'out-of-stock' : 'active'; // Modifié pour inclure le seuil
 
     await ref.update({
       quantite: newQuantity,
@@ -418,6 +487,6 @@ export class StockService {
       dateMiseAJour: new Date().toISOString()
     });
 
-    this.checkStockLevels(productId, newQuantity);
+    await this.checkStockLevels(productId, newQuantity);
   }
 }

@@ -18,15 +18,14 @@ export interface Sale {
   subTotal: number;
   discount: number;
   discountAmount: number;
-  totalAmount: number;
+  totalAmount: number; // Gardez seulement totalAmount comme montant total
   paymentMethod: string;
   userId: string;
   date: string;
   clientId?: string;  
   customerName: string; 
   customerId: string; 
-  location?: string; 
- 
+  location?: string;
 }
 
 export interface StockItem {

@@ -34,8 +34,9 @@ import { FinancialDashboardComponent } from './responsable/financial-dashboard/f
 import { FacturationCommandesComponent } from './responsable/facturation-commandes/facturation-commandes.component';
 import { DetailsProductsComponent } from './admin/details-products/details-products.component';
 import { DashboardFinancierComponent } from './admin/dashboard-financier/dashboard-financier.component';
+import { NotificationsComponent } from './admin/notifications/notifications.component';
 import { LivraisonComponent } from './responsable/livraison/livraison.component';
-
+import { LivraisonViewComponent } from './admin/livraison-view/livraison-view.component';
 
 const routes: Routes = [
   { path: '', component: LoginComponent },
@@ -43,6 +44,7 @@ const routes: Routes = [
   { path: 'admin', component: AdminDashboardComponent, children: [
     { path: 'statistics', component: StatisticsComponent },
     { path: 'users', component: UserManagementComponent },
+    { path: 'notifications', component: NotificationsComponent },
     { path: 'products', component: ProductManagementComponent },
     { path: 'stock-history', component: StockHistoryComponent },
     { path: 'settings', component: SettingsComponent },
@@ -51,6 +53,7 @@ const routes: Routes = [
     { path: 'analyse-financier', component: DashboardFinancierComponent },
     { path: 'navbar', component: NavbarComponent },
     { path: 'ventes', component: VentesComponent },
+    { path: 'livraison-view', component: LivraisonViewComponent },
     { path: 'profile', component: ProfileComponent, canActivate: [AuthGuard] }, // Nouvelle route
     { path: '', redirectTo: 'statistics', pathMatch: 'full' }
   ]},
@@ -70,7 +73,7 @@ const routes: Routes = [
     { path: 'sales', component: SalesComponent },
     { path: 'financial-dashboard', component: FinancialDashboardComponent},
     { path: 'facturation-commande', component: FacturationCommandesComponent},
-   { path: 'livraison', component: LivraisonComponent},
+    { path: 'livraison', component: LivraisonComponent},
     { path: 'product-details/:id', component: ProductDetailsComponent },
     { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
   ]},

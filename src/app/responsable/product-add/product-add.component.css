@@ -1,214 +1,242 @@
-/* Style global */
+/* ====== GLOBAL STYLES ====== */
 body {
-  font-family: 'Arial', sans-serif;
-  background-color: #f7f9fc;
-  color: #333;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f4f6f9;
+  color: #2f3542;
   margin: 0;
   padding: 20px;
 }
 
-/* Conteneur du formulaire */
+/* ====== FORM CONTAINER ====== */
 .form-container {
-  max-width: 800px;
-  margin: 0 auto;
-  background-color: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  padding: 20px;
+  max-width: 850px;
+  margin: auto;
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  padding: 30px;
+  transition: box-shadow 0.3s ease;
 }
 
-/* Titre du formulaire */
+.form-container:hover {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+}
+
+/* ====== TITLE ====== */
 .form-title {
   text-align: center;
-  font-size: 24px;
-  margin-bottom: 20px;
-  color: #4A90E2;
+  font-size: 28px;
+  font-weight: 600;
+  margin-bottom: 30px;
+  color: #1e90ff;
 }
 
-/* Section du formulaire */
+/* ====== SECTION ====== */
 .form-section {
-  margin-bottom: 20px;
+  margin-bottom: 25px;
 }
 
-/* Titre de section */
 .section-title {
-  font-size: 18px;
-  margin-bottom: 10px;
-  border-bottom: 2px solid #4A90E2;
-  padding-bottom: 5px;
+  font-size: 20px;
+  font-weight: 500;
+  margin-bottom: 12px;
+  border-bottom: 3px solid #1e90ff;
+  padding-bottom: 6px;
+  color: #34495e;
 }
 
-/* Grille du formulaire */
+/* ====== GRID ====== */
 .form-grid {
   display: flex;
   justify-content: space-between;
+  gap: 20px;
   margin-bottom: 20px;
 }
 
-/* Colonne du formulaire */
 .form-column {
-  width: 48%;
+  flex: 1;
 }
 
-/* Groupe de formulaires */
+/* ====== FORM ELEMENTS ====== */
 .form-group {
-  margin-bottom: 15px;
+  margin-bottom: 18px;
 }
 
-/* Étiquettes */
 label {
   display: block;
-  margin-bottom: 5px;
-  font-weight: bold;
+  margin-bottom: 6px;
+  font-weight: 600;
+  color: #2d3436;
 }
 
-/* Entrées modernes */
 .modern-input,
 .modern-select,
 .modern-textarea {
   width: 100%;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  transition: border-color 0.3s;
+  padding: 12px 14px;
+  border: 1px solid #dcdde1;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  font-size: 15px;
+  transition: all 0.3s ease;
 }
 
-/* Entrées focalisées */
 .modern-input:focus,
 .modern-select:focus,
 .modern-textarea:focus {
-  border-color: #4A90E2;
+  border-color: #1e90ff;
+  background-color: #fff;
+  box-shadow: 0 0 0 3px rgba(30, 144, 255, 0.1);
   outline: none;
 }
 
-/* Indicateur de validation */
-.validation-hint {
-  color: red;
-  font-size: 12px;
+input[readonly] {
+  background-color: #f1f2f6;
+  color: #999;
+  cursor: not-allowed;
 }
 
-/* Banner d'erreur */
+/* ====== VALIDATION ====== */
+.validation-hint {
+  color: #e74c3c;
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+/* ====== ERROR BANNER ====== */
 .error-banner {
-  background-color: #ffcccc;
-  color: #c00;
-  padding: 10px;
-  border-radius: 5px;
+  background-color: #ffe6e6;
+  color: #c0392b;
+  padding: 12px 15px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
-  margin-bottom: 15px;
+  gap: 10px;
+  margin-bottom: 20px;
+  font-weight: 500;
 }
 
-/* Icones dans la banner d'erreur */
-.error-banner i {
-  margin-right: 10px;
-}
-
-/* Section des médias */
+/* ====== MEDIA UPLOAD ====== */
 .media-section {
   display: flex;
-  justify-content: space-between;
+  gap: 20px;
 }
 
-/* Groupe des médias */
 .media-group {
   flex: 1;
-  margin-right: 10px;
 }
 
-/* Boîte de téléchargement */
 .upload-box {
-  border: dashed 2px #4A90E2;
-  border-radius: 5px;
+  border: 2px dashed #1e90ff;
+  border-radius: 8px;
+  padding: 25px;
   text-align: center;
-  padding: 20px;
   cursor: pointer;
-  transition: background-color 0.3s;
+  color: #1e90ff;
+  background-color: #f0f8ff;
+  transition: background-color 0.3s ease;
+}
+
+.upload-box:hover {
+  background-color: #e6f2ff;
 }
 
 .upload-box.active {
-  background-color: #e7f3ff;
+  background-color: #d0eaff;
 }
 
-/* Prévisualisation de l'image */
 .image-preview,
 .qr-preview {
   margin-top: 10px;
   max-width: 100%;
-  border-radius: 5px;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-/* Boutons */
+/* ====== BUTTONS ====== */
 .form-actions {
   display: flex;
   justify-content: space-between;
-  margin-top: 20px;
+  gap: 15px;
+  margin-top: 30px;
 }
 
 .submit-btn,
 .cancel-btn {
-  padding: 10px 15px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
+  flex: 1;
+  padding: 12px 20px;
   font-size: 16px;
-  transition: background-color 0.3s;
+  font-weight: 600;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s;
 }
 
 .submit-btn {
-  background-color: #4A90E2;
-  color: white;
+  background-color: #1e90ff;
+  color: #fff;
+}
+
+.submit-btn:hover {
+  background-color: #187bcd;
+  transform: scale(1.03);
 }
 
 .cancel-btn {
-  background-color: #f44336;
-  color: white;
+  background-color: #e74c3c;
+  color: #fff;
+}
+
+.cancel-btn:hover {
+  background-color: #c0392b;
+  transform: scale(1.03);
 }
 
 .submit-btn:disabled {
-  background-color: #c0c0c0;
+  background-color: #dcdde1;
   cursor: not-allowed;
 }
 
-/* Animation de chargement */
+/* ====== LOADING SPINNER ====== */
 .loading-indicator {
-  margin-left: 5px;
+  margin-left: 8px;
 }
 
-/* Médias Responsifs */
+/* ====== RESPONSIVE ====== */
 @media (max-width: 768px) {
   .form-grid {
-      flex-direction: column;
+    flex-direction: column;
   }
 
   .form-column {
-      width: 100%;
-      margin-bottom: 20px;
+    width: 100%;
   }
-  .stock-hint {
-    display: block;
-    color: #666;
-    font-size: 0.8rem;
-    margin-top: 5px;
+
+  .media-section {
+    flex-direction: column;
   }
-  
-  input[readonly] {
-    background-color: #f5f5f5;
-    cursor: not-allowed;
+
+  .form-actions {
+    flex-direction: column;
   }
 }
 
+/* ====== BADGES & PRICES ====== */
 .discount-badge {
   background: #ff4757;
   color: white;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 0.8em;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: bold;
   margin-left: 8px;
 }
 
 .price {
   color: #2ed573;
   font-weight: bold;
+  font-size: 1.1em;
 }
 
 del {

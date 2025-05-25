@@ -43,50 +43,32 @@
             <i class="fas fa-cash-register me-2"></i> Ventes
           </a>
         </li>
-   <li class="nav-item">
-  <a class="nav-link stock-link" routerLink="/responsable/livraison" routerLinkActive="active">
-    Livraison
-  </a>
-</li>
-
+           <li class="nav-item">
+          <a class="nav-link stock-link" routerLink="/responsable/livraison" routerLinkActive="active">
+            <i class="fas fa-truck"></i> livraison
+          </a>
+        </li>
         <li class="nav-item">
           <a class="nav-link stock-link" routerLink="/responsable/financial-dashboard" routerLinkActive="active">
             <i class="fas fa-file-invoice me-2"></i> Analyse financière
           </a>
         </li>
+ 
       </ul>
 
       <!-- Notifications & Profil -->
       <ul class="navbar-nav ms-auto">
         <!-- Notifications -->
-        <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle notification-link" href="#" id="alertsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            <i class="fas fa-bell"></i>
-            <span class="badge bg-danger notification-badge">3</span>
-          </a>
-          <ul class="dropdown-menu dropdown-menu-end dropdown-notifications" aria-labelledby="alertsDropdown">
-            <li><h6 class="dropdown-header">Centre d'alertes</h6></li>
-            <li><a class="dropdown-item" href="#">
-              <i class="fas fa-exclamation-circle text-warning me-2"></i>
-              Stock faible - Produit X
-            </a></li>
-            <li><a class="dropdown-item" href="#">
-              <i class="fas fa-times-circle text-danger me-2"></i>
-              Produit épuisé
-            </a></li>
-            <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item text-center view-all" href="#">
-              <i class="fas fa-arrow-right me-2"></i>Voir toutes
-            </a></li>
-          </ul>
+        <li class="nav-item notification-item">
+          <app-notifications (click)="handleNotificationClick($event)"></app-notifications>
         </li>
 
   <!-- Profil Responsable -->
 <li class="nav-item dropdown profile-dropdown">
   <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-    <div class="profile-avatar">
-      <img src="assets/images/administrateur.png" alt="Profil">
-    </div>
+<div class="profile-avatar">
+  <img [src]="profileImageUrl" alt="Profil">
+</div>
     <span class="profile-name ms-2">Responsable</span>
   </a>
   <ul class="dropdown-menu dropdown-menu-end profile-menu" aria-labelledby="userDropdown">

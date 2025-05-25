@@ -1,10 +1,9 @@
-<!-- login.component.html -->
 <!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login Interface</title>
+  <title>Connexion</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <link rel="stylesheet" href="login.component.css">
 </head>
@@ -25,33 +24,39 @@
                 {{errorMessage}}
               </div>
               
-              <form [formGroup]="loginForm">
+              <form [formGroup]="loginForm" (ngSubmit)="login()">
                 <div class="input-container">
                   <input 
                     type="email" 
                     formControlName="email" 
-                    placeholder="Email" 
-                    [class.invalid]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
+                    placeholder="Veuillez entrer votre email"
+                    [class.invalid]="(loginForm.get('email')?.invalid && loginForm.get('email')?.touched) || fieldErrors.email">
                   <i class="fas fa-envelope"></i>
+                  <div *ngIf="fieldErrors.email" class="field-error">
+                    {{ fieldErrors.email }}
+                  </div>
                 </div>
                 
                 <div class="input-container">
                   <input 
                     type="password" 
                     formControlName="password" 
-                    placeholder="Mot de passe" 
-                    [class.invalid]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
+                    placeholder="Veuillez entrer votre mot de passe"
+                    [class.invalid]="(loginForm.get('password')?.invalid && loginForm.get('password')?.touched) || fieldErrors.password">
                   <i class="fas fa-lock"></i>
+                  <div *ngIf="fieldErrors.password" class="field-error">
+                    {{ fieldErrors.password }}
+                  </div>
                 </div>
-              </form>
-              
-              <a routerLink="/forgot-password">Mot de passe oublié ?</a>
-              
-              <div *ngIf="loading" class="spinner"></div>
 
-              <button class="login-btn" (click)="login()" [disabled]="loading">
-                Se connecter
-              </button>
+                <a routerLink="/forgot-password" class="forgot-password">Mot de passe oublié ?</a>
+                
+                <div *ngIf="loading" class="spinner"></div>
+
+                <button type="submit" class="login-btn" [disabled]="loading">
+                  Se connecter
+                </button>
+              </form>
 
               <button class="register-btn" (click)="toggleView()">Créer un compte</button>
             </div>
@@ -59,6 +64,7 @@
         </div>
       </div>
 
+      <!-- Face arrière (Inscription) -->
       <div class="back">
         <app-register (goToLogin)="toggleView()"></app-register>
       </div>

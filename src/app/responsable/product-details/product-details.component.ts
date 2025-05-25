@@ -115,15 +115,15 @@ export class ProductDetailsComponent implements OnInit {
     console.error('Erreur détaillée:', error);
   }
 
-getStatusLabel(status: string): string {
-  const statusMap: {[key: string]: string} = {
-    'active': 'Actif',
-    'inactive': 'Inactif',
-    'promotion': 'En promotion',
-    'out-of-stock': 'Rupture'
-  };
-  return statusMap[status] || status;
-}
+  getStatusLabel(status: string): string {
+    const statusMap: {[key: string]: string} = {
+      'active': 'Actif',
+      'inactive': 'Inactif',
+      'promotion': 'En promotion',
+      'out-of-stock': 'Rupture'
+    };
+    return statusMap[status] || status;
+  }
 
   isPromotionActive(): boolean {
     if (!this.product || this.product.status !== 'promotion' || !this.product.promotion) return false;

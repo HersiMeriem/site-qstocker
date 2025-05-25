@@ -22,7 +22,7 @@
         </tr>
       </thead>
       <tbody>
-       <tr *ngFor="let user of getResponsableUsers() | search: searchQuery">
+        <tr *ngFor="let user of users | search: searchQuery">
           <td>{{ user.email }}</td>
           <td>
             <span class="status-indicator {{ user.status }}">{{ user.status }}</span>
@@ -44,6 +44,6 @@
   </div>
 
   <div class="table-footer">
-    <div class="user-count">Total: {{ getPendingUsers().length }} utilisateurs en attente</div>
+    <div class="user-count">Total: {{ users.length }} utilisateurs</div>
   </div>
 </div>

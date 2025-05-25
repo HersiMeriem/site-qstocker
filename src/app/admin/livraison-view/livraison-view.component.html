@@ -1,0 +1,144 @@
+<div class="container-fluid mt-4">
+  <!-- Alertes -->
+  <div *ngIf="showSuccess" class="alert alert-success alert-dismissible fade show">
+    {{ successMessage }}
+    <button type="button" class="btn-close" (click)="showSuccess = false"></button>
+  </div>
+
+  <div *ngIf="showError" class="alert alert-danger alert-dismissible fade show">
+    {{ errorMessage }}
+    <button type="button" class="btn-close" (click)="showError = false"></button>
+  </div>
+
+  <div class="row">
+    <!-- Liste des commandes -->
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header bg-primary text-white">
+          <h4 class="mb-0">Commandes à Livrer</h4>
+        </div>
+        <div class="card-body">
+          <div class="btn-group mb-3">
+            <button *ngFor="let status of statuses"
+                    class="btn btn-outline-primary"
+                    [class.active]="selectedStatus === status"
+                    (click)="onStatusChange(status)">
+              {{ getStatusText(status) }}
+            </button>
+          </div>
+          <div class="mb-3">
+            <label for="searchFilter">Rechercher :</label>
+            <input type="text" id="searchFilter" class="form-control" 
+                   [(ngModel)]="searchQuery" (input)="filterBySearch()" 
+                   placeholder="Nom client ou ID commande">
+          </div>
+
+          <div *ngIf="isLoading" class="text-center my-4">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Chargement...</span>
+            </div>
+          </div>
+
+          <div *ngIf="!isLoading && filteredOrders.length === 0" class="alert alert-info">
+            Aucune commande trouvée avec le statut "{{ getStatusText(selectedStatus) }}"
+          </div>
+
+          <div class="list-group">
+            <div *ngFor="let order of filteredOrders"
+                 class="list-group-item list-group-item-action"
+                 [ngClass]="getStatusClass(order.status)"
+                 (click)="selectOrder(order)">
+              <div class="d-flex w-100 justify-content-between">
+                <h5 class="mb-1">Commande #{{ order.id.substring(0, 8) }}</h5>
+                <span class="badge rounded-pill" [ngClass]="getBadgeClass(order.status)">
+                  {{ getStatusText(order.status) }}
+                </span>
+              </div>
+              <p class="mb-1">{{ order.customerName }} - {{ order.customerPhone }}</p>
+              <small>{{ order.orderDate | date:'medium' }}</small>
+              <div class="d-flex justify-content-between mt-2">
+                <span>{{ order.items.length }} article(s)</span>
+                <strong>{{ order.grandTotal | currency:'symbol':'1.2-2' :'DT'}}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Détails de la commande -->
+    <div class="col-md-6" *ngIf="selectedOrder">
+      <div class="card">
+        <div class="card-header bg-secondary text-white">
+          <h4 class="mb-0">Détails de la commande</h4>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <h5>Client</h5>
+            <p><strong>Nom:</strong> {{ selectedOrder.customerName }}</p>
+            <p><strong>Téléphone:</strong> {{ selectedOrder.customerPhone }}</p>
+            <p *ngIf="selectedOrder.customerAddress"><strong>Adresse:</strong> {{ selectedOrder.customerAddress }}</p>
+            <p *ngIf="selectedOrder.customerNotes"><strong>Notes:</strong> {{ selectedOrder.customerNotes }}</p>
+          </div>
+
+          <div class="mb-3">
+            <h5>Articles</h5>
+            <div class="table-responsive">
+              <table class="table table-sm table-hover">
+                <thead class="table-light">
+                  <tr>
+                    <th>Article</th>
+                    <th class="text-end">Prix</th>
+                    <th class="text-center">Qté</th>
+                    <th class="text-end">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let item of selectedOrder.items">
+                    <td>
+                      <div class="d-flex align-items-center">
+                        <img *ngIf="item.productImage" [src]="item.productImage" 
+                             width="40" height="40" class="me-2 rounded">
+                        <div>
+                          <div>{{ item.productName }}</div>
+                          <small class="text-muted">{{ item.brand }}</small>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="text-end">{{ item.unitPrice | currency:'symbol':'1.2-2' :'DT' }}</td>
+                    <td class="text-center">{{ item.quantity }}</td>
+                    <td class="text-end">{{ item.totalPrice | currency:'symbol':'1.2-2':'DT'}}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="mb-3 border-top pt-2">
+            <div class="d-flex justify-content-between">
+              <span>Sous-total:</span>
+              <span>{{ selectedOrder.totalAmount | currency:'symbol': '1.2-2' :'DT'}}</span>
+            </div>
+            <div class="d-flex justify-content-between">
+              <span>Livraison:</span>
+              <span>{{ selectedOrder.shippingFee | currency:'symbol':'1.2-2' :'DT' }}</span>
+            </div>
+            <div class="d-flex justify-content-between fw-bold fs-5 mt-2">
+              <span>Total:</span>
+              <span>{{ selectedOrder.grandTotal | currency :'symbol':'1.2-2' : 'DT'}}</span>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between gap-2">
+            <button class="btn btn-outline-secondary" (click)="selectedOrder = null">
+              <i class="bi bi-arrow-left me-1"></i> Retour
+            </button>
+            <button class="btn btn-success" (click)="generateInvoice()">
+              <i class="bi bi-file-earmark-pdf me-1"></i> Télécharger PDF
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

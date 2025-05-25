@@ -1,3 +1,4 @@
+
 import { Component, OnInit, ViewChild, OnDestroy } from '@angular/core';
 import { StockService } from '../../services/stock.service';
 import { StockItem, Promotion } from '../../services/stock.service';
@@ -33,7 +34,8 @@ export class StockComponent implements OnInit, OnDestroy {
     private productService: ProductService
   ) {}
 
-  async ngOnInit(): Promise<void> {
+
+    async ngOnInit(): Promise<void> {
     await this.syncStockStatus();
     this.loadStock();
     this.loadProducts();
@@ -44,6 +46,8 @@ export class StockComponent implements OnInit, OnDestroy {
       this.stockSubscription.unsubscribe();
     }
   }
+
+  
 
   loadProducts(): void {
     this.productService.getProducts().subscribe({
@@ -307,6 +311,9 @@ export class StockComponent implements OnInit, OnDestroy {
     this.checkStockLevels(productId, newQuantity);
   }
 
+
+
+
   private checkStockLevels(productId: string, newQuantity: number): void {
     this.db.object<StockItem>(`${this.stockPath}/${productId}`).valueChanges()
       .pipe(take(1))
@@ -331,6 +338,18 @@ export class StockComponent implements OnInit, OnDestroy {
     await this.db.list('/notifications').push(notification);
   }
 
+
+
+
+
+
+
+
+
+
+
+  // meriem
+    
   getStatusLabel(status: string): string {
     const statusMap: {[key: string]: string} = {
       'active': 'Actif',
@@ -351,67 +370,62 @@ export class StockComponent implements OnInit, OnDestroy {
     return iconMap[status] || 'fas fa-info-circle';
   }
 
-  loadStock(): void {
-    this.loading = true;
-    combineLatest([
-      this.stockService.getStock(),
-      this.productService.getProducts()
-    ]).subscribe({
-      next: ([stock, products]) => {
-        this.stock = stock.map(item => {
-          const product = products.find(p => p.id === item.idProduit);
-          const seuil = item.seuil || 10; // Seuil par défaut
+loadStock(): void {
+  this.loading = true;
+  combineLatest([
+    this.stockService.getStock(),
+    this.productService.getProducts()
+  ]).subscribe({
+    next: ([stock, products]) => {
+      this.stock = stock.map(item => {
+        const product = products.find(p => p.id === item.idProduit);
+        const seuil = item.seuil || 10; // Seuil par défaut
+        
+        // Calcul du statut basé sur la quantité et le seuil
+        const status = item.quantite <= seuil ? 'out-of-stock' : 
+                      item.status === 'promotion' && this.isPromotionActive(item) ? 'promotion' :
+                      'active';
 
-          // Calcul du statut basé sur la quantité et le seuil
-          const status = item.quantite <= seuil ?
-            'out-of-stock' :
-            item.status === 'promotion' && this.isPromotionActive(item) ?
-              'promotion' :
-              'active';
+        return {
+          ...item,
+          status,
+          promotion: product?.promotion || item.promotion || undefined,
+          editingPrice: false,
+          originalPrice: item.prixDeVente || 0,
+          qrCode: item.qrCode || product?.qrCode || null,
+          imageUrl: item.imageUrl || product?.imageUrl || null,
+          description: item.description || product?.description || null,
+          seuil: item.seuil || 10 // Seuil par défaut
+        };
+      });
+      this.filteredStock = [...this.stock];
+      this.loading = false;
+    },
+    error: (err) => {
+      this.errorMessage = 'Erreur lors du chargement du stock';
+      this.loading = false;
+      console.error(err);
+    }
+  });
+}
 
-          return {
-            ...item,
-            status,
-            promotion: product?.promotion || item.promotion || undefined,
-            editingPrice: false,
-            originalPrice: item.prixDeVente || 0,
-            qrCode: item.qrCode || product?.qrCode || null,
-            imageUrl: item.imageUrl || product?.imageUrl || null,
-            description: item.description || product?.description || null,
-            seuil: item.seuil || 10 // Seuil par défaut
-          };
-        });
-        this.filteredStock = [...this.stock];
-        this.loading = false;
-      },
-      error: (err) => {
-        this.errorMessage = 'Erreur lors du chargement du stock';
-        this.loading = false;
-        console.error(err);
+private async syncStockStatus(): Promise<void> {
+  try {
+    const stock = await firstValueFrom(this.stockService.getStock());
+    
+    const updates = stock.map(async (item: StockItem) => {
+      const seuil = item.seuil || 10; // Seuil par défaut à 10
+      const newStatus = item.quantite <= seuil ? 'out-of-stock' : 
+                       item.status === 'out-of-stock' ? 'active' : item.status;
+
+      if (newStatus !== item.status) {
+        await this.stockService.updateStock(item.idProduit, { status: newStatus });
       }
     });
+
+    await Promise.all(updates);
+  } catch (error) {
+    console.error('Error syncing status:', error);
   }
-
-  private async syncStockStatus(): Promise<void> {
-    try {
-      const stock = await firstValueFrom(this.stockService.getStock());
-
-      const updates = stock.map(async (item: StockItem) => {
-        const seuil = item.seuil || 10; // Seuil par défaut à 10
-        const newStatus = item.quantite <= seuil ?
-          'out-of-stock' :
-          item.status === 'out-of-stock' ?
-            'active' :
-            item.status;
-
-        if (newStatus !== item.status) {
-          await this.stockService.updateStock(item.idProduit, { status: newStatus });
-        }
-      });
-
-      await Promise.all(updates);
-    } catch (error) {
-      console.error('Error syncing status:', error);
-    }
-  }
+}
 }

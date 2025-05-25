@@ -28,9 +28,9 @@
           </div>
           <div class="mb-3">
             <label for="searchFilter">Rechercher par nom de client ou ID de commande:</label>
-            <input type="text" id="searchFilter" class="form-control" [(ngModel)]="searchQuery" (input)="filterBySearch()">
+            <input type="text" id="searchFilter" class="form-control" [(ngModel)]="searchQuery" 
+                   (input)="filterBySearch()" placeholder="Rechercher...">
           </div>
-
 
           <div *ngIf="isLoading" class="text-center my-4">
             <div class="spinner-border text-primary" role="status">
@@ -38,12 +38,12 @@
             </div>
           </div>
 
-          <div *ngIf="!isLoading && orders.length === 0" class="alert alert-info">
+          <div *ngIf="!isLoading && filteredOrders.length === 0" class="alert alert-info">
             Aucune commande trouvée avec le statut "{{ getStatusText(selectedStatus) }}"
           </div>
 
           <div class="list-group">
-            <div *ngFor="let order of orders"
+            <div *ngFor="let order of filteredOrders"
                  class="list-group-item list-group-item-action"
                  [ngClass]="{
                    'list-group-item-warning': order.status === 'pending',
@@ -95,11 +95,6 @@
                           class="btn btn-outline-success"
                           (click)="updateOrderStatusDirect(order.id, 'delivered'); $event.stopPropagation()">
                     Livrée
-                  </button>
-                  <button *ngIf="order.status === 'delivered'"
-                          class="btn btn-outline-danger"
-                          (click)="updateOrderStatusDirect(order.id, 'cancelled'); $event.stopPropagation()">
-                    Annuler
                   </button>
                   <button *ngIf="order.status !== 'cancelled' && order.status !== 'delivered'"
                           class="btn btn-outline-danger"
@@ -176,16 +171,16 @@
             </div>
           </div>
 
-          <div class="d-flex justify-content-between">
+          <div class="d-flex justify-content-between flex-wrap gap-2">
             <button class="btn btn-outline-secondary" (click)="selectedOrder = null">
               <i class="bi bi-arrow-left"></i> Retour
             </button>
 
             <button class="btn btn-outline-success" (click)="generateInvoice()">
-              <i class="bi bi-file-earmark-pdf"></i> Télécharger la facture
+              <i class="bi bi-file-earmark-pdf"></i> Facture
             </button>
 
-            <div *ngIf="selectedOrder.status === 'pending'">
+            <div class="btn-group" *ngIf="selectedOrder.status === 'pending'">
               <button [disabled]="isLoading" class="btn btn-primary" (click)="updateOrderStatus('processing')">
                 <span *ngIf="!isLoading"><i class="bi bi-gear"></i> En traitement</span>
                 <span *ngIf="isLoading" class="spinner-border spinner-border-sm"></span>
@@ -195,21 +190,15 @@
               </button>
             </div>
 
-            <div *ngIf="selectedOrder.status === 'processing'">
+            <div class="btn-group" *ngIf="selectedOrder.status === 'processing'">
               <button class="btn btn-primary" (click)="updateOrderStatus('shipped')">
                 <i class="bi bi-truck"></i> Expédier
               </button>
             </div>
 
-            <div *ngIf="selectedOrder.status === 'shipped'">
+            <div class="btn-group" *ngIf="selectedOrder.status === 'shipped'">
               <button class="btn btn-success" (click)="updateOrderStatus('delivered')">
                 <i class="bi bi-check-circle"></i> Livrée
-              </button>
-            </div>
-
-            <div *ngIf="selectedOrder.status === 'delivered'">
-              <button class="btn btn-danger" (click)="updateOrderStatus('cancelled')">
-                <i class="bi bi-x-circle"></i> Annuler
               </button>
             </div>
 

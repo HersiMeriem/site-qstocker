@@ -4,6 +4,7 @@ import { AngularFireDatabase } from '@angular/fire/compat/database';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { TranslateService } from '@ngx-translate/core';
 import { EventInput } from '@fullcalendar/core';
+import { AngularFireFunctions } from '@angular/fire/compat/functions';
 
 @Component({
   selector: 'app-settings',
@@ -43,6 +44,7 @@ export class SettingsComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private db: AngularFireDatabase,
     private snackBar: MatSnackBar,
+    private fns: AngularFireFunctions,
     private translate: TranslateService,
     private cdRef: ChangeDetectorRef
   ) {}
@@ -68,75 +70,116 @@ export class SettingsComponent implements OnInit, OnDestroy {
 
   initForm(): void {
     this.settingsForm = this.fb.group({
-      theme: ['light', Validators.required],
-      notifications: [true],
-      emailNotifications: [true],
-      language: ['en', Validators.required],
-      accentColor: ['#3b82f6'],
-      silentHours: this.fb.group({
-        start: ['22:00'],
-        end: ['07:00']
-      })
+      notifications: [false],
+      emailNotifications: [false],
+      webNotifications: [false],
+      adminEmail: ['admin@example.com', Validators.email]
     });
-  
-    // Désactiver les notifications email si les notifications générales sont désactivées
+
+    // Désactiver les sous-notifications si la notification principale est désactivée
     this.settingsForm.get('notifications')?.valueChanges.subscribe(notifEnabled => {
-      const emailNotifControl = this.settingsForm.get('emailNotifications');
+      const emailControl = this.settingsForm.get('emailNotifications');
+      const webControl = this.settingsForm.get('webNotifications');
+      
       if (!notifEnabled) {
-        emailNotifControl?.disable();
-        emailNotifControl?.setValue(false);
+        emailControl?.disable();
+        webControl?.disable();
+        emailControl?.setValue(false);
+        webControl?.setValue(false);
       } else {
-        emailNotifControl?.enable();
+        emailControl?.enable();
+        webControl?.enable();
       }
     });
   }
 
   loadSettings(): void {
-    this.isLoading = true;
-    this.db.object('admin/settings').valueChanges().subscribe({
-      next: (settings: any) => {
-        if (settings) {
-          this.settingsForm.patchValue(settings);
-          this.applySettings(settings);
-        }
-        this.isLoading = false;
-      },
-      error: (error) => {
-        console.error('Error loading settings:', error);
-        this.isLoading = false;
+    this.db.object('admin/settings').valueChanges().subscribe(settings => {
+      if (settings) {
+        this.settingsForm.patchValue(settings);
       }
     });
   }
+  private async sendTestNotifications(settings: any) {
+    // Notification par email
+    if (settings.emailNotifications && settings.adminEmail) {
+      const sendEmail = this.fns.httpsCallable('sendEmailNotification');
+      await sendEmail({
+        to: settings.adminEmail,
+        subject: 'Test de notification',
+        message: 'Ceci est un test de notification depuis votre panneau admin.'
+      }).toPromise();
+    }
 
-  saveSettings(): void {
-    if (this.settingsForm.valid) {
-      this.isLoading = true;
-      const settings = this.settingsForm.value;
-
-      this.db.object('admin/settings').set(settings)
-        .then(() => {
-          const activityLog = {
-            action: 'Settings updated',
-            user: 'Admin',
-            type: 'settings',
-            details: JSON.stringify(settings),
-            timestamp: new Date().toISOString()
-          };
-          return this.db.list('activityLogs').push(activityLog);
-        })
-        .then(() => {
-          this.showNotification('settingsSaved');
-        })
-        .catch((error) => {
-          this.showNotification('settingsSaveError', { error });
-        })
-        .finally(() => {
-          this.isLoading = false;
-        });
+    // Notification web
+    if (settings.webNotifications) {
+      await this.db.list('notifications').push({
+        title: 'Test de notification',
+        message: 'Ceci est un test de notification web',
+        timestamp: new Date().toISOString(),
+        read: false
+      });
     }
   }
 
 
+  async saveSettings() {
+    if (this.settingsForm.valid) {
+      this.isLoading = true;
+      const settings = this.settingsForm.value;
+  
+      try {
+        // 1. Sauvegarde des paramètres
+        console.log('Tentative de sauvegarde des paramètres...', settings);
+        await this.db.object('admin/settings').set(settings);
+        console.log('Paramètres sauvegardés avec succès');
+  
+        // 2. Vérification activation notifications email
+        if (settings.emailNotifications && settings.adminEmail) {
+          console.log('Notifications email activées, email admin:', settings.adminEmail);
+          await this.testEmailNotifications(settings.adminEmail);
+        } else {
+          console.log('Notifications email non activées ou email manquant');
+        }
+  
+        this.snackBar.open('Paramètres sauvegardés avec succès', 'Fermer', { 
+          duration: 3000,
+          panelClass: ['success-snackbar']
+        });
+  
+      } catch (error: any) {
+        console.error('Erreur complète:', error);
+        this.snackBar.open('Échec de la sauvegarde: ' + (error.message || 'Erreur inconnue'), 'Fermer', {
+          duration: 5000,
+          panelClass: ['error-snackbar']
+        });
+      } finally {
+        this.isLoading = false;
+      }
+    }
+  }
+  
+  private async testEmailNotifications(email: string) {
+    try {
+      console.log('Tentative d\'envoi d\'email de test à:', email);
+      const sendEmail = this.fns.httpsCallable('sendTestEmail');
+      const result = await sendEmail({ email }).toPromise();
+      console.log('Résultat de l\'envoi:', result);
+      
+      if (result?.success) {
+        this.snackBar.open('Email de test envoyé avec succès', 'Fermer', {
+          duration: 3000,
+          panelClass: ['success-snackbar']
+        });
+      } else {
+        throw new Error('Échec de l\'envoi de l\'email');
+      }
+    } catch (error) {
+      console.error('Erreur d\'envoi d\'email:', error);
+      throw error; // Propager l'erreur
+    }
+  }
+  
   loadActivityLogs(): void {
     this.db.list('activityLogs', ref => ref.orderByChild('timestamp'))
       .valueChanges()

@@ -22,12 +22,16 @@ export class ProductAddComponent {
   showFileError = false;
   currentStockQuantity: number = 0;
   showCustomCategoryField = false;
+  logoImagePreview: string | null = null;
+  showLogoFileError = false;
   showCustomOlfactiveFamilyField = false;
   private readonly ID_PATTERN = /^PRD-\d{3,5}$/i;
   private readonly NAME_MIN_LENGTH = 2;
   private readonly NAME_MAX_LENGTH = 50;
   showCustomVolumeField = false;
   private readonly VOLUME_PATTERN = /^\d+ml$/i;
+  packagingImagePreview: string | null = null;
+  showPackagingFileError = false;
 
   constructor(
     private fb: FormBuilder,
@@ -89,7 +93,9 @@ export class ProductAddComponent {
       promotionStart: [''],
       promotionEnd: [''],
       info: ['', Validators.required],
-      isAuthentic: [true, Validators.required]
+      isAuthentic: [true, Validators.required],
+      logoImageUrl: [''],
+      packagingImageUrl: ['']
     });
 
     // Gestion dynamique des validations pour les promotions
@@ -232,6 +238,39 @@ export class ProductAddComponent {
     }
   }
 
+  onLogoFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    this.showLogoFileError = false;
+
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        this.logoImagePreview = reader.result as string;
+        this.productForm.patchValue({ logoImageUrl: this.logoImagePreview });
+      };
+      reader.readAsDataURL(file);
+    } else {
+      this.showLogoFileError = true;
+      this.logoImagePreview = null;
+    }
+  }
+
+  onPackagingFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    this.showPackagingFileError = false;
+
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = () => this.packagingImagePreview = reader.result as string;
+      reader.readAsDataURL(file);
+    } else {
+      this.showPackagingFileError = true;
+      this.packagingImagePreview = null;
+    }
+  }
+
   private setupStockSync(): void {
     this.productForm.get('id')?.valueChanges.subscribe(async (productId) => {
       if (productId && this.productForm.get('id')?.valid) {
@@ -252,6 +291,7 @@ export class ProductAddComponent {
     this.errorMessage = null;
     this.markFormAsTouched();
 
+    // Validation des champs personnalisés
     if (this.productForm.value.category === 'other' && !this.productForm.value.customCategory) {
       this.errorMessage = 'Veuillez saisir le public cible manuellement';
       return;
@@ -259,6 +299,11 @@ export class ProductAddComponent {
 
     if (this.productForm.value.olfactiveFamily === 'other' && !this.productForm.value.customOlfactiveFamily) {
       this.errorMessage = 'Veuillez saisir la famille olfactive manuellement';
+      return;
+    }
+
+    if (this.productForm.value.volume === 'other' && !this.productForm.value.customVolume) {
+      this.errorMessage = 'Veuillez saisir le volume manuellement';
       return;
     }
 
@@ -276,26 +321,32 @@ export class ProductAddComponent {
       this.isLoading = true;
       const product = this.prepareProduct();
 
-      const existingStock = await firstValueFrom(
-        this.stockService.getProduct(product.id).pipe(
+      // Vérification si le produit existe déjà
+      const existingProduct = await firstValueFrom(
+        this.productService.getProductById(product.id).pipe(
           catchError(() => of(null))
-      ));
+        )
+      );
 
-      if (existingStock) {
-        const newQuantity = existingStock.quantite + product.stockQuantity;
-        await this.stockService.updateStockQuantity(product.id, newQuantity);
-      } else {
-        await this.stockService.ajouterAuStock({
-          productId: product.id,
-          productName: product.name,
-          quantity: product.stockQuantity,
-          unitPrice: this.calculateUnitPrice(product),
-          qrCode: product.qrCode || null,
-          imageUrl: product.imageUrl || null,
-          description: product.description || null
-        });
+      if (existingProduct) {
+        this.errorMessage = 'Un produit avec cet ID existe déjà';
+        return;
       }
 
+      // Ajout au stock
+      const stockData = {
+        productId: product.id,
+        productName: product.name,
+        quantity: product.stockQuantity,
+        unitPrice: this.calculateUnitPrice(product),
+        qrCode: product.qrCode,
+        imageUrl: product.imageUrl,
+        description: product.description
+      };
+
+      await this.stockService.ajouterAuStock(stockData);
+
+      // Ajout du produit
       await this.productService.addProduct(product);
       this.handleSuccess();
     } catch (error: any) {
@@ -310,10 +361,12 @@ export class ProductAddComponent {
   }
 
   private calculateUnitPrice(product: Product): number {
-    return 0;
+    // Implémentez votre logique de calcul de prix unitaire ici
+    // Par exemple, vous pourriez avoir un prix de base ou le calculer à partir d'autres propriétés
+    return 10; // Valeur par défaut temporaire
   }
 
-  private prepareProduct(): Product {
+private prepareProduct(): Product {
     const category = this.productForm.value.category === 'other'
       ? this.productForm.value.customCategory
       : this.productForm.value.category;
@@ -335,10 +388,19 @@ export class ProductAddComponent {
       description: this.productForm.value.info,
       imageUrl: this.imagePreview!,
       qrCode: this.qrCodeImage!,
-      stockQuantity: parseInt(this.productForm.value.stockQuantity),
-      createdAt: new Date().toISOString()
+      stockQuantity: parseInt(this.productForm.value.stockQuantity, 10),
+      createdAt: new Date().toISOString(),
+      logoImageUrl: this.logoImagePreview || undefined,
+      packagingImageUrl: this.packagingImagePreview || undefined,
+      // Suppression de serialNumber
+      promotion: this.productForm.value.status === 'promotion' ? {
+        startDate: this.productForm.value.promotionStart,
+        endDate: this.productForm.value.promotionEnd,
+        discountPercentage: this.productForm.value.discountPercentage
+      } : undefined
     };
-  }
+}
+
 
   private handleSuccess(): void {
     this.router.navigate(['/products'], {
@@ -426,6 +488,10 @@ export class ProductAddComponent {
     this.showCustomVolumeField = false;
     this.showCustomCategoryField = false;
     this.showCustomOlfactiveFamilyField = false;
+    this.logoImagePreview = null;
+    this.showLogoFileError = false;
+    this.packagingImagePreview = null;
+    this.showPackagingFileError = false;
     this.markFormAsTouched();
   }
 

@@ -1,14 +1,17 @@
 import { Injectable } from '@angular/core';
+import { AngularFireDatabase } from '@angular/fire/compat/database';
 import { SaleService } from './sale.service';
-import { map, catchError } from 'rxjs/operators';
 import { StockService } from './stock.service';
+import { NotificationService, NotificationType } from './notification.service';
+import { map, catchError, take } from 'rxjs/operators';
 import { combineLatest, Observable, of } from 'rxjs';
+import { StockItem } from '../models/stock-items';
 
 interface Activity {
   type: 'sales' | 'stock' | 'alerts' | 'system';
   icon: string;
   message: string;
-  time: Date | string;
+  time: Date;
   user?: string;
   location?: string;
   product?: {
@@ -16,7 +19,7 @@ interface Activity {
     nomProduit: string;
   };
   amount?: number;
-  stockData?: { 
+  stockData?: {
     totalProducts: number;
     totalStock: number;
   };
@@ -31,27 +34,25 @@ interface Activity {
 })
 export class ActivityService {
   constructor(
+    private db: AngularFireDatabase,
     private saleService: SaleService,
-    private stockService: StockService
+    private stockService: StockService,
+    private notificationService: NotificationService
   ) {}
 
   getRecentActivities(): Observable<Activity[]> {
     return combineLatest([
-      this.saleService.getRecentSales(),
-      this.stockService.getStockMovements().pipe(
-        catchError(error => {
-          console.error('Error loading stock movements:', error);
-          return of([]);
-        })
-      )
+      this.saleService.getRecentSales().pipe(take(1)), // Limite à une seule émission
+      this.stockService.getStockMovements().pipe(take(1)), // Limite à une seule émission
+      this.getNotificationActivities().pipe(take(1)) // Limite à une seule émission
     ]).pipe(
-      map(([sales, movements]) => {
+      map(([sales, movements, notifications]) => {
         // Convertir les ventes en activités
         const salesActivities = sales.map(sale => ({
           type: 'sales' as const,
           icon: 'shopping_cart',
-          message: `Vente #${sale.invoiceNumber}`,
-          time: sale.date,
+          message: Vente #${sale.invoiceNumber},
+          time: new Date(sale.date),
           amount: sale.totalAmount,
           user: sale.customerName || 'Anonyme',
           product: sale.items[0] ? {
@@ -68,23 +69,23 @@ export class ActivityService {
           type: 'stock' as const,
           icon: this.getStockMovementIcon(movement.type),
           message: this.getStockMovementMessage(movement),
-          time: movement.date || new Date().toISOString(),
+          time: new Date(movement.date || new Date().toISOString()),
           amount: movement.quantity * (movement.unitPrice || 0),
           product: {
             idProduit: movement.productId,
-            nomProduit: movement.productName || 'Produit inconnu'
+            nomProduit: movement.productName || movement.product?.nomProduit || 'Produit'
           },
           actions: [
             { label: 'Historique', action: 'viewStockHistory' }
           ]
         }));
 
-        // Combiner et trier les activités
-        const allActivities = [...salesActivities, ...stockActivities];
-        
+        // Combiner toutes les activités
+        const allActivities = [...salesActivities, ...stockActivities, ...notifications];
+
         return allActivities
-          .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
-          .slice(0, 20);
+          .sort((a, b) => b.time.getTime() - a.time.getTime())
+          .slice(0, 50); // Augmentez la limite si nécessaire
       }),
       catchError(error => {
         console.error('Error in activity service:', error);
@@ -93,8 +94,33 @@ export class ActivityService {
     );
   }
 
+  getNotificationActivities(): Observable<Activity[]> {
+    return this.notificationService.getNotifications().pipe(
+      map((notifications: any[]) => {
+        return notifications.map(notification => ({
+          type: 'alerts' as const,
+          icon: this.getNotificationIcon(notification.type),
+          message: ${notification.title}: ${notification.message},
+          time: new Date(notification.timestamp),
+          product: notification.productId ? {
+            idProduit: notification.productId,
+            nomProduit: notification.productName || notification.message.split(' ')[2] || 'Produit'
+          } : undefined,
+          actions: [
+            { label: 'Voir détails', action: 'viewDetails' }
+          ]
+        }));
+      })
+    );
+  }
+
+  private addActivity(activity: Activity): void {
+    // Ajouter l'activité à la base de données
+    this.db.list('/activities').push(activity);
+  }
+
   logActivity(
-    message: string, 
+    message: string,
     type: 'sales' | 'stock' | 'alerts' | 'system' = 'system',
     user?: string,
     product?: any,
@@ -114,6 +140,7 @@ export class ActivityService {
       amount,
       stockData
     };
+    this.addActivity(newActivity);
     return of(newActivity);
   }
 
@@ -146,11 +173,39 @@ export class ActivityService {
       'inventory': 'Inventaire',
       'transfer': 'Transfert'
     };
-    
+
     const productName = movement.productName || 'Produit';
     const quantity = movement.quantity || 0;
     const unit = quantity > 1 ? 'unités' : 'unité';
-    
-    return `${actions[movement.type] || 'Mouvement'} - ${productName} (${quantity} ${unit})`;
+
+    return ${actions[movement.type] || 'Mouvement'} - ${productName} (${quantity} ${unit});
+  }
+
+  logStockOutActivity(product: StockItem) {
+    const activity: Activity = {
+      type: 'alerts',
+      icon: 'warning',
+      message: 'Produit en rupture de stock',
+      time: new Date(),
+      product: {
+        idProduit: product.idProduit,
+        nomProduit: product.nomProduit
+      }
+    };
+    this.addActivity(activity);
+  }
+
+  private getNotificationIcon(type: NotificationType): string {
+    const icons = {
+      'stock-out': 'warning',
+      'low-stock': 'warning',
+      'sale': 'shopping_cart',
+      'system': 'info',
+      'success': 'check_circle',
+      'error': 'error',
+      'info': 'info',
+      'product-sold': 'attach_money'
+    };
+    return icons[type] || 'notifications';
   }
 }

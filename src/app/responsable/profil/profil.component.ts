@@ -9,6 +9,7 @@ import { takeUntil, switchMap, map, take } from 'rxjs/operators';
 import { MessagingService } from '../../services/messaging.service';
 import { forkJoin } from 'rxjs';
 import { EmailNotificationService } from '../../services/mail-notification.service';
+import { ProfileImageService } from '../../services/profile-image.service';
 
 
 interface Task {
@@ -107,7 +108,10 @@ export class ProfilComponent implements OnInit, OnDestroy {
     private confirmationService: StockManagerConfirmationService,
     private messagingService: MessagingService,
     private emailService: EmailNotificationService,
+    private profileImageService: ProfileImageService
   ) {}
+  
+
   
   async ngOnInit() {
     await this.loadUserProfile();
@@ -613,10 +617,10 @@ loadConversations() {
 
 
   async loadUserProfile() {
-    this.isLoading = true;
-    try {
-      const user = await this.afAuth.currentUser;
-      if (user) {
+   this.isLoading = true;
+  try {
+    const user = await this.afAuth.currentUser;
+    if (user){
         this.managerProfile.name = user.displayName || '';
         this.managerProfile.email = user.email || '';
         
@@ -634,11 +638,11 @@ loadConversations() {
           };
         }
         
-        if (profileData.val()?.photoUrl) {
-          this.profileService.updateProfilePhoto(profileData.val().photoUrl);
-          this.managerProfile.photoUrl = profileData.val().photoUrl;
-        }
+ if (profileData.val()?.photoUrl) {
+        this.profileImageService.changeProfileImage(profileData.val().photoUrl);
+        this.managerProfile.photoUrl = profileData.val().photoUrl;
       }
+    }
     } catch (error: any) {
       this.errorMessage = "Erreur lors du chargement du profil: " + error.message;
     } finally {
@@ -754,14 +758,14 @@ loadConversations() {
       this.uploadProgress = 100;
       
       try {
-        const imageDataUrl = e.target.result;
+            const imageDataUrl = e.target.result;
+    // ... sauvegarde dans la base de données ...
+    this.profileImageService.changeProfileImage(imageDataUrl);
+    this.managerProfile.photoUrl = imageDataUrl;
         await this.profileService.updateStockManagerProfile(user.uid, {
           photoUrl: imageDataUrl,
           lastUpdated: new Date().toISOString()
         });
-        
-        this.profileService.updateProfilePhoto(imageDataUrl);
-        this.managerProfile.photoUrl = imageDataUrl;
         
         await this.profileService.logStockManagerActivity(user.uid, 'Photo de profil changée');
         this.showSuccess("Photo de profil mise à jour avec succès");
@@ -788,12 +792,12 @@ loadConversations() {
   async removeProfilePhoto() {
     this.isLoading = true;
     try {
-      const user = await this.afAuth.currentUser;
-      if (user) {
-        const userId = user.uid;
-        
-        await this.db.object(`users/${userId}/photoUrl`).remove();
-        this.profileService.updateProfilePhoto('assets/images/responsable.png');
+    const user = await this.afAuth.currentUser;
+    if (user) {
+      const userId = user.uid;
+      await this.db.object(`users/${userId}/photoUrl`).remove();
+      this.profileImageService.changeProfileImage(this.profileImageService.getCurrentImage());
+      this.managerProfile.photoUrl = null;
         this.showSuccess("Photo de profil supprimée avec succès");
     
         

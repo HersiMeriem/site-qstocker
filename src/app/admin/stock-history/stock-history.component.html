@@ -1,30 +1,40 @@
 <section>
   <div class="stock-history-container" id="stock">
-    <h2 class="stock-history-title">📦 Historique des Stocks</h2>
+    <h2 class="stock-history-title">
+      <a routerLink="/admin/products" class="back-icon" title="Retour">
+        <i class="fas fa-arrow-left"></i>
+      </a>
+      📦 Stocks
+      <button class="toggle-suppliers-btn" (click)="toggleSuppliersView()">
+        {{ showSuppliers ? 'Masquer les fournisseurs' : 'Afficher les fournisseurs' }}
+      </button>
+    </h2>
 
-    <div class="mb-4">
-      <input 
-        type="text" 
-        [(ngModel)]="searchTerm" 
-        (input)="filterStock()" 
-        placeholder="🔍 Rechercher par nom ou ID produit..." 
-        class="form-control"
-      >
-    </div>
-
-    <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show">
-      {{errorMessage}}
-      <button type="button" class="btn-close" (click)="errorMessage = null"></button>
-    </div>
-
-    <div *ngIf="loading" class="text-center my-5">
-      <div class="spinner-border text-success" style="width: 3rem; height: 3rem;" role="status">
-        <span class="visually-hidden">Chargement...</span>
+    <div *ngIf="!showSuppliers">
+      <!-- Contenu original du stock -->
+      <div class="mb-4">
+        <input 
+          type="text" 
+          [(ngModel)]="searchTerm" 
+          (input)="filterStock()" 
+          placeholder="🔍 Rechercher par nom ou ID produit..." 
+          class="form-control"
+        >
       </div>
-      <p class="mt-2">Chargement du stock...</p>
-    </div>
 
-    <div class="table-responsive" *ngIf="!loading && combinedData.length > 0">
+      <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show">
+        {{errorMessage}}
+        <button type="button" class="btn-close" (click)="errorMessage = null"></button>
+      </div>
+
+      <div *ngIf="loading" class="text-center my-5">
+        <div class="spinner-border text-success" style="width: 3rem; height: 3rem;" role="status">
+          <span class="visually-hidden">Chargement...</span>
+        </div>
+        <p class="mt-2">Chargement du stock...</p>
+      </div>
+
+<div class="table-responsive" *ngIf="!loading && combinedData.length > 0">
       <table class="stock-table">
         <thead>
           <tr>
@@ -61,6 +71,69 @@
           </tr>
         </tbody>
       </table>
+    </div>
+  </div>
+
+    <!-- Section des fournisseurs -->
+    <div *ngIf="showSuppliers" class="suppliers-section">
+      <h3>Liste des fournisseurs</h3>
+      
+      <div class="mb-4">
+        <input 
+          type="text" 
+          [(ngModel)]="supplierSearchTerm" 
+          (input)="filterSuppliers()" 
+          placeholder="🔍 Rechercher un fournisseur..." 
+          class="form-control"
+        >
+      </div>
+
+      <button mat-raised-button color="primary" class="add-button" (click)="openSupplierDialog()">
+        <mat-icon>add</mat-icon> Ajouter un fournisseur
+      </button>
+
+      <div *ngIf="suppliersLoading" class="text-center my-5">
+        <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+          <span class="visually-hidden">Chargement...</span>
+        </div>
+        <p class="mt-2">Chargement des fournisseurs...</p>
+      </div>
+
+      <div class="table-responsive" *ngIf="!suppliersLoading && filteredSuppliers.length > 0">
+        <table class="suppliers-table">
+          <thead>
+            <tr>
+              <th>Nom</th>
+              <th>Email</th>
+              <th>Téléphone</th>
+              <th>Adresse</th>
+              <th>Informations</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let supplier of filteredSuppliers">
+              <td>{{ supplier.name }}</td>
+              <td>{{ supplier.email }}</td>
+              <td>{{ supplier.phone }}</td>
+              <td>{{ supplier.address }}</td>
+              <td>{{ supplier.info }}</td>
+              <td>
+                <button mat-icon-button color="accent" class="action-btn" (click)="openSupplierDialog(supplier)">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button mat-icon-button color="warn" class="action-btn" (click)="deleteSupplier(supplier.id)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div *ngIf="!suppliersLoading && filteredSuppliers.length === 0" class="no-results">
+        Aucun fournisseur trouvé
+      </div>
     </div>
   </div>
 </section>

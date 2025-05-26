@@ -168,7 +168,7 @@ export class StockService {
       );
   }
 
-  async ajouterAuStock(commande: {
+async ajouterAuStock(commande: {
     productId: string;
     quantity: number;
     unitPrice: number;
@@ -176,71 +176,74 @@ export class StockService {
     qrCode?: string | null;
     imageUrl?: string | null;
     description?: string | null;
-  }): Promise<StockItem> {
+    promotion?: Promotion | null;
+}): Promise<StockItem> {
     try {
-      const stockRef = this.db.object<StockItem>(`${this.stockPath}/${commande.productId}`);
-      const snapshot = await firstValueFrom(stockRef.snapshotChanges()) as SnapshotAction<StockItem>;
-      const currentData = snapshot.payload.val() || {
-        idProduit: commande.productId,
-        nomProduit: commande.productName || 'Nouveau produit',
-        quantite: 0,
-        prixUnitaireHT: 0,
-        prixDeVente: commande.unitPrice * 1.2,
-        dateMiseAJour: new Date().toISOString(),
-        historiquePrix: [],
-        qrCode: commande.qrCode || null,
-        imageUrl: commande.imageUrl || null,
-        description: commande.description || null,
-        seuil: 10,
-        status: 'active',
-        originalPrice: commande.unitPrice * 1.2,
-        editingPrice: false,
-        promotion: undefined
-      };
+        const stockRef = this.db.object<StockItem>(`${this.stockPath}/${commande.productId}`);
+        const snapshot = await firstValueFrom(stockRef.snapshotChanges()) as SnapshotAction<StockItem>;
+        const currentData = snapshot.payload.val() || {
+            idProduit: commande.productId,
+            nomProduit: commande.productName || 'Nouveau produit',
+            quantite: 0,
+            prixUnitaireHT: 0,
+            prixDeVente: commande.unitPrice * 1.2,
+            dateMiseAJour: new Date().toISOString(),
+            historiquePrix: [],
+            qrCode: commande.qrCode || null,
+            imageUrl: commande.imageUrl || null,
+            description: commande.description || null,
+            seuil: 10,
+            status: 'active',
+            originalPrice: commande.unitPrice * 1.2,
+            editingPrice: false,
+            promotion: commande.promotion || null
+        };
 
-      // Calcul du nouveau prix moyen pondéré
-      const ancienTotalValeur = currentData.prixUnitaireHT * currentData.quantite;
-      const nouvelleValeurAjoutee = commande.unitPrice * commande.quantity;
-      const nouvelleQuantiteTotale = currentData.quantite + commande.quantity;
-      const nouveauPrixMoyen = nouvelleQuantiteTotale > 0
-        ? (ancienTotalValeur + nouvelleValeurAjoutee) / nouvelleQuantiteTotale
-        : commande.unitPrice;
+        // Calcul du nouveau prix moyen pondéré
+        const ancienTotalValeur = currentData.prixUnitaireHT * currentData.quantite;
+        const nouvelleValeurAjoutee = commande.unitPrice * commande.quantity;
+        const nouvelleQuantiteTotale = currentData.quantite + commande.quantity;
+        const nouveauPrixMoyen = nouvelleQuantiteTotale > 0
+            ? (ancienTotalValeur + nouvelleValeurAjoutee) / nouvelleQuantiteTotale
+            : commande.unitPrice;
 
-      // Création de l'entrée historique
-      const newEntry = {
-        date: new Date().toISOString(),
-        prix: commande.unitPrice,
-        quantiteAjoutee: commande.quantity
-      };
+        // Création de l'entrée historique
+        const newEntry = {
+            date: new Date().toISOString(),
+            prix: commande.unitPrice,
+            quantiteAjoutee: commande.quantity
+        };
 
-      // Mise à jour des données
-      const updatedData: StockItem = {
-        ...currentData,
-        quantite: nouvelleQuantiteTotale,
-        prixUnitaireHT: nouveauPrixMoyen,
-        dateMiseAJour: new Date().toISOString(),
-        historiquePrix: [...(currentData.historiquePrix || []), newEntry],
-        status: nouvelleQuantiteTotale <= currentData.seuil ? 'out-of-stock' : 'active'
-      };
+        // Mise à jour des données
+        const updatedData: StockItem = {
+            ...currentData,
+            quantite: nouvelleQuantiteTotale,
+            prixUnitaireHT: nouveauPrixMoyen,
+            dateMiseAJour: new Date().toISOString(),
+            historiquePrix: [...(currentData.historiquePrix || []), newEntry],
+            status: nouvelleQuantiteTotale <= currentData.seuil ? 'out-of-stock' : 'active',
+            promotion: commande.promotion || null
+        };
 
-      await stockRef.set(updatedData);
+        await stockRef.set(updatedData);
 
-      // Log du mouvement de stock
-      await this.logStockMovement({
-        productId: commande.productId,
-        type: 'ajout',
-        quantity: commande.quantity,
-        previousQuantity: currentData.quantite,
-        date: new Date().toISOString(),
-        reason: 'stock_replenishment'
-      });
+        // Log du mouvement de stock
+        await this.logStockMovement({
+            productId: commande.productId,
+            type: 'ajout',
+            quantity: commande.quantity,
+            previousQuantity: currentData.quantite,
+            date: new Date().toISOString(),
+            reason: 'stock_replenishment'
+        });
 
-      return updatedData;
+        return updatedData;
     } catch (error) {
-      console.error('Erreur lors de l\'ajout au stock:', error);
-      throw error;
+        console.error('Erreur lors de l\'ajout au stock:', error);
+        throw error;
     }
-  }
+}
+
 
   async deleteProduct(productId: string): Promise<void> {
     try {

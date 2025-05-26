@@ -379,7 +379,7 @@ private prepareProduct(): Product {
       ? this.productForm.value.customOlfactiveFamily
       : this.productForm.value.olfactiveFamily;
 
-    return {
+    const product: Product = {
       ...this.productForm.value,
       id: this.productForm.value.id.toUpperCase(),
       category: category,
@@ -392,13 +392,19 @@ private prepareProduct(): Product {
       createdAt: new Date().toISOString(),
       logoImageUrl: this.logoImagePreview || undefined,
       packagingImageUrl: this.packagingImagePreview || undefined,
-      // Suppression de serialNumber
       promotion: this.productForm.value.status === 'promotion' ? {
         startDate: this.productForm.value.promotionStart,
         endDate: this.productForm.value.promotionEnd,
         discountPercentage: this.productForm.value.discountPercentage
       } : undefined
     };
+
+    // Assurez-vous que la propriété promotion est définie si le statut est promotion
+    if (product.status === 'promotion' && !product.promotion) {
+      throw new Error('Promotion details are required for promotion status');
+    }
+
+    return product;
 }
 
 

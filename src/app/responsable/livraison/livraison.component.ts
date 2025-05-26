@@ -94,21 +94,26 @@ loadOrders(): void {
       });
   }
 
-  updateOrderStatusDirect(orderId: string, newStatus: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled'): void {
-    this.isLoading = true;
-    this.orderService.updateOrderStatus(orderId, newStatus)
-      .then(() => {
-        this.showSuccessAlert(`Statut changé à "${this.getStatusText(newStatus)}"`);
-        this.loadOrders();
-      })
-      .catch(err => {
-        console.error('Erreur:', err);
-        this.showErrorAlert('Échec de la mise à jour');
-      })
-      .finally(() => {
-        this.isLoading = false;
-      });
-  }
+updateOrderStatusDirect(orderId: string, newStatus: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled'): void {
+  this.isLoading = true;
+  this.orderService.updateOrderStatus(orderId, newStatus)
+    .then(() => {
+      this.showSuccessAlert(`Statut changé à "${this.getStatusText(newStatus)}"`);
+      this.loadOrders();
+      
+      // Si la commande mise à jour est celle sélectionnée, mettre à jour son statut
+      if (this.selectedOrder?.id === orderId) {
+        this.selectedOrder.status = newStatus;
+      }
+    })
+    .catch(err => {
+      console.error('Erreur:', err);
+      this.showErrorAlert(err.message || 'Échec de la mise à jour');
+    })
+    .finally(() => {
+      this.isLoading = false;
+    });
+}
 
   deleteOrder(orderId: string): void {
     if (!orderId) return;

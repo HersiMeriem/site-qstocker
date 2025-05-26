@@ -12,73 +12,79 @@ export class ProductService {
 
   constructor(private db: AngularFireDatabase) {}
 
-  async addProduct(product: Product): Promise<void> {
+async addProduct(product: Product): Promise<void> {
     try {
-      // Validation de base
-      if (!/^PRD-\d{3,5}$/i.test(product.id)) {
-        throw new Error('Format ID invalide. Exemple: PRD-1234');
-      }
-
-      // Validation du nom
-      if (!product.name || product.name.trim().length < 3) {
-        throw new Error('Le nom doit faire au moins 3 caractères');
-      }
-
-      // Nettoyage et formatage
-      const formattedId = product.id.toUpperCase().trim();
-      const now = new Date().toISOString();
-
-      // Vérification existence
-      const ref = this.db.database.ref(`${this.dbPath}/${formattedId}`);
-      if ((await ref.once('value')).exists()) {
-        throw new Error('ID déjà utilisé');
-      }
-
-      // Validation des promotions
-      if (product.status === 'promotion') {
-        if (!product.promotion) {
-          throw new Error('Promotion requise pour le statut promotion');
+        // Validation de base
+        if (!/^PRD-\d{3,5}$/i.test(product.id)) {
+            throw new Error('Format ID invalide. Exemple: PRD-1234');
         }
 
-        const { discountPercentage, startDate, endDate } = product.promotion;
-        const start = new Date(startDate);
-        const end = new Date(endDate);
-
-        if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-          throw new Error('Dates de promotion invalides');
+        // Validation du nom
+        if (!product.name || product.name.trim().length < 3) {
+            throw new Error('Le nom doit faire au moins 3 caractères');
         }
 
-        if (start >= end) {
-          throw new Error('La date de fin doit être après la date de début');
+        // Nettoyage et formatage
+        const formattedId = product.id.toUpperCase().trim();
+        const now = new Date().toISOString();
+
+        // Vérification existence
+        const ref = this.db.database.ref(`${this.dbPath}/${formattedId}`);
+        if ((await ref.once('value')).exists()) {
+            throw new Error('ID déjà utilisé');
         }
 
-        if (!discountPercentage || discountPercentage < 1 || discountPercentage > 100) {
-          throw new Error('Remise doit être entre 1% et 100%');
+        // Validation des promotions
+        if (product.status === 'promotion') {
+            if (!product.promotion) {
+                throw new Error('Promotion requise pour le statut promotion');
+            }
+
+            const { discountPercentage, startDate, endDate } = product.promotion;
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+
+            if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+                throw new Error('Dates de promotion invalides');
+            }
+
+            if (start >= end) {
+                throw new Error('La date de fin doit être après la date de début');
+            }
+
+            if (!discountPercentage || discountPercentage < 1 || discountPercentage > 100) {
+                throw new Error('Remise doit être entre 1% et 100%');
+            }
         }
-      }
 
-      // Ajout de la validation de l’authenticité
-      if (product.isAuthentic === undefined) {
-        throw new Error('Le champ d\'authenticité est requis');
-      }
+        // Ajout de la validation de l’authenticité
+        if (product.isAuthentic === undefined) {
+            throw new Error('Le champ d\'authenticité est requis');
+        }
 
-      // Structure finale du produit
-      const productData = {
-        ...this.cleanProductFields(product), // Nettoyage des champs supplémentaires
-        id: formattedId,
-        status: product.status || 'active', // Valeur par défaut
-        createdAt: now,
-        updatedAt: now,
-        promotion: product.status === 'promotion' ? product.promotion : null
-      };
+        // Structure finale du produit
+        const productData = {
+            ...this.cleanProductFields(product), // Nettoyage des champs supplémentaires
+            id: formattedId,
+            status: product.status || 'active', // Valeur par défaut
+            createdAt: now,
+            updatedAt: now,
+            promotion: product.status === 'promotion' && product.promotion ? {
+                discountPercentage: product.promotion.discountPercentage,
+                startDate: product.promotion.startDate,
+                endDate: product.promotion.endDate
+            } : null
+        };
 
-      await ref.set(productData);
+        await ref.set(productData);
 
     } catch (error) {
-      console.error(`Erreur d'ajout produit: ${error}`);
-      throw new Error(this.getUserFriendlyError(error));
+        console.error(`Erreur d'ajout produit: ${error}`);
+        throw new Error(this.getUserFriendlyError(error));
     }
-  }
+}
+
+
 
 private cleanProductFields(product: Product): Partial<Product> {
     // Enlève les champs inutiles pour Firebase

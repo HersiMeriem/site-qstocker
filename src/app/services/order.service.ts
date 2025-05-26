@@ -16,30 +16,35 @@ export class OrderService {
     private notificationService: NotificationService
   ) {}
 
- getOrdersByStatus(status: string): Observable<Order[]> {
-    return this.db.list<Order>('orders', ref =>
-      ref.orderByChild('status').equalTo(status)
-    ).valueChanges().pipe(
-      map(orders => orders.map(order => ({
+getOrdersByStatus(status: string): Observable<Order[]> {
+  return this.db.list<Order>('orders', ref =>
+    ref.orderByChild('status').equalTo(status)
+  ).snapshotChanges().pipe(
+    map(snapshots => snapshots.map(snapshot => {
+      const order = snapshot.payload.val() as Order;
+      return {
         ...order,
+        id: snapshot.key || '',
         orderDate: order.orderDate || new Date().toISOString()
-      })))
-    );
-  }
+      };
+    }))
+  );
+}
 
-  async updateOrderStatus(orderId: string, newStatus: string): Promise<void> {
+async updateOrderStatus(orderId: string, newStatus: string): Promise<void> {
     if (!orderId) {
       throw new Error('ID de commande invalide');
     }
 
     try {
-      const snapshot = await this.db.object(`orders/${orderId}`).query.once('value');
-      const order = snapshot.val();
-
-      if (!order) {
+      const orderRef = this.db.object(`orders/${orderId}`);
+      const snapshot = await orderRef.query.once('value');
+      
+      if (!snapshot.exists()) {
         throw new Error('Commande non trouvée');
       }
 
+      const order = snapshot.val();
       const previousStatus = order.status;
 
       // Diminuer le stock seulement quand le statut passe à "livré"
@@ -83,8 +88,10 @@ export class OrderService {
       }
 
       // Mise à jour du statut
-      await this.db.object(`orders/${orderId}/status`).set(newStatus);
-      await this.db.object(`orders/${orderId}/lastUpdated`).set(new Date().toISOString());
+      await orderRef.update({
+        status: newStatus,
+        lastUpdated: new Date().toISOString()
+      });
     } catch (error) {
       console.error('Erreur lors de la mise à jour:', error);
       throw error;

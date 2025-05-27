@@ -54,6 +54,7 @@ export class FinancialDashboardComponent implements OnInit, AfterViewInit, OnDes
   private subscriptions = new Subscription();
   private lineChart?: Chart<'line', number[], string>;
   private combinedCAChart?: Chart<'line', number[], string>;
+  private profitChart?: Chart;
 
   // Facturation commande
   showCommandInvoices = false;
@@ -378,7 +379,6 @@ export class FinancialDashboardComponent implements OnInit, AfterViewInit, OnDes
     );
   }
 
-  // Reste des méthodes existantes...
   toggleExpensesSection(): void {
     this.showExpensesSection = !this.showExpensesSection;
     if (this.showExpensesSection && this.expenses.length === 0) {
@@ -420,7 +420,6 @@ export class FinancialDashboardComponent implements OnInit, AfterViewInit, OnDes
     });
   }
 
-  //depenses
   openExpenseModal(): void {
     this.showExpenseModal = true;
   }
@@ -588,26 +587,38 @@ export class FinancialDashboardComponent implements OnInit, AfterViewInit, OnDes
     }
   }
 
-  private calculateMetrics(): void {
-    try {
-      this.transactions = this.filteredSales.length;
-      this.totalCA = this.filteredSales.reduce((sum, s) => sum + (s.totalAmount || 0), 0);
-      this.totalCost = this.calculateTotalCost();
-      this.benefice = this.totalCA - this.totalCost;
-      this.margeBrute = this.totalCA > 0 ? (this.benefice / this.totalCA) * 100 : 0;
-      this.panierMoyen = this.transactions > 0 ? this.totalCA / this.transactions : 0;
-      this.costPerTransaction = this.transactions > 0 ? this.totalCost / this.transactions : 0;
+private calculateMetrics(): void {
+  try {
+    // Basic metrics
+    this.transactions = this.filteredSales.length;
+    this.totalCA = this.filteredSales.reduce((sum, s) => sum + (s.totalAmount || 0), 0);
+    this.totalCost = this.calculateTotalCost();
 
-      const previousCA = this.previousPeriodSales.reduce((sum, s) => sum + (s.totalAmount || 0), 0);
-      this.caTrend = previousCA > 0 ? ((this.totalCA - previousCA) / previousCA) * 100 : 0;
+    // Calculate delivered orders metrics
+    this.calculateDeliveredOrdersMetrics(this.deliveredOrders);
 
-      // Calculez le CA total
-      this.totalRevenue = this.totalCA + this.deliveredOrdersRevenue;
-    } catch (e) {
-      console.error('Erreur calcul métriques:', e);
-      this.errorMessage = 'Erreur de calcul';
-    }
+    // Total revenue (CA + delivered orders)
+    this.totalRevenue = this.totalCA + this.deliveredOrdersRevenue;
+
+    // Calculate profits
+    this.calculateGrossProfit();
+
+    // Calculate net profit (after all expenses)
+    const netProfit = this.benefice - this.totalExpenses;
+
+    // Other metrics
+    this.panierMoyen = this.transactions > 0 ? this.totalCA / this.transactions : 0;
+    this.costPerTransaction = this.transactions > 0 ? this.totalCost / this.transactions : 0;
+
+    // Trend calculation
+    const previousCA = this.previousPeriodSales.reduce((sum, s) => sum + (s.totalAmount || 0), 0);
+    this.caTrend = previousCA > 0 ? ((this.totalCA - previousCA) / previousCA) * 100 : 0;
+  } catch (e) {
+    console.error('Error calculating metrics:', e);
+    this.errorMessage = 'Calculation error';
   }
+}
+
 
   private calculateTotalCost(): number {
     try {
@@ -706,11 +717,9 @@ export class FinancialDashboardComponent implements OnInit, AfterViewInit, OnDes
   printInvoice(): void {
     if (!this.selectedInvoice) return;
 
-    // Créer une fenêtre d'impression avec le contenu de la facture
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
-    // HTML pour l'impression
     printWindow.document.write(`
       <html>
         <head>
@@ -757,7 +766,6 @@ export class FinancialDashboardComponent implements OnInit, AfterViewInit, OnDes
           </div>
 
           <script>
-            // Imprimer automatiquement quand la fenêtre est chargée
             window.onload = function() {
               setTimeout(function() {
                 window.print();
@@ -771,8 +779,6 @@ export class FinancialDashboardComponent implements OnInit, AfterViewInit, OnDes
     printWindow.document.close();
   }
 
-  //livraison
-
   private loadInitialData(): void {
     this.errorMessage = null;
 
@@ -781,7 +787,7 @@ export class FinancialDashboardComponent implements OnInit, AfterViewInit, OnDes
     const deliveredOrders$ = this.orderService.getOrdersByStatus('delivered').pipe(
       tap(orders => {
         this.deliveredOrders = orders;
-        this.calculateDeliveredOrdersMetrics(orders); // Filtre immédiatement selon la période par défaut
+        this.calculateDeliveredOrdersMetrics(orders);
       })
     );
 
@@ -798,235 +804,253 @@ export class FinancialDashboardComponent implements OnInit, AfterViewInit, OnDes
     );
   }
 
-  private calculateDeliveredOrdersMetrics(orders: any[]): void {
+private calculateGrossProfit(): void {
+  // Calculate transaction profit
+  const transactionProfit = this.totalCA - this.totalCost;
+
+  // Calculate delivery profit
+  const deliveryProfit = this.calculateDeliveryProfit();
+
+  // Total gross profit
+  this.benefice = transactionProfit + deliveryProfit;
+
+  // Update margin calculation
+  this.margeBrute = this.totalRevenue > 0 ? (this.benefice / this.totalRevenue) * 100 : 0;
+}
+
+
+private calculateDeliveredOrdersMetrics(orders: any[]): void {
+  const { start, end } = this.getDateRange();
+
+  // Reset metrics before calculation
+  this.deliveredOrdersCount = 0;
+  this.deliveredOrdersRevenue = 0;
+
+  const filteredOrders = orders.filter(order => {
+    try {
+      if (!order || !order.orderDate) return false;
+
+      const orderDate = new Date(order.orderDate);
+      return isWithinInterval(orderDate, { start, end });
+    } catch (e) {
+      console.error('Error filtering date:', e);
+      return false;
+    }
+  });
+
+  this.deliveredOrdersCount = filteredOrders.length;
+  this.deliveredOrdersRevenue = filteredOrders.reduce((sum, order) => {
+    return sum + (order.grandTotal || order.totalAmount || 0);
+  }, 0);
+}
+
+
+applyPeriodFilter(): void {
+  try {
     const { start, end } = this.getDateRange();
 
-    const filteredOrders = orders.filter(order => {
+    // Filter sales
+    this.filteredSales = this.sales.filter(sale => {
       try {
-        const orderDate = new Date(order.orderDate || order.date);
-        return isWithinInterval(orderDate, { start, end });
+        const saleDate = new Date(sale.date);
+        return isWithinInterval(saleDate, { start, end });
       } catch (e) {
-        console.error('Erreur filtre date:', e);
+        console.error('Error filtering date:', e);
         return false;
       }
     });
 
-    this.deliveredOrdersCount = filteredOrders.length;
-    this.deliveredOrdersRevenue = filteredOrders.reduce((sum, order) => sum + (order.grandTotal || order.totalAmount || 0), 0);
+    // Filter expenses
+    this.filterExpenses();
+
+    // Filter command invoices
+    this.filterCommandInvoices();
+
+    // Filter and calculate delivered orders
+    this.calculateDeliveredOrdersMetrics(this.deliveredOrders);
+
+    // Calculate all metrics
+    this.calculateMetrics();
+
+    // Update charts
+    this.updateCharts();
+
+  } catch (e) {
+    console.error('Error applying filter:', e);
+    this.errorMessage = 'Filtering error';
   }
+}
 
-  applyPeriodFilter(): void {
-    try {
-      const { start, end } = this.getDateRange();
 
-      // Filtre les ventes
-      this.filteredSales = this.sales.filter(sale => {
-        try {
-          const saleDate = new Date(sale.date);
-          return isWithinInterval(saleDate, { start, end });
-        } catch (e) {
-          console.error('Erreur filtre date:', e);
-          return false;
-        }
-      });
-
-      // Filtre les dépenses
-      if (this.expenses.length > 0) {
-        this.filterExpenses();
-      }
-
-      // Filtre les factures fournisseurs
-      if (this.commandInvoices.length > 0) {
-        this.filterCommandInvoices();
-      }
-
-      // Filtre les commandes livrées
-      this.calculateDeliveredOrdersMetrics(this.deliveredOrders);
-
-      // Gestion des erreurs
-      if (this.filteredSales.length === 0 && this.filteredExpenses.length === 0 && this.deliveredOrdersCount === 0) {
-        this.errorMessage = 'Aucune donnée pour cette période';
-      } else {
-        this.errorMessage = null;
-      }
-
-      // Calcul des métriques et mise à jour des graphiques
-      this.calculateMetrics();
-      this.updateCharts();
-    } catch (e) {
-      console.error('Erreur application filtre:', e);
-      this.errorMessage = 'Erreur de filtrage';
-      this.deliveredOrdersCount = 0;
-      this.deliveredOrdersRevenue = 0;
-    }
-  }
-
-  //courbe
 
   private initCharts(): void {
     this.destroyCharts();
     this.updateLineChart();
-    this.initCombinedCAChart(); // <-- Ajoutez cette ligne
+    this.initCombinedCAChart();
+    this.initProfitChart();
   }
 
-  private updateCharts(): void {
-    this.updateLineChart();
-    this.initCombinedCAChart(); // <-- Ajoutez cette ligne
-  }
+private updateCharts(): void {
+  this.updateLineChart();
+  this.initCombinedCAChart();
+  this.initProfitChart();
+}
 
-  private initCombinedCAChart(): void {
-    const ctx = document.getElementById('combinedCAChart') as HTMLCanvasElement;
-    if (!ctx) return;
 
-    if (this.combinedCAChart) this.combinedCAChart.destroy();
+private initCombinedCAChart(): void {
+  const ctx = document.getElementById('combinedCAChart') as HTMLCanvasElement;
+  if (!ctx) return;
 
-    const dailySalesData = this.groupSalesByDay();
-    const dailyOrdersData = this.groupDeliveredOrdersByDay();
+  if (this.combinedCAChart) this.combinedCAChart.destroy();
 
-    const allDates = Array.from(new Set([
-      ...dailySalesData.labels,
-      ...dailyOrdersData.labels
-    ])).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+  const dailySalesData = this.groupSalesByDay();
+  const dailyOrdersData = this.groupDeliveredOrdersByDay();
 
-    const salesValues = allDates.map(date =>
-      dailySalesData.labels.includes(date)
-        ? dailySalesData.values[dailySalesData.labels.indexOf(date)]
-        : 0
-    );
+  const allDates = Array.from(new Set([
+    ...dailySalesData.labels,
+    ...dailyOrdersData.labels
+  ])).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
 
-    const ordersValues = allDates.map(date =>
-      dailyOrdersData.labels.includes(date)
-        ? dailyOrdersData.values[dailyOrdersData.labels.indexOf(date)]
-        : 0
-    );
+  const salesValues = allDates.map(date =>
+    dailySalesData.labels.includes(date)
+      ? dailySalesData.values[dailySalesData.labels.indexOf(date)]
+      : 0
+  );
 
-    const totalValues = allDates.map((_, i) => salesValues[i] + ordersValues[i]);
+  const ordersValues = allDates.map(date =>
+    dailyOrdersData.labels.includes(date)
+      ? dailyOrdersData.values[dailyOrdersData.labels.indexOf(date)]
+      : 0
+  );
 
-    const config: ChartConfiguration<'line', number[], string> = {
-      type: 'line',
-      data: {
-        labels: allDates,
-        datasets: [
-          {
-            label: 'CA Global',
-            data: totalValues,
-            borderColor: '#4ade80',
-            backgroundColor: 'rgba(74, 222, 128, 0.1)',
-            borderWidth: 3,
-            pointRadius: 4,
-            pointHoverRadius: 6,
-            pointBackgroundColor: '#4ade80',
-            fill: true,
-            tension: 0.4
-          },
-          {
-            label: 'Transactions',
-            data: salesValues,
-            borderColor: '#3b82f6',
-            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-            borderWidth: 2,
-            borderDash: [6, 3],
-            pointRadius: 4,
-            pointHoverRadius: 6,
-            pointBackgroundColor: '#3b82f6',
-            fill: false,
-            tension: 0.4
-          },
-          {
-            label: 'Commandes Livrées',
-            data: ordersValues,
-            borderColor: '#facc15',
-            backgroundColor: 'rgba(250, 204, 21, 0.1)',
-            borderWidth: 2,
-            pointRadius: 4,
-            pointHoverRadius: 6,
-            pointBackgroundColor: '#facc15',
-            fill: false,
-            tension: 0.4
-          }
-        ]
+  const totalValues = allDates.map((_, i) => salesValues[i] + ordersValues[i]);
+
+  const config: ChartConfiguration<'line', number[], string> = {
+    type: 'line',
+    data: {
+      labels: allDates,
+      datasets: [
+        {
+          label: 'CA Global',
+          data: totalValues,
+          borderColor: '#4ade80',
+          backgroundColor: 'rgba(74, 222, 128, 0.1)',
+          borderWidth: 3,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          pointBackgroundColor: '#4ade80',
+          fill: true,
+          tension: 0.4
+        },
+        {
+          label: 'Transactions',
+          data: salesValues,
+          borderColor: '#3b82f6',
+          backgroundColor: 'rgba(59, 130, 246, 0.1)',
+          borderWidth: 2,
+          borderDash: [6, 3],
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          pointBackgroundColor: '#3b82f6',
+          fill: false,
+          tension: 0.4
+        },
+        {
+          label: 'Commandes Livrées',
+          data: ordersValues,
+          borderColor: '#facc15',
+          backgroundColor: 'rgba(250, 204, 21, 0.1)',
+          borderWidth: 2,
+          pointRadius: 4,
+          pointHoverRadius: 6,
+          pointBackgroundColor: '#facc15',
+          fill: false,
+          tension: 0.4
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: {
+        duration: 1000,
+        easing: 'easeOutQuart'
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        animation: {
-          duration: 1000,
-          easing: 'easeOutQuart'
-        },
-        plugins: {
-          legend: {
-            position: 'bottom',
-            labels: {
-              font: {
-                size: 13
-              },
-              usePointStyle: true
-            }
-          },
-          tooltip: {
-            backgroundColor: '#ffffff',
-            titleColor: '#111827',
-            bodyColor: '#374151',
-            borderColor: '#e5e7eb',
-            borderWidth: 1,
-            callbacks: {
-              label: (context) => {
-                const label = context.dataset.label || '';
-                const value = context.raw as number;
-                return `${label}: ${value.toFixed(2)} DT`;
-              }
-            }
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            font: {
+              size: 13
+            },
+            usePointStyle: true
           }
         },
-        layout: {
-          padding: { top: 10, left: 10, right: 10, bottom: 10 }
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: {
-              color: '#374151',
-              font: { size: 12 },
-              callback: (value) => `${value} DT`
-            },
-            grid: {
-              color: '#e5e7eb',
-              drawBorder: false
-            },
-            title: {
-              display: true,
-              text: 'Montant (DT)',
-              font: {
-                size: 14,
-                weight: 'bold'
-              },
-              color: '#111827'
-            }
-          },
-          x: {
-            ticks: {
-              color: '#374151',
-              font: { size: 12 }
-            },
-            grid: {
-              display: false
-            },
-            title: {
-              display: true,
-              text: 'Date',
-              font: {
-                size: 14,
-                weight: 'bold'
-              },
-              color: '#111827'
+        tooltip: {
+          backgroundColor: '#ffffff',
+          titleColor: '#111827',
+          bodyColor: '#374151',
+          borderColor: '#e5e7eb',
+          borderWidth: 1,
+          callbacks: {
+            label: (context) => {
+              const label = context.dataset.label || '';
+              const value = context.raw as number;
+              return `${label}: ${value.toFixed(2)} DT`;
             }
           }
         }
+      },
+      layout: {
+        padding: { top: 10, left: 10, right: 10, bottom: 10 }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            color: '#374151',
+            font: { size: 12 },
+            callback: (value) => `${value} DT`
+          },
+          grid: {
+            color: '#e5e7eb',
+            drawBorder: false
+          },
+          title: {
+            display: true,
+            text: 'Montant (DT)',
+            font: {
+              size: 14,
+              weight: 'bold'
+            },
+            color: '#111827'
+          }
+        },
+        x: {
+          ticks: {
+            color: '#374151',
+            font: { size: 12 }
+          },
+          grid: {
+            display: false
+          },
+          title: {
+            display: true,
+            text: 'Date',
+            font: {
+              size: 14,
+              weight: 'bold'
+            },
+            color: '#111827'
+          }
+        }
       }
-    };
+    }
+  };
 
-    this.combinedCAChart = new Chart(ctx, config);
-  }
+  this.combinedCAChart = new Chart(ctx, config);
+}
+
 
   private groupDeliveredOrdersByDay(): { labels: string[]; values: number[] } {
     const groupedData: Record<string, number> = {};
@@ -1052,8 +1076,8 @@ export class FinancialDashboardComponent implements OnInit, AfterViewInit, OnDes
   }
 
   retryFiltering(): void {
-    this.errorMessage = null; // Réinitialiser le message d'erreur
-    this.applyPeriodFilter(); // Réappliquer le filtre
+    this.errorMessage = null;
+    this.applyPeriodFilter();
   }
 
   private destroyCharts(): void {
@@ -1065,5 +1089,80 @@ export class FinancialDashboardComponent implements OnInit, AfterViewInit, OnDes
       this.combinedCAChart.destroy();
       this.combinedCAChart = undefined;
     }
+    if (this.profitChart) {
+      this.profitChart.destroy();
+      this.profitChart = undefined;
+    }
+  }
+
+  private initProfitChart(): void {
+    const ctx = document.getElementById('profitChart') as HTMLCanvasElement;
+    if (!ctx) return;
+
+    if (this.profitChart) {
+      this.profitChart.destroy();
+    }
+
+    this.profitChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['Transactions', 'Delivered Orders', 'Total'],
+        datasets: [{
+          label: 'Gross Profit (DT)',
+          data: [
+            this.benefice,
+            this.calculateDeliveryProfit(),
+            this.benefice + this.calculateDeliveryProfit()
+          ],
+          backgroundColor: [
+            'rgba(54, 162, 235, 0.7)',
+            'rgba(255, 206, 86, 0.7)',
+            'rgba(75, 192, 192, 0.7)'
+          ],
+          borderColor: [
+            'rgba(54, 162, 235, 1)',
+            'rgba(255, 206, 86, 1)',
+            'rgba(75, 192, 192, 1)'
+          ],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Amount (DT)'
+            }
+          }
+        },
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: (context) => {
+                const label = context.dataset.label || '';
+                const value = context.raw as number;
+                return `${label}: ${value.toFixed(2)} DT`;
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  calculateDeliveryProfit(): number {
+    const costMap = new Map(
+      this.stock.map(item => [item.idProduit, item.prixUnitaireHT])
+    );
+
+    return this.deliveredOrders.reduce((total, order) => {
+      return total + (order.items?.reduce((sum: number, item: any) => {
+        const cost = (costMap.get(item.productId) || 0) * (item.quantity || 0);
+        return sum + (item.totalPrice || 0) - cost;
+      }, 0) || 0);
+    }, 0);
   }
 }

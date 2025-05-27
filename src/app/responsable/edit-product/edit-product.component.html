@@ -226,22 +226,6 @@
     </div>
 
     <div class="media-section">
-      <div class="media-group">
-        <label class="media-label">
-          <span class="label-text">Logo du Produit</span>
-          <input type="file" id="logo" (change)="onLogoSelected($event)" accept="image/*" hidden>
-          <div class="upload-box" [class.active]="logoPreview || existingLogo">
-            <div *ngIf="!logoPreview && !existingLogo" class="upload-placeholder">
-              <i class="fas fa-cloud-upload-alt"></i>
-              <p>Glisser-déposer ou cliquer pour uploader</p>
-            </div>
-            <img *ngIf="logoPreview || existingLogo" [src]="logoPreview || existingLogo" alt="Aperçu" class="image-preview">
-          </div>
-          <div class="validation-hint" *ngIf="showLogoError">
-            Veuillez sélectionner une image valide
-          </div>
-        </label>
-      </div>
 
       <div class="media-group">
         <label class="media-label">
@@ -258,26 +242,6 @@
                  alt="Aperçu" class="image-preview">
           </div>
           <div class="validation-hint" *ngIf="showFileError">
-            Veuillez sélectionner une image valide
-          </div>
-        </label>
-      </div>
-
-      <div class="media-group">
-        <label class="media-label">
-          <span class="label-text">Image de l'emballage</span>
-          <input type="file" id="packagingImage" (change)="onPackagingSelected($event)"
-                 accept="image/*" hidden>
-          <div class="upload-box" [class.active]="packagingPreview || existingPackaging">
-            <div *ngIf="!packagingPreview && !existingPackaging" class="upload-placeholder">
-              <i class="fas fa-cloud-upload-alt"></i>
-              <p>Glisser-déposer ou cliquer pour uploader</p>
-            </div>
-            <img *ngIf="packagingPreview || existingPackaging"
-                 [src]="packagingPreview || existingPackaging"
-                 alt="Aperçu de l'emballage" class="image-preview">
-          </div>
-          <div class="validation-hint" *ngIf="showPackagingError">
             Veuillez sélectionner une image valide
           </div>
         </label>

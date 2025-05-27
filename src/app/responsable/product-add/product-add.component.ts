@@ -22,16 +22,12 @@ export class ProductAddComponent {
   showFileError = false;
   currentStockQuantity: number = 0;
   showCustomCategoryField = false;
-  logoImagePreview: string | null = null;
-  showLogoFileError = false;
   showCustomOlfactiveFamilyField = false;
   private readonly ID_PATTERN = /^PRD-\d{3,5}$/i;
   private readonly NAME_MIN_LENGTH = 2;
   private readonly NAME_MAX_LENGTH = 50;
   showCustomVolumeField = false;
   private readonly VOLUME_PATTERN = /^\d+ml$/i;
-  packagingImagePreview: string | null = null;
-  showPackagingFileError = false;
 
   constructor(
     private fb: FormBuilder,
@@ -193,13 +189,13 @@ export class ProductAddComponent {
     this.productForm.get('customOlfactiveFamily')?.updateValueAndValidity();
   }
 
-  private setupQRAutoGeneration(): void {
-    this.productForm.get('name')?.valueChanges.subscribe(value => {
-      if (value?.length >= this.NAME_MIN_LENGTH && this.productForm.get('id')?.valid) {
-        this.generateQRCode(value);
-      }
-    });
-  }
+private setupQRAutoGeneration(): void {
+  this.productForm.get('id')?.valueChanges.subscribe(() => {
+    if (this.productForm.get('id')?.valid) {
+      this.generateQRCode();
+    }
+  });
+}
 
   formatProductId(): void {
     const idControl = this.productForm.get('id');
@@ -209,19 +205,6 @@ export class ProductAddComponent {
     }
   }
 
-  async generateQRCode(productName: string): Promise<void> {
-    try {
-      const qrData = JSON.stringify({
-        id: this.productForm.value.id,
-        name: productName,
-        timestamp: new Date().toISOString()
-      });
-      this.qrCodeImage = await this.qrCodeService.generateQRCode(qrData);
-    } catch (error) {
-      console.error('Erreur génération QR Code:', error);
-      this.errorMessage = "Échec de la génération du QR Code";
-    }
-  }
 
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
@@ -238,38 +221,6 @@ export class ProductAddComponent {
     }
   }
 
-  onLogoFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    this.showLogoFileError = false;
-
-    if (file && file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        this.logoImagePreview = reader.result as string;
-        this.productForm.patchValue({ logoImageUrl: this.logoImagePreview });
-      };
-      reader.readAsDataURL(file);
-    } else {
-      this.showLogoFileError = true;
-      this.logoImagePreview = null;
-    }
-  }
-
-  onPackagingFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    this.showPackagingFileError = false;
-
-    if (file && file.type.startsWith('image/')) {
-      const reader = new FileReader();
-      reader.onload = () => this.packagingImagePreview = reader.result as string;
-      reader.readAsDataURL(file);
-    } else {
-      this.showPackagingFileError = true;
-      this.packagingImagePreview = null;
-    }
-  }
 
   private setupStockSync(): void {
     this.productForm.get('id')?.valueChanges.subscribe(async (productId) => {
@@ -379,7 +330,7 @@ private prepareProduct(): Product {
       ? this.productForm.value.customOlfactiveFamily
       : this.productForm.value.olfactiveFamily;
 
-    const product: Product = {
+    return {
       ...this.productForm.value,
       id: this.productForm.value.id.toUpperCase(),
       category: category,
@@ -387,26 +338,17 @@ private prepareProduct(): Product {
       olfactiveFamily: olfactiveFamily,
       description: this.productForm.value.info,
       imageUrl: this.imagePreview!,
-      qrCode: this.qrCodeImage!,
+      qrCode: this.productForm.value.id.toUpperCase(), // ID comme texte
+      qrCodeImage: this.qrCodeImage, // Image base64 (optionnelle)
       stockQuantity: parseInt(this.productForm.value.stockQuantity, 10),
       createdAt: new Date().toISOString(),
-      logoImageUrl: this.logoImagePreview || undefined,
-      packagingImageUrl: this.packagingImagePreview || undefined,
       promotion: this.productForm.value.status === 'promotion' ? {
         startDate: this.productForm.value.promotionStart,
         endDate: this.productForm.value.promotionEnd,
         discountPercentage: this.productForm.value.discountPercentage
       } : undefined
     };
-
-    // Assurez-vous que la propriété promotion est définie si le statut est promotion
-    if (product.status === 'promotion' && !product.promotion) {
-      throw new Error('Promotion details are required for promotion status');
-    }
-
-    return product;
 }
-
 
   private handleSuccess(): void {
     this.router.navigate(['/products'], {
@@ -494,10 +436,7 @@ private prepareProduct(): Product {
     this.showCustomVolumeField = false;
     this.showCustomCategoryField = false;
     this.showCustomOlfactiveFamilyField = false;
-    this.logoImagePreview = null;
-    this.showLogoFileError = false;
-    this.packagingImagePreview = null;
-    this.showPackagingFileError = false;
+
     this.markFormAsTouched();
   }
 
@@ -519,17 +458,41 @@ private prepareProduct(): Product {
   }
 
   private handleScannedData(scannedData: any): void {
-    if (scannedData.id) {
-      this.productForm.patchValue({
-        id: scannedData.id
-      });
-    }
+  if (scannedData.id) {
+    this.productForm.patchValue({
+      id: scannedData.id
+    });
+    this.generateQRCode(); 
+  }
 
-    if (scannedData.name) {
-      this.productForm.patchValue({
-        name: scannedData.name
-      });
-      this.generateQRCode(scannedData.name);
+  if (scannedData.name) {
+    this.productForm.patchValue({
+      name: scannedData.name
+    });
+  }
+}
+
+  async generateQRCode(): Promise<void> {
+    if (!this.productForm.get('id')?.valid) return;
+
+    const productId = this.productForm.get('id')?.value;
+    try {
+      this.qrCodeImage = await this.qrCodeService.generateQRCodeImage(productId);
+    } catch (error) {
+      console.error('Erreur génération QR Code:', error);
+      this.errorMessage = 'Erreur lors de la génération du QR Code';
     }
   }
+
+downloadQRCode(): void {
+  if (!this.qrCodeImage) return;
+  
+  const link = document.createElement('a');
+  link.href = this.qrCodeImage;
+  link.download = `QRCode_${this.productForm.get('id')?.value || 'produit'}.png`;
+  link.click();
+}
+
+
+
 }

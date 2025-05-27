@@ -87,16 +87,19 @@
   </div>
 </div>
 
-          <!-- Gross profit card -->
-          <div class="col-md-3">
-            <div class="metric-box card h-100">
-              <div class="card-body">
-                <h4 class="card-title">Bénéfice brut</h4>
-                <p class="card-text display-6">{{ benefice | number:'1.2-2' }} DT</p>
-                <div class="subtext">Marge: {{ margeBrute | number:'1.1-1' }}%</div>
-              </div>
-            </div>
-          </div>
+<!-- Bénéfice brut -->
+<div class="col-md-3">
+  <div class="metric-box card h-100">
+    <div class="card-body">
+      <h4 class="card-title">Bénéfice brut</h4>
+      <p class="card-text display-6">{{ benefice | number:'1.2-2' }} DT</p>
+      <div class="subtext">
+        <span class="badge bg-primary">Marge: {{ margeBrute | number:'1.1-1' }}%</span>
+      </div>
+    </div>
+  </div>
+</div>
+
 
       <!-- Second row - Expenses and net profit -->
       <div class="col-md-12 mt-3">
@@ -131,27 +134,26 @@
     </div>
   </div>
 </div>
-          <!-- Net profit card -->
-          <div class="col-md-6">
-            <div class="metric-box highlight-secondary card h-100">
-              <div class="card-body">
-                <h4 class="card-title">Bénéfice net</h4>
-                <p class="card-text display-6">{{ (benefice - totalExpenses) | number:'1.2-2' }} DT</p>
-                <div class="d-flex justify-content-between">
-                  <small class="text-muted">Après dépenses</small>
-                  <span class="badge"
-                        [ngClass]="(benefice - totalExpenses) >= 0 ? 'bg-success' : 'bg-danger'">
-                    {{ ((benefice - totalExpenses) / totalCA * 100) | number:'1.1-1' }}% de marge nette
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <!-- Bénéfice net -->
+<div class="col-md-3">
+  <div class="metric-box highlight-secondary card h-100">
+    <div class="card-body">
+      <h4 class="card-title">Bénéfice net</h4>
+      <p class="card-text display-6">{{ (benefice - totalExpenses) | number:'1.2-2' }} DT</p>
+      <div class="d-flex justify-content-between">
+        <small class="text-muted">Après dépenses</small>
+        <span class="badge" [ngClass]="(benefice - totalExpenses) >= 0 ? 'bg-success' : 'bg-danger'">
+          {{ ((benefice - totalExpenses) / totalRevenue * 100) | number:'1.1-1' }}% de marge nette
+        </span>
       </div>
     </div>
-<!--courbe -->
+  </div>
+</div>
+      </div>
+    </div>
+
 <br>
+<!--courbe -->
     <div class="col-lg-12">
   <div class="chart-container card h-100">
     <div class="card-body">
@@ -162,6 +164,20 @@
     </div>
   </div>
 </div>
+
+<!-- Nouveau graphique des bénéfices -->
+<div class="col-lg-12 mt-4">
+  <div class="chart-container card h-100">
+    <div class="card-body">
+      <h4 class="card-title">Bénéfices par Type de Vente</h4>
+      <div class="chart-wrapper">
+        <canvas id="profitChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 
   <!-- Expenses Section -->
   <div class="expenses-section mt-5" *ngIf="showExpensesSection">

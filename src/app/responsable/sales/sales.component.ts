@@ -12,7 +12,6 @@ import { BarcodeFormat } from '@zxing/library';
 import { v4 as uuidv4 } from 'uuid';
 import { HttpClient } from '@angular/common/http';
 import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
-import { NotificationService } from '../../services/notification.service';
 
 @Component({
   selector: 'app-sales',
@@ -33,7 +32,7 @@ export class SalesComponent implements OnInit {
   historyError: string | null = null;
   imageLoaded: boolean = false;
 
-  // Propriétés du scanner
+  // Scanner properties
   scannerEnabled = false;
   availableCameras: MediaDeviceInfo[] = [];
   currentCamera: MediaDeviceInfo | undefined;
@@ -57,8 +56,7 @@ export class SalesComponent implements OnInit {
   db: any;
   dbPath: any;
 
-
-  // Données
+  // Data
   salesHistory: Sale[] = [];
   customers: any[] = [];
   dailyRevenue = 0;
@@ -75,8 +73,7 @@ export class SalesComponent implements OnInit {
     private stockService: StockService,
     private saleService: SaleService,
     private customerService: CustomerService,
-    private dialog: MatDialog,
-    private notificationService: NotificationService
+    private dialog: MatDialog
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -108,6 +105,7 @@ export class SalesComponent implements OnInit {
     this.loadSalesHistory();
     this.loadDailyStats();
   }
+
   generateCustomerId(customerName: string): string {
     const normalizedName = customerName.trim().toLowerCase();
     const today = new Date().toISOString().slice(0, 10);
@@ -125,7 +123,7 @@ export class SalesComponent implements OnInit {
     return this.createNewCustomerId();
   }
 
-   private createNewCustomerId(): string {
+  private createNewCustomerId(): string {
     const timestamp = new Date().getTime().toString().slice(-6);
     const random = Math.floor(100 + Math.random() * 900);
     return `CLI-${timestamp}-${random}`;
@@ -138,7 +136,7 @@ export class SalesComponent implements OnInit {
     });
   }
 
-   private loadDailyStats(): void {
+  private loadDailyStats(): void {
     this.loadingStats = true;
     this.statsError = null;
 
@@ -183,8 +181,9 @@ export class SalesComponent implements OnInit {
 
   refreshQRCode(): void {
     if (this.selectedProduct) {
-        this.selectedProduct = { ...this.selectedProduct };
-    }}
+      this.selectedProduct = { ...this.selectedProduct };
+    }
+  }
 
   closeScanner(): void {
     this.scannerEnabled = false;
@@ -198,32 +197,30 @@ export class SalesComponent implements OnInit {
     try {
       let productId: string;
 
+      // Essayer de parser le QR code comme JSON
       try {
         const qrData = JSON.parse(resultString);
-        console.log('QR code structuré:', qrData);
-
-        if (!qrData.idProduit && !qrData.id) {
-          throw new Error('Structure QR code invalide');
-        }
-        productId = qrData.idProduit || qrData.id;
-      } catch (jsonError) {
-        console.log('QR code non-JSON - Utilisation directe de la chaîne');
+        productId = qrData.idProduit || qrData.id || resultString;
+      } catch {
+        // Si ce n'est pas du JSON, utiliser directement la chaîne
         productId = resultString;
       }
 
-      productId = productId.toString().trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
+      // Nettoyer l'ID du produit
+      productId = productId.toString().trim().toLowerCase();
 
-      const product = this.availableProducts.find(p => {
-        const normalizedId = p.idProduit.toString().trim().toLowerCase();
-        return normalizedId === productId && p.quantite > 0;
-      });
+      // Trouver le produit correspondant
+      const product = this.availableProducts.find(p =>
+        p.idProduit.toString().trim().toLowerCase() === productId
+      );
 
       if (product) {
-        console.log('Produit trouvé:', product);
-        this.scannedProduct = {
-          ...product,
-          qrCode: this.generateProductQRCode(product),
-        };
+        if (product.quantite <= 0) {
+          this.showProductNotFoundError('Ce produit est en rupture de stock');
+          return;
+        }
+
+        this.scannedProduct = { ...product };
         this.selectedQuantity = 1;
       } else {
         this.showProductNotFoundError(productId);
@@ -313,8 +310,7 @@ export class SalesComponent implements OnInit {
     }
   }
 
-
- incrementQuantity(): void {
+  incrementQuantity(): void {
     if (this.selectedProduct) {
       this.selectedQuantity++;
     }
@@ -327,21 +323,75 @@ export class SalesComponent implements OnInit {
   }
 
   addScannedToCart(): void {
-    if (this.scannedProduct) {
-        this.selectedProduct = this.scannedProduct;
-        this.selectedProductId = this.scannedProduct.idProduit;
-        this.addToCart();
-        this.closeScanner();
+    if (!this.scannedProduct) return;
+
+    // Vérifier si le produit est en stock
+    if (this.scannedProduct.quantite <= 0) {
+      alert('Ce produit est en rupture de stock');
+      return;
     }
+
+    // Vérifier la quantité
+    if (this.selectedQuantity <= 0 || this.selectedQuantity > this.scannedProduct.quantite) {
+      alert('Quantité invalide');
+      return;
+    }
+
+    // Créer l'item pour le panier
+    const newItem: SaleItem = {
+      productId: this.scannedProduct.idProduit,
+      name: this.scannedProduct.nomProduit,
+      quantity: this.selectedQuantity,
+      unitPrice: this.scannedProduct.prixDeVente,
+      originalPrice: this.scannedProduct.prixDeVente,
+      totalPrice: this.selectedQuantity * this.scannedProduct.prixDeVente
+    };
+
+    // Vérifier si le produit existe déjà dans le panier
+    const existingItemIndex = this.currentSale.items.findIndex(
+      item => item.productId === newItem.productId
+    );
+
+    if (existingItemIndex !== -1) {
+      // Mettre à jour la quantité si le produit existe déjà
+      this.currentSale.items[existingItemIndex].quantity += newItem.quantity;
+      this.currentSale.items[existingItemIndex].totalPrice =
+        this.currentSale.items[existingItemIndex].quantity *
+        this.currentSale.items[existingItemIndex].unitPrice;
+    } else {
+      // Ajouter le nouvel item
+      this.currentSale.items.push(newItem);
+    }
+
+    // Mettre à jour les totaux
+    this.updateCartTotals();
+
+    // Fermer le scanner
+    this.closeScanner();
   }
 
- get canAddToCart(): boolean {
+  get canAddToCart(): boolean {
     return !!this.selectedProduct &&
            this.selectedQuantity > 0;
   }
 
   addToCart(): void {
-    if (!this.selectedProduct || !this.canAddToCart) return;
+    if (!this.selectedProduct) {
+      alert('Aucun produit sélectionné');
+      return;
+    }
+
+    if (this.selectedProduct.quantite <= 0) {
+      alert('Ce produit est en rupture de stock');
+      return;
+    }
+
+    if (this.selectedQuantity <= 0 || this.selectedQuantity > this.selectedProduct.quantite) {
+      alert('Quantité invalide');
+      return;
+    }
+
+    if (!this.canAddToCart) return;
 
     const unitPrice = this.selectedProduct.prixDeVente;
     const originalPrice = this.selectedProduct.prixDeVente;
@@ -368,17 +418,6 @@ export class SalesComponent implements OnInit {
 
     this.updateCartTotals();
     this.clearSelection();
-    
-    // Notification pour produit à faible stock
-    if (this.selectedProduct.quantite <= 10) {
-      this.notificationService.createNotification({
-        title: 'Stock faible',
-        message: `Le produit ${this.selectedProduct.nomProduit} a été vendu alors qu'il reste ${this.selectedProduct.quantite} unités`,
-        type: 'low-stock',
-        productId: this.selectedProduct.idProduit,
-        priority: 'medium'
-      });
-    }
   }
 
   get canFinalize(): boolean {
@@ -657,12 +696,10 @@ export class SalesComponent implements OnInit {
     return 0;
   }
 
-
-
-updateDiscount(): void {
-  this.currentSale.discountAmount = this.currentSale.subTotal * (this.currentSale.discount / 100);
-  this.currentSale.totalAmount = this.currentSale.subTotal - this.currentSale.discountAmount;
-}
+  updateDiscount(): void {
+    this.currentSale.discountAmount = this.currentSale.subTotal * (this.currentSale.discount / 100);
+    this.currentSale.totalAmount = this.currentSale.subTotal - this.currentSale.discountAmount;
+  }
 
   removeItem(index: number): void {
     this.currentSale.items.splice(index, 1);
@@ -675,11 +712,6 @@ updateDiscount(): void {
     this.selectedQuantity = 1;
   }
 
-
-
-
-
-  //meriem
   async finalizeSale(): Promise<void> {
     if (!this.canFinalize) return;
 
@@ -711,29 +743,28 @@ updateDiscount(): void {
       console.error('Erreur finale:', error);
     }
   }
-  
-private async validateSaleData(saleData: any): Promise<void> {
-  if (!saleData.items || saleData.items.length === 0) {
-    throw new Error('Le panier est vide');
+
+  private async validateSaleData(saleData: any): Promise<void> {
+    if (!saleData.items || saleData.items.length === 0) {
+      throw new Error('Le panier est vide');
+    }
+
+    if (saleData.totalAmount <= 0) {
+      throw new Error('Le montant total doit être positif');
+    }
+
+    if (!saleData.paymentMethod) {
+      throw new Error('Méthode de paiement non spécifiée');
+    }
   }
 
-  if (saleData.totalAmount <= 0) {
-    throw new Error('Le montant total doit être positif');
+  private async processSaleTransaction(saleData: any): Promise<string> {
+    const saleRef = this.db.list(this.dbPath).push(saleData);
+    return saleRef.key || '';
   }
-
-  if (!saleData.paymentMethod) {
-    throw new Error('Méthode de paiement non spécifiée');
-  }
-}
-
-private async processSaleTransaction(saleData: any): Promise<string> {
-  const saleRef = this.db.list(this.dbPath).push(saleData);
-  return saleRef.key || '';
-}
 
   updateCartTotals(): void {
     this.currentSale.subTotal = this.currentSale.items.reduce((sum, item) => sum + item.totalPrice, 0);
     this.updateDiscount();
   }
-
 }

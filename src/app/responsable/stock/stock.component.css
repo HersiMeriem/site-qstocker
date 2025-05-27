@@ -1,377 +1,127 @@
-/* Style général du body */
-body {
-  background-color: #f8f9fa; /* Couleur de fond pour le corps de la page */
-  font-family: 'Arial', sans-serif; /* Police générale */
-  margin: 0; /* Supprime les marges par défaut */
-  padding: 0; /* Supprime le padding par défaut */
-}
-
-/* Style général du conteneur */
-.container {
-  background-color: transparent; /* Fond transparent */
-  padding: 0; /* Pas de padding */
-  width: 100%; /* Prend toute la largeur */
-  max-width: 100%; /* Supprime toute limite de largeur */
-  margin: 0; /* Supprime les marges */
-}
-
-
-/* Style du titre */
-h3.text-success {
-  color: #28a745 !important;
-  font-weight: 700;
-  font-size: 2rem; /* Augmente la taille */
-  border-bottom: 3px solid #28a745; /* Sous-ligne */
-  padding-bottom: 10px;
-}
-
-/* Style du bouton de rafraîchissement */
-.btn-outline-success.float-end {
-  border-color: #28a745;
-  font-weight: 500;
-  transition: all 0.3s ease;
-}
-
-.btn-outline-success.float-end:hover {
-  background-color: #28a745;
-  color: white;
-  transform: translateY(-2px); /* Effet de levée au survol */
-}
-
-/* Style de la barre de recherche */
-.form-control {
-  border-radius: 25px; /* Bords arrondis */
-  padding: 12px 20px; /* Espacement interne */
-  border: 1px solid #ced4da; /* Bordure */
-}
-
-/* Style des alertes */
-.alert {
-  border-radius: 8px; /* Coins arrondis pour les alertes */
-}
-
-/* Style du tableau */
-.table-responsive {
-  border-radius: 8px;
-  overflow: hidden;
-}
-
+/* ---- Table générale ---- */
 .table {
-  margin-bottom: 0; /* Ajuste pour éviter les marges */
-}
-
-/* Style des images */
-img[alt="QR Code"],
-img[alt="Produit"] {
-  background: white;
-  padding: 5px; /* Espace autour des images */
-  border-radius: 5px; /* Coins arrondis */
-  border: 1px solid #dee2e6; /* Bordure légère */
-}
-
-/* Style responsive */
-@media (max-width: 768px) {
-  .container {
-    padding: 15px; /* Réduire le padding sur les petits écrans */
-  }
-
-  h3.text-success {
-    font-size: 1.5rem; /* Ajuster la taille pour mobile */
-  }
-
-  .btn-sm {
-    width: 100%; /* Largeur 100% sur mobile */
-    margin-bottom: 5px; /* Espace entre les boutons */
-  }
-}
-
-/* Animation du spinner */
-.spinner-border.text-success {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-
-
-.status-badge {
-  padding: 5px 10px;
-  border-radius: 12px;
-  font-size: 0.8rem;
-  font-weight: 500;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  white-space: nowrap;
-}
-
-.status-badge i {
-  font-size: 0.6rem;
-}
-
-.status-active {
-  background-color: #e6f7e6;
-  color: #2e7d32;
-  border: 1px solid #2e7d32;
-}
-
-.status-inactive {
-  background-color: #ffebee;
-  color: #c62828;
-  border: 1px solid #c62828;
-}
-
-.status-promotion {
-  background-color: #fff3e0;
-  color: #e65100;
-  border: 1px solid #e65100;
-}
-
-/* Styles pour les prix */
-.promo-price-container {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.original-price {
-  font-size: 0.8rem;
-  color: #6c757d;
-}
-
-.discounted-price {
-  font-weight: bold;
-  font-size: 0.9rem;
-}
-
-.expired-promo-container {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.expired-text {
-  font-size: 0.7rem;
-  color: #dc3545;
-  margin-left: 3px;
-}
-
-/* Style pour les seuils de stock */
-.bg-warning {
-  background-color: #ffc107 !important;
-}/* Style général du body */
-body {
-  background-color: #f8f9fa; /* Couleur de fond pour le corps de la page */
-  font-family: 'Arial', sans-serif; /* Police générale */
-  margin: 0; /* Supprime les marges par défaut */
-  padding: 0; /* Supprime le padding par défaut */
-}
-
-/* Style général du conteneur */
-.container {
-  background-color: transparent; /* Fond transparent */
-  padding: 0; /* Pas de padding */
-  width: 100%; /* Prend toute la largeur */
-  max-width: 100%; /* Supprime toute limite de largeur */
-  margin: 0; /* Supprime les marges */
-}
-
-
-/* Style du titre */
-h3.text-success {
-  color: #28a745 !important;
-  font-weight: 700;
-  font-size: 2rem; /* Augmente la taille */
-  border-bottom: 3px solid #28a745; /* Sous-ligne */
-  padding-bottom: 10px;
-}
-
-/* Style du bouton de rafraîchissement */
-.btn-outline-success.float-end {
-  border-color: #28a745;
-  font-weight: 500;
-  transition: all 0.3s ease;
-}
-
-.btn-outline-success.float-end:hover {
-  background-color: #28a745;
-  color: white;
-  transform: translateY(-2px); /* Effet de levée au survol */
-}
-
-/* Style de la barre de recherche */
-.form-control {
-  border-radius: 25px; /* Bords arrondis */
-  padding: 12px 20px; /* Espacement interne */
-  border: 1px solid #ced4da; /* Bordure */
-}
-
-/* Style des alertes */
-.alert {
-  border-radius: 8px; /* Coins arrondis pour les alertes */
-}
-
-/* Style du tableau */
-.table-responsive {
-  border-radius: 8px;
+  border-radius: 10px;
   overflow: hidden;
+  background-color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
-.table {
-  margin-bottom: 0; /* Ajuste pour éviter les marges */
-}
-
-/* Style des images */
-img[alt="QR Code"],
-img[alt="Produit"] {
-  background: white;
-  padding: 5px; /* Espace autour des images */
-  border-radius: 5px; /* Coins arrondis */
-  border: 1px solid #dee2e6; /* Bordure légère */
-}
-
-/* Style responsive */
-@media (max-width: 768px) {
-  .container {
-    padding: 15px; /* Réduire le padding sur les petits écrans */
-  }
-
-  h3.text-success {
-    font-size: 1.5rem; /* Ajuster la taille pour mobile */
-  }
-
-  .btn-sm {
-    width: 100%; /* Largeur 100% sur mobile */
-    margin-bottom: 5px; /* Espace entre les boutons */
-  }
-}
-
-/* Animation du spinner */
-.spinner-border.text-success {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-
-
-.status-badge {
-  padding: 5px 10px;
-  border-radius: 12px;
-  font-size: 0.8rem;
-  font-weight: 500;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  white-space: nowrap;
-}
-
-.status-badge i {
-  font-size: 0.6rem;
-}
-
-.status-active {
-  background-color: #e6f7e6;
-  color: #2e7d32;
-  border: 1px solid #2e7d32;
-}
-
-.status-inactive {
-  background-color: #ffebee;
-  color: #c62828;
-  border: 1px solid #c62828;
-}
-
-.status-promotion {
-  background-color: #fff3e0;
-  color: #e65100;
-  border: 1px solid #e65100;
-}
-
-/* Styles pour les prix */
-.promo-price-container {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.original-price {
-  font-size: 0.8rem;
-  color: #6c757d;
-}
-
-.discounted-price {
-  font-weight: bold;
-  font-size: 0.9rem;
-}
-
-.expired-promo-container {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.expired-text {
-  font-size: 0.7rem;
-  color: #dc3545;
-  margin-left: 3px;
-}
-
-/* Style pour les seuils de stock */
-.bg-warning {
-  background-color: #ffc107 !important;
-}
-
-
-/* statut */
-.status-badge {
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 500;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.status-out-of-stock {
-  background-color: #ffedd5;
-  color: #f97316;
-}
-
-.status-badge {
-  padding: 0.25em 0.5em;
-  border-radius: 0.25rem;
-  font-size: 0.875em;
-}
-
-.status-active {
-  background-color: #d4edda;
+/* ---- En-tête de table ---- */
+.table thead th {
+  background-color: #d1e7dd;
   color: #155724;
+  font-weight: 600;
+  text-align: center;
+  vertical-align: middle;
 }
 
-.status-inactive {
-  background-color: #f8d7da;
-  color: #721c24;
+/* ---- Cellules de table ---- */
+.table td {
+  vertical-align: middle;
+  text-align: center;
+  font-size: 0.92rem;
+}
+
+/* ---- Image produit ---- */
+.table img {
+  border-radius: 8px;
+  transition: transform 0.3s ease;
+}
+
+.table img:hover {
+  transform: scale(1.2);
+}
+
+/* ---- QR Code ---- */
+.qr-code-img {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+  margin-bottom: 4px;
+}
+
+.qr-code-details {
+  font-size: 0.75rem;
+  color: #6c757d;
+}
+
+/* ---- Boutons ---- */
+button.btn {
+  transition: all 0.3s ease;
+  border-radius: 20px;
+}
+
+button.btn:hover {
+  transform: scale(1.05);
+  opacity: 0.9;
+}
+
+/* Styles pour les statuts */
+.status-badge {
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.status-active {
+  background-color: #d1fae5;
+  color: #065f46;
 }
 
 .status-promotion {
-  background-color: #fff3cd;
-  color: #856404;
+  background-color: #fef3c7;
+  color: #92400e;
 }
 
 .status-out-of-stock {
-  background-color: #f8d7da;
-  color: #721c24;
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+.status-inactive {
+  background-color: #e5e7eb;
+  color: #4b5563;
 }
 
 .expired-text {
-  font-size: 0.75em;
+  font-size: 0.7rem;
+  opacity: 0.8;
+}
+
+/* ---- Spinner de chargement ---- */
+.spinner-border {
+  border-width: 5px;
+}
+
+/* ---- Input recherche ---- */
+input.form-control {
+  border-radius: 30px;
+  padding: 0.6rem 1.2rem;
+  border-color: #198754;
+}
+
+/* ---- Titres et titres secondaires ---- */
+h3 {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-weight: 600;
+}
+
+/* ---- Promo prices ---- */
+.promo-price-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.original-price {
   color: #6c757d;
+  font-size: 0.8rem;
+}
+
+.discounted-price {
+  font-size: 1rem;
 }

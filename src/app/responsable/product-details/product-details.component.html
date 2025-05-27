@@ -34,21 +34,22 @@
           </div>
 
           <!-- Section QR Code -->
-          <div class="qr-section p-3 bg-light rounded">
-            <h5 class="text-center mb-3">
-              <i class="fas fa-qrcode me-2"></i>QR Code du produit
-            </h5>
-            <div *ngIf="qrCodeUrl" class="text-center">
-              <img [src]="qrCodeUrl" alt="QR Code" class="img-thumbnail qr-image" />
-              <p class="text-muted small mt-2">
-                Scannez ce code pour plus d'informations
-              </p>
-            </div>
-            <div *ngIf="!qrCodeUrl" class="alert alert-warning text-center">
-              <i class="fas fa-exclamation-triangle me-2"></i>
-              QR Code non disponible
-            </div>
-          </div>
+         <div class="qr-section p-3 bg-light rounded">
+  <h5 class="text-center mb-3">
+    <i class="fas fa-qrcode me-2"></i>QR Code du produit
+  </h5>
+  <div *ngIf="qrCodeUrl" class="text-center">
+    <img [src]="qrCodeUrl" alt="QR Code" class="img-thumbnail qr-image" />
+    <p class="text-muted small mt-2">
+      Scannez ce code pour plus d'informations
+    </p>
+  </div>
+  <div *ngIf="!qrCodeUrl" class="alert alert-warning text-center">
+    <i class="fas fa-exclamation-triangle me-2"></i>
+    QR Code non disponible
+  </div>
+</div>
+
         </div>
 
         <!-- Colonne droite (Détails) -->

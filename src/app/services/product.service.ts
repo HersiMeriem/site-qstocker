@@ -3,94 +3,102 @@ import { AngularFireDatabase } from '@angular/fire/compat/database';
 import { Observable, firstValueFrom, throwError } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { Product } from '../models/product';
+import { QrCodeService } from './qr-code.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ProductService {
   private dbPath = '/products';
+  private readonly ID_PATTERN = /^PRD-\d{3,5}$/i;
 
-  constructor(private db: AngularFireDatabase) {}
+  constructor(
+    private db: AngularFireDatabase,
+    private qrCodeService: QrCodeService
+  ) {}
 
-async addProduct(product: Product): Promise<void> {
+  async addProduct(product: Product): Promise<void> {
     try {
-        // Validation de base
-        if (!/^PRD-\d{3,5}$/i.test(product.id)) {
-            throw new Error('Format ID invalide. Exemple: PRD-1234');
-        }
+      // Validation de base
+      if (!this.ID_PATTERN.test(product.id)) {
+        throw new Error('Format ID invalide. Exemple: PRD-1234');
+      }
 
-        // Validation du nom
-        if (!product.name || product.name.trim().length < 3) {
-            throw new Error('Le nom doit faire au moins 3 caractères');
-        }
+      if (!product.name || product.name.trim().length < 3) {
+        throw new Error('Le nom doit faire au moins 3 caractères');
+      }
 
-        // Nettoyage et formatage
-        const formattedId = product.id.toUpperCase().trim();
-        const now = new Date().toISOString();
+      const formattedId = product.id.toUpperCase().trim();
+      const now = new Date().toISOString();
 
-        // Vérification existence
-        const ref = this.db.database.ref(`${this.dbPath}/${formattedId}`);
-        if ((await ref.once('value')).exists()) {
-            throw new Error('ID déjà utilisé');
-        }
+      // Vérification existence
+      const ref = this.db.database.ref(`${this.dbPath}/${formattedId}`);
+      if ((await ref.once('value')).exists()) {
+        throw new Error('ID déjà utilisé');
+      }
 
-        // Validation des promotions
-        if (product.status === 'promotion') {
-            if (!product.promotion) {
-                throw new Error('Promotion requise pour le statut promotion');
-            }
+      // Validation promotion
+      if (product.status === 'promotion') {
+        this.validatePromotion(product.promotion);
+      }
 
-            const { discountPercentage, startDate, endDate } = product.promotion;
-            const start = new Date(startDate);
-            const end = new Date(endDate);
+      // Validation authenticité
+      if (product.isAuthentic === undefined) {
+        throw new Error('Le champ d\'authenticité est requis');
+      }
 
-            if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-                throw new Error('Dates de promotion invalides');
-            }
+      // Génération QR Code
+      const qrCodeImage = await this.qrCodeService.generateQRCodeImage(product.id);
 
-            if (start >= end) {
-                throw new Error('La date de fin doit être après la date de début');
-            }
+      const productData = {
+        ...this.cleanProductFields(product),
+        id: formattedId,
+        qrCode: product.id,
+        qrCodeImage: qrCodeImage,
+        status: product.status || 'active',
+        createdAt: now,
+        updatedAt: now,
+        promotion: product.status === 'promotion' && product.promotion ? {
+          discountPercentage: product.promotion.discountPercentage,
+          startDate: product.promotion.startDate,
+          endDate: product.promotion.endDate
+        } : null
+      };
 
-            if (!discountPercentage || discountPercentage < 1 || discountPercentage > 100) {
-                throw new Error('Remise doit être entre 1% et 100%');
-            }
-        }
-
-        // Ajout de la validation de l’authenticité
-        if (product.isAuthentic === undefined) {
-            throw new Error('Le champ d\'authenticité est requis');
-        }
-
-        // Structure finale du produit
-        const productData = {
-            ...this.cleanProductFields(product), // Nettoyage des champs supplémentaires
-            id: formattedId,
-            status: product.status || 'active', // Valeur par défaut
-            createdAt: now,
-            updatedAt: now,
-            promotion: product.status === 'promotion' && product.promotion ? {
-                discountPercentage: product.promotion.discountPercentage,
-                startDate: product.promotion.startDate,
-                endDate: product.promotion.endDate
-            } : null
-        };
-
-        await ref.set(productData);
+      await ref.set(productData);
 
     } catch (error) {
-        console.error(`Erreur d'ajout produit: ${error}`);
-        throw new Error(this.getUserFriendlyError(error));
+      console.error(`Erreur d'ajout produit: ${error}`);
+      throw new Error(this.getUserFriendlyError(error));
     }
-}
+  }
 
+  private validatePromotion(promotion?: any): void {
+    if (!promotion) {
+      throw new Error('Promotion requise pour le statut promotion');
+    }
 
+    const { discountPercentage, startDate, endDate } = promotion;
+    const start = new Date(startDate);
+    const end = new Date(endDate);
 
-private cleanProductFields(product: Product): Partial<Product> {
-    // Enlève les champs inutiles pour Firebase
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      throw new Error('Dates de promotion invalides');
+    }
+
+    if (start >= end) {
+      throw new Error('La date de fin doit être après la date de début');
+    }
+
+    if (!discountPercentage || discountPercentage < 1 || discountPercentage > 100) {
+      throw new Error('Remise doit être entre 1% et 100%');
+    }
+  }
+
+  private cleanProductFields(product: Product): Partial<Product> {
     const { id, promotion, ...cleanProduct } = product;
     return cleanProduct;
-}
+  }
 
   private getUserFriendlyError(error: unknown): string {
     const message = (error as Error).message;
@@ -177,5 +185,22 @@ private cleanProductFields(product: Product): Partial<Product> {
         locationScore: 0
       }
     });
+  }
+
+  async generateMissingQRCodes(): Promise<void> {
+    const products = await firstValueFrom(this.getProducts());
+
+    for (const product of products) {
+      if (!product.qrCodeImage) {
+        try {
+          const qrCodeImage = await this.qrCodeService.generateQRCodeImage(product.id);
+          await this.db.database.ref(`${this.dbPath}/${product.id}`).update({
+            qrCodeImage: qrCodeImage
+          });
+        } catch (error) {
+          console.error(`Failed to generate QR code for product ${product.id}:`, error);
+        }
+      }
+    }
   }
 }

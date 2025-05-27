@@ -338,17 +338,18 @@ export class StockComponent implements OnInit, OnDestroy {
     await this.db.list('/notifications').push(notification);
   }
 
-
-
-
-
-
-
-
-
-
-
-  // meriem
+getStatusColor(status: string): string {
+  switch (status) {
+    case 'active':
+      return 'green';
+    case 'promotion':
+      return 'orange';
+    case 'out-of-stock':
+      return 'red';
+    default:
+      return 'gray';
+  }
+}
     
   getStatusLabel(status: string): string {
     const statusMap: {[key: string]: string} = {
@@ -427,5 +428,11 @@ private async syncStockStatus(): Promise<void> {
   } catch (error) {
     console.error('Error syncing status:', error);
   }
+}
+
+//qrcode 
+getProductQrCode(productId: string): string | null {
+  const product = this.products.find(p => p.id === productId);
+  return product?.qrCodeImage || null;
 }
 }

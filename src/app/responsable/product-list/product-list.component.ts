@@ -39,6 +39,8 @@ export class ProductListComponent implements OnInit, OnDestroy {
   scanMode: 'add' | 'edit' | 'delete' | 'view' | null = null;
   availableDevices: MediaDeviceInfo[] = [];
 
+
+  
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -70,6 +72,9 @@ export class ProductListComponent implements OnInit, OnDestroy {
         }
       }
     });
+     this.productService.generateMissingQRCodes().catch(error => {
+    console.error('Error generating missing QR codes:', error);
+  });
   }
 
   private extractFilters(products: Product[]): void {
@@ -509,5 +514,7 @@ private loadProducts(): void {
     }
   });
 }
+
+
 
 }

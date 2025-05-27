@@ -1,24 +1,35 @@
-/* Général */
+/* General Styles */
 body, .dashboard-wrapper {
   font-family: 'Inter', 'Segoe UI', sans-serif;
   background-color: #f5f7fa;
   color: #2c3e50;
+  padding: 2rem;
 }
 
-/* Titres */
+/* Headings */
 h2, h3, h4, h5 {
   color: #1a1a1a;
   font-weight: 600;
 }
 
-/* Boutons */
+.dashboard-wrapper h2 {
+  font-size: 1.8rem;
+  color: #2a2f45;
+}
+
+/* Buttons */
+.btn {
+  border-radius: 6px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
 .btn-primary {
   background: linear-gradient(135deg, #4CAF50, #66BB6A);
   border: none;
   color: white;
-  transition: 0.3s ease;
-  padding: 0.375rem 0.75rem; /* Réduire le padding pour rendre les boutons plus compacts */
-  font-size: 1rem; /* Augmenter légèrement la taille de la police */
+  padding: 0.375rem 0.75rem;
+  font-size: 1rem;
 }
 
 .btn-primary:hover {
@@ -27,20 +38,29 @@ h2, h3, h4, h5 {
 }
 
 .btn-sm {
-  padding: 0.25rem 0.5rem; /* Réduire davantage le padding pour les boutons de petite taille */
-  font-size: 0.9rem; /* Augmenter légèrement la taille de la police pour les boutons de petite taille */
+  padding: 0.25rem 0.5rem;
+  font-size: 0.9rem;
 }
 
 .d-flex {
   display: flex;
-  gap: 0.5rem; 
+  gap: 0.5rem;
 }
 
+/* Filters */
+.filters {
+  margin-top: 1rem;
+  margin-bottom: 1.5rem;
+}
 
+.form-select,
+.form-control {
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  padding: 6px 12px;
+}
 
-
-
-/* Cartes métriques */
+/* Metric Cards */
 .metric-box {
   background-color: #ffffff;
   border-radius: 14px;
@@ -48,88 +68,80 @@ h2, h3, h4, h5 {
   padding: 1rem;
   transition: transform 0.2s ease;
 }
+
 .metric-box:hover {
   transform: translateY(-3px);
 }
+
+.metric-box .card-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #4e73df;
+}
+
+.metric-box .card-text {
+  font-size: 1.6rem;
+  font-weight: bold;
+  color: #1b1e23;
+}
+
+.metric-box .subtext {
+  font-size: 0.8rem;
+  color: #6c757d;
+  margin-top: 0.5rem;
+}
+
+/* Highlight Boxes */
 .highlight {
   background: linear-gradient(135deg, #f2f4f8, #e0f7fa);
 }
+
 .highlight-secondary {
   background: linear-gradient(135deg, #e1f5fe, #fce4ec);
 }
 
-/* Sous-texte */
-.subtext, small.text-muted {
-  font-size: 0.9rem;
-  color: #7f8c8d;
+/* Progress Bars */
+.progress {
+  background-color: #e9ecef;
+  border-radius: 8px;
 }
 
-/* Filtres */
-.filters select, .filters input {
+.progress-bar {
   border-radius: 8px;
-  border: 1px solid #ccc;
-  padding: 6px 12px;
+  transition: width 0.5s ease;
 }
 
 /* Badges */
 .badge {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
+  padding: 0.4em 0.6em;
   border-radius: 12px;
-  padding: 4px 8px;
 }
 
-/* Tableau */
-.table {
-  background-color: white;
-  border-radius: 10px;
-  overflow: hidden;
-}
-.table thead {
-  background-color: #f0f3f5;
-  color: #333;
-}
-.table tbody tr:hover {
-  background-color: #f9f9f9;
+.badge.bg-primary {
+  background-color: #4e73df !important;
 }
 
-/* Modal personnalisé */
-.custom-modal .modal-container {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 6px 16px rgba(0,0,0,0.2);
-  padding: 1.5rem;
-}
-.custom-modal .modal-header {
-  border-bottom: 1px solid #eee;
-  margin-bottom: 1rem;
+.badge.bg-success {
+  background-color: #1cc88a !important;
 }
 
-/* Progression */
-.progress {
-  background-color: #e9ecef;
-  border-radius: 6px;
-}
-.progress-bar {
-  border-radius: 6px;
-  transition: width 0.5s ease;
+.badge.bg-danger {
+  background-color: #e74a3b !important;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .dashboard-wrapper {
-    padding: 0 1rem;
-  }
-  .chart-container canvas {
-    max-height: 250px !important;
-  }
+.badge.bg-warning {
+  background-color: #f6c23e !important;
 }
 
+/* Chart Containers */
 .chart-container {
   background-color: #ffffff;
   border-radius: 16px;
   padding: 1.5rem;
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.04);
   margin-bottom: 2rem;
+  min-height: 400px;
 }
 
 .chart-container h4 {
@@ -142,26 +154,48 @@ h2, h3, h4, h5 {
   background: linear-gradient(to bottom, #ffffff, #f9fafb);
   border-radius: 16px;
   padding: 1rem;
+  position: relative;
+  height: 350px;
+  width: 100%;
 }
 
 canvas {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   border-radius: 12px;
-}
-
-.chart-wrapper canvas {
   width: 100% !important;
   max-height: 360px;
 }
 
-.chart-container canvas {
-  width: 100% !important;
-  max-height: 360px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+/* Tables */
+.table-responsive {
+  margin-top: 1rem;
 }
 
-/* Modal personnalisé */
+.table {
+  background-color: white;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.table thead {
+  background-color: #f0f3f5;
+  color: #333;
+}
+
+.table th {
+  color: #6c757d;
+  font-weight: 600;
+}
+
+.table td {
+  vertical-align: middle;
+}
+
+.table-hover tbody tr:hover {
+  background-color: #f2f6fc;
+}
+
+/* Modals */
 .custom-modal {
   position: fixed;
   top: 0;
@@ -193,7 +227,7 @@ canvas {
   width: 500px;
   max-width: 90%;
   position: relative;
-  z-index: 1001; /* Assurez-vous que le modal est au-dessus de l'overlay */
+  z-index: 1001;
 }
 
 .modal-header {
@@ -209,4 +243,25 @@ canvas {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+}
+
+/* Error Message */
+.error-message {
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .dashboard-wrapper {
+    padding: 1rem;
+  }
+  
+  .metric-box .card-text {
+    font-size: 1.4rem;
+  }
+  
+  .chart-container canvas {
+    max-height: 250px !important;
+  }
 }

@@ -18,6 +18,7 @@ export class ProductDetailsComponent implements OnInit {
   stockLoading = true;
   error: string | null = null;
   stockItem: StockItem | null = null;
+  qrCodeService: any;
 
   constructor(
     private route: ActivatedRoute,
@@ -76,22 +77,24 @@ export class ProductDetailsComponent implements OnInit {
     });
   }
 
-  private loadQrCode(productId: string): void {
-    if (this.product?.qrCode) {
-      this.qrCodeUrl = this.product.qrCode;
-      return;
-    }
-
-    this.stockService.getProduct(productId).subscribe({
-      next: (stockItem) => {
-        this.qrCodeUrl = stockItem?.qrCode || null;
-      },
-      error: (err) => {
-        console.error('Erreur lors du chargement du QR code:', err);
-        this.qrCodeUrl = null;
-      }
-    });
+ private loadQrCode(productId: string): void {
+  if (this.product?.qrCodeImage) {
+    this.qrCodeUrl = this.product.qrCodeImage;
+    return;
   }
+
+  this.qrCodeService.generateQRCodeImage(productId).subscribe({
+    next: (qrCodeImage) => {
+      this.qrCodeUrl = qrCodeImage;
+    },
+    error: (err) => {
+      console.error('Erreur lors du chargement du QR code:', err);
+      this.qrCodeUrl = null;
+    }
+  });
+}
+
+
 
   deleteProduct(productId: string): void {
     if (confirm('Êtes-vous sûr de vouloir supprimer ce produit ?')) {

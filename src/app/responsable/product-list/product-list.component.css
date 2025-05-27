@@ -735,3 +735,44 @@ body {
   font-size: 0.8em;
   opacity: 0.8;
 }
+
+
+.qr-code-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  width: fit-content;
+  margin-top: 6px;
+}
+
+.qr-code-img {
+  width: 35px;
+  height: 35px;
+  object-fit: contain;
+  border-radius: 4px;
+  transition: transform 0.3s ease;
+}
+
+.qr-code-section:hover .qr-code-img {
+  transform: scale(1.05);
+}
+
+.qr-code-details {
+  margin-top: 2px;
+  font-size: 9px;
+  color: #888;
+  font-weight: 400;
+  text-align: center;
+  line-height: 1;
+}
+
+
+.product-id {
+  font-size: 10px;
+  color: #666;
+  font-weight: 400;
+}

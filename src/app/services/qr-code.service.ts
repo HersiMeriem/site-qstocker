@@ -1,4 +1,3 @@
-// services/qr-code.service.ts
 import { Injectable } from '@angular/core';
 import * as QRCode from 'qrcode';
 
@@ -6,12 +5,26 @@ import * as QRCode from 'qrcode';
   providedIn: 'root'
 })
 export class QrCodeService {
-  async generateQRCode(data: string): Promise<string> {
+  async generateQRCodeImage(data: string): Promise<string> {
     try {
-      return await QRCode.toDataURL(data); // Retourne une image en base64
+      const options: QRCode.QRCodeToDataURLOptions = {
+        errorCorrectionLevel: 'H',
+        margin: 2,
+        width: 300,
+        color: {
+          dark: '#000000',
+          light: '#ffffff'
+        }
+      };
+      return await QRCode.toDataURL(data, options);
     } catch (error) {
-      console.error("Erreur QR Code:", error);
+      console.error("Erreur génération QR Code:", error);
       throw error;
     }
+  }
+
+  // Ajoutez cette méthode pour la compatibilité
+  async generateQRCode(data: string): Promise<string> {
+    return this.generateQRCodeImage(data);
   }
 }

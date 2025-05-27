@@ -41,17 +41,8 @@ export class EditProductComponent implements OnInit {
   currentStockQuantity = 0;
   private dialogRef!: MatDialogRef<any>;
 
-  // Logo properties
-  logoFile: File | null = null;
-  logoPreview: string | null = null;
-  existingLogo: string | undefined;
-  showLogoError = false;
 
-  // Packaging properties
-  packagingFile: File | null = null;
-  packagingPreview: string | null = null;
-  existingPackaging: string | undefined;
-  showPackagingError = false;
+
 
   private readonly VOLUME_PATTERN = /^\d+ml$/i;
   private readonly NAME_MIN_LENGTH = 2;
@@ -225,9 +216,7 @@ export class EditProductComponent implements OnInit {
     this.showCustomOlfactiveFamilyField = isCustomOlfactiveFamily;
     this.showCustomCategoryField = isCustomCategory;
     this.existingImage = product.imageUrl;
-    this.existingLogo = product.logoImageUrl;
     this.existingQrCode = product.qrCode;
-    this.existingPackaging = product.packagingImageUrl;
   }
 
   private formatDateForInput(isoDate: string): string {
@@ -316,21 +305,22 @@ export class EditProductComponent implements OnInit {
     setTimeout(() => this.showSuccessMessage = false, 3000);
   }
 
-  async generateQRCode(productName: string): Promise<void> {
-    if (!productName || !this.productForm.get('id')?.value) return;
+async generateQRCode(productName: string): Promise<void> {
+  if (!productName || !this.productForm.get('id')?.value) return;
 
-    try {
-      const qrData = JSON.stringify({
-        productId: this.productForm.get('id')?.value,
-        productName: productName,
-        timestamp: new Date().toISOString()
-      });
-      this.qrCodeImage = await this.qrCodeService.generateQRCode(qrData);
-    } catch (error) {
-      console.error('Erreur génération QR Code:', error);
-      this.errorMessage = "Échec de la génération du QR Code";
-    }
+  try {
+    const qrData = JSON.stringify({
+      productId: this.productForm.get('id')?.value,
+      productName: productName,
+      timestamp: new Date().toISOString()
+    });
+    // Utilisez generateQRCodeImage au lieu de generateQRCode
+    this.qrCodeImage = await this.qrCodeService.generateQRCodeImage(qrData);
+  } catch (error) {
+    console.error('Erreur génération QR Code:', error);
+    this.errorMessage = "Échec de la génération du QR Code";
   }
+}
 
   onFileSelected(event: any): void {
     const file = event.target.files?.[0];
@@ -349,39 +339,8 @@ export class EditProductComponent implements OnInit {
     }
   }
 
-  onLogoSelected(event: any): void {
-    const file = event.target.files?.[0];
-    if (file && file.type.startsWith('image/')) {
-      this.logoFile = file;
-      this.showLogoError = false;
-      const reader = new FileReader();
-      reader.onload = (e: any) => {
-        this.logoPreview = e.target.result as string;
-      };
-      reader.readAsDataURL(file);
-    } else {
-      this.showLogoError = true;
-      this.logoFile = null;
-      this.logoPreview = null;
-    }
-  }
 
-  onPackagingSelected(event: any): void {
-    const file = event.target.files?.[0];
-    if (file && file.type.startsWith('image/')) {
-      this.packagingFile = file;
-      this.showPackagingError = false;
-      const reader = new FileReader();
-      reader.onload = (e: any) => {
-        this.packagingPreview = e.target.result as string;
-      };
-      reader.readAsDataURL(file);
-    } else {
-      this.showPackagingError = true;
-      this.packagingFile = null;
-      this.packagingPreview = null;
-    }
-  }
+
 
   async updateProduct(): Promise<void> {
     this.errorMessage = null;
@@ -457,57 +416,49 @@ export class EditProductComponent implements OnInit {
     return product.volume?.includes('100ml') ? 50 : 30;
   }
 
-  private prepareUpdateData(): Partial<Product> {
-    const formData = this.productForm.getRawValue();
+private prepareUpdateData(): Partial<Product> {
+  const formData = this.productForm.getRawValue();
 
-    const olfactiveFamily = formData.olfactiveFamily === 'other' ? formData.customOlfactiveFamily : formData.olfactiveFamily;
-    const category = formData.category === 'other' ? formData.customCategory : formData.category;
-    const volume = formData.volume === 'other' ? formData.customVolume : formData.volume;
+  const olfactiveFamily = formData.olfactiveFamily === 'other' ? formData.customOlfactiveFamily : formData.olfactiveFamily;
+  const category = formData.category === 'other' ? formData.customCategory : formData.category;
+  const volume = formData.volume === 'other' ? formData.customVolume : formData.volume;
 
-    const updateData: Partial<Product> = {
-      name: formData.name,
-      isAuthentic: formData.isAuthentic,
-      brand: formData.brand,
-      perfumeType: formData.perfumeType,
-      olfactiveFamily: olfactiveFamily,
-      origin: formData.origin,
-      category: category,
-      description: formData.info,
-      volume: volume,
-      stockQuantity: Number(formData.stockQuantity),
-      status: formData.status,
-      updatedAt: new Date().toISOString(),
-      postPromoStatus: formData.postPromoStatus,
-    };
+  const updateData: Partial<Product> = {
+    name: formData.name,
+    isAuthentic: formData.isAuthentic,
+    brand: formData.brand,
+    perfumeType: formData.perfumeType,
+    olfactiveFamily: olfactiveFamily,
+    origin: formData.origin,
+    category: category,
+    description: formData.info,
+    volume: volume,
+    stockQuantity: Number(formData.stockQuantity),
+    status: formData.status,
+    updatedAt: new Date().toISOString(),
+    postPromoStatus: formData.postPromoStatus,
+  };
 
-    if (this.imageFile) {
-      updateData.imageUrl = this.imagePreview || undefined;
-    }
-
-    if (this.logoFile) {
-      updateData.logoImageUrl = this.logoPreview || undefined;
-    }
-
-    if (this.qrCodeImage) {
-      updateData.qrCode = this.qrCodeImage;
-    }
-
-    if (this.packagingFile) {
-      updateData.packagingImageUrl = this.packagingPreview || undefined;
-    }
-
-    if (formData.status === 'promotion') {
-      updateData.promotion = {
-        discountPercentage: formData.discountPercentage,
-        startDate: new Date(formData.promotionStart).toISOString(),
-        endDate: new Date(formData.promotionEnd).toISOString()
-      };
-    } else {
-      updateData.promotion = null;
-    }
-
-    return updateData;
+  if (this.imageFile) {
+    updateData.imageUrl = this.imagePreview || undefined;
   }
+
+  if (this.qrCodeImage) {
+    updateData.qrCode = this.qrCodeImage;
+  }
+
+  if (formData.status === 'promotion') {
+    updateData.promotion = {
+      discountPercentage: formData.discountPercentage,
+      startDate: new Date(formData.promotionStart).toISOString(),
+      endDate: new Date(formData.promotionEnd).toISOString()
+    };
+  } else {
+    updateData.promotion = null;
+  }
+
+  return updateData;
+}
 
   async removePromotion(): Promise<void> {
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
@@ -676,10 +627,4 @@ export class EditProductComponent implements OnInit {
     this.productForm.markAsDirty();
   }
 
-  removeCurrentPackaging(): void {
-    this.existingPackaging = undefined;
-    this.packagingPreview = null;
-    this.packagingFile = null;
-    this.productForm.markAsDirty();
-  }
 }

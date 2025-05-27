@@ -1,9 +1,7 @@
 <div class="container mt-4">
-  <!-- Modal d'édition -->
   <div class="modal fade" id="editStockModal" tabindex="-1" aria-labelledby="editStockModalLabel" aria-hidden="true">
     <div class="modal-dialog">
-      <div class="modal-content">
-      </div>
+      <div class="modal-content"></div>
     </div>
   </div>
 
@@ -19,7 +17,7 @@
       type="text"
       [(ngModel)]="searchTerm"
       (input)="filterStock()"
-      placeholder="🔍 Rechercher par nom ou ID produit..."
+      placeholder="🔍 Rechercher par nom..."
       class="form-control"
     >
   </div>
@@ -41,37 +39,42 @@
   </div>
 
   <div class="table-responsive" *ngIf="!loading && stock.length > 0">
-    <table class="table table-hover align-middle">
+    <table class="table table-hover align-middle text-center">
       <thead class="table-success">
         <tr>
           <th>QR Code</th>
           <th>Image</th>
-          <th>ID Produit</th>
           <th>Nom</th>
           <th>Quantité</th>
           <th>Prix Unitaire HT</th>
           <th>Prix de Vente</th>
           <th>Valeur Totale</th>
           <th>Statut</th>
-          <th>Dernière Mise à Jour</th>
+          <th>Dernière MAJ</th>
           <th>Actions</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let produit of filteredStock">
           <td>
-            <img *ngIf="produit.qrCode" [src]="produit.qrCode" alt="QR Code" style="width: 50px; height: 50px; object-fit: contain;">
+            <div class="qr-code-section" *ngIf="getProductQrCode(produit.idProduit)">
+              <img [src]="getProductQrCode(produit.idProduit)" alt="QR Code" style="width: 50px; height: 50px;">
+               <div class="qr-code-details">
+      <span class="product-id">ID: {{ produit.idProduit | slice:0:8 }}</span>
+    </div>
+            </div>
           </td>
           <td>
             <img *ngIf="produit.imageUrl" [src]="produit.imageUrl" alt="Produit" style="width: 50px; height: 50px; object-fit: cover;">
           </td>
-          <td class="fw-bold">#{{ produit.idProduit | slice:0:8 }}</td>
-          <td>{{ produit.nomProduit }}</td>
+          <td class="fw-bold">{{ produit.nomProduit }}</td>
           <td>
             <span class="badge rounded-pill"
-                  [ngClass]="{'bg-primary': produit.quantite > produit.seuil,
-                             'bg-warning text-dark': produit.quantite <= produit.seuil && produit.quantite > 0,
-                             'bg-danger': produit.quantite === 0}">
+              [ngClass]="{
+                'bg-primary': produit.quantite > produit.seuil,
+                'bg-warning text-dark': produit.quantite <= produit.seuil && produit.quantite > 0,
+                'bg-danger': produit.quantite === 0
+              }">
               {{ produit.quantite }}
               <span *ngIf="produit.quantite <= produit.seuil" class="ms-1">
                 <i class="fas fa-exclamation-circle"></i>
@@ -79,64 +82,42 @@
             </span>
           </td>
           <td>
-            {{ produit.prixUnitaireHT | number:'1.3-3' }} DT
-            <br>
-            <small class="text-muted">PMP (Moyenne pondérée)</small>
+            {{ produit.prixUnitaireHT | number:'1.3-3' }} DT<br>
+            <small class="text-muted">PMP</small>
           </td>
           <td>
             <span *ngIf="!produit.editingPrice" (click)="startEditingPrice(produit)">
-              <!-- Cas promotion active -->
-              <span *ngIf="produit.status === 'promotion'">
-                <div *ngIf="isPromotionActive(produit)" class="promo-price-container">
-                  <span class="original-price">
-                    <del>{{ produit.prixDeVente | number:'1.3-3' }} DT</del>
-                  </span>
-                  <span class="discounted-price text-success fw-bold">
-                    {{ calculateDiscountedPrice(produit) | number:'1.3-3' }} DT
-                  </span>
-                  <span class="badge bg-danger ms-1">
-                    -{{ produit.promotion?.discountPercentage }}%
-                  </span>
-                </div>
-                <div *ngIf="!isPromotionActive(produit)" class="expired-promo-container">
+              <ng-container *ngIf="produit.status === 'promotion'">
+                <ng-container *ngIf="isPromotionActive(produit)">
+                  <span class="original-price"><del>{{ produit.prixDeVente | number:'1.3-3' }} DT</del></span>
+                  <span class="text-success fw-bold">{{ calculateDiscountedPrice(produit) | number:'1.3-3' }} DT</span>
+                  <span class="badge bg-danger ms-1">-{{ produit.promotion?.discountPercentage }}%</span>
+                </ng-container>
+                <ng-container *ngIf="!isPromotionActive(produit)">
                   {{ produit.prixDeVente | number:'1.3-3' }} DT
-                  <span class="badge bg-secondary ms-1">
-                    <i class="fas fa-clock"></i> Promo expirée
-                  </span>
-                </div>
-              </span>
-              <!-- Cas normal (pas de promotion) -->
-              <span *ngIf="produit.status !== 'promotion'">
+                  <span class="badge bg-secondary ms-1"><i class="fas fa-clock"></i> Expirée</span>
+                </ng-container>
+              </ng-container>
+              <ng-container *ngIf="produit.status !== 'promotion'">
                 {{ produit.prixDeVente | number:'1.3-3' }} DT
-              </span>
+              </ng-container>
             </span>
             <div *ngIf="produit.editingPrice" class="input-group input-group-sm">
-              <input type="number"
-                     [(ngModel)]="produit.prixDeVente"
-                     class="form-control"
-                     step="0.001"
-                     min="0">
-              <button class="btn btn-success" (click)="savePrice(produit)">
-                <i class="fas fa-check"></i>
-              </button>
-              <button class="btn btn-danger" (click)="cancelEditingPrice(produit)">
-                <i class="fas fa-times"></i>
-              </button>
+              <input type="number" [(ngModel)]="produit.prixDeVente" class="form-control" step="0.001" min="0">
+              <button class="btn btn-success" (click)="savePrice(produit)"><i class="fas fa-check"></i></button>
+              <button class="btn btn-danger" (click)="cancelEditingPrice(produit)"><i class="fas fa-times"></i></button>
             </div>
           </td>
           <td class="fw-bold" [ngClass]="{'text-success': produit.quantite > 0, 'text-danger': produit.quantite === 0}">
             {{ calculateTotalValue(produit.prixUnitaireHT, produit.quantite) | number:'1.3-3' }} DT
           </td>
-       <td>
+        <td>
   <span class="status-badge" [ngClass]="'status-' + produit.status">
     <i [class]="getStatusIcon(produit.status)"></i>
     {{ getStatusLabel(produit.status) }}
-    <span *ngIf="produit.status === 'promotion' && !isPromotionActive(produit)" class="expired-text">
-      (Expirée)
-    </span>
+    <span *ngIf="produit.status === 'promotion' && !isPromotionActive(produit)" class="expired-text">(Expirée)</span>
   </span>
 </td>
-
           <td>{{ produit.dateMiseAJour | date:'dd/MM/yy HH:mm' }}</td>
           <td>
             <button class="btn btn-sm btn-info" (click)="showPriceHistory(produit)" title="Historique des prix">

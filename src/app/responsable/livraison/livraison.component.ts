@@ -150,7 +150,7 @@ updateOrderStatusDirect(orderId: string, newStatus: 'pending' | 'processing' | '
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(20);
     doc.setTextColor('#1e4868');
-    doc.text('QStocker', 15, 20);
+    doc.text('QParfy', 15, 20);
     
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(12);

@@ -64,32 +64,30 @@
         </li>
 
   <!-- Profil Responsable -->
-<li class="nav-item dropdown profile-dropdown">
-  <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-<div class="profile-avatar">
-  <img [src]="profileImageUrl" alt="Profil">
-</div>
-    <span class="profile-name ms-2">Responsable</span>
-  </a>
-  <ul class="dropdown-menu dropdown-menu-end profile-menu" aria-labelledby="userDropdown">
-    <li>
-      <a class="dropdown-item" routerLink="/responsable/setting">
-        <i class="fas fa-cog me-2"></i>Paramètres
-      </a>
-    </li>
-    <li>
-      <a class="dropdown-item" routerLink="/responsable/profil">
-        <i class="fas fa-user me-2"></i>Profil
-      </a>
-    </li>
-    <li><hr class="dropdown-divider"></li>
-    <li>
-      <a class="dropdown-item logout-item" href="#" (click)="logout()">
-        <i class="fas fa-sign-out-alt me-2"></i>Déconnexion
-      </a>
-    </li>
-  </ul>
-</li>
+  <li class="nav-item dropdown profile-dropdown">
+    <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+      <!-- Remplacement du cercle par une image fixe -->
+      <img src="assets/images/res.png" alt="Photo responsable" class="fixed-profile-image">
+    </a>
+    <ul class="dropdown-menu dropdown-menu-end profile-menu" aria-labelledby="userDropdown">
+      <li>
+        <a class="dropdown-item" routerLink="/responsable/setting">
+          <i class="fas fa-cog me-2"></i>Paramètres
+        </a>
+      </li>
+      <li>
+        <a class="dropdown-item" routerLink="/responsable/profil">
+          <i class="fas fa-user me-2"></i>Profil
+        </a>
+      </li>
+      <li><hr class="dropdown-divider"></li>
+      <li>
+        <a class="dropdown-item logout-item" href="#" (click)="logout()">
+          <i class="fas fa-sign-out-alt me-2"></i>Déconnexion
+        </a>
+      </li>
+    </ul>
+  </li>
       </ul>
     </div>
   </div>

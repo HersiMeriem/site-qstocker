@@ -31,30 +31,12 @@
   <div *ngIf="activeTab === 'profile'" class="tab-content">
     <div class="profile-header">
       <div class="profile-picture-container">
-        <img [src]="managerProfile.photoUrl || 'assets/default-profile.png'" 
-             alt="Photo de profil" 
-             class="profile-picture">
-        <div class="profile-picture-actions">
-          <input type="file" 
-                 id="profilePhoto" 
-                 (change)="handleFileInput($event)" 
-                 accept="image/*" 
-                 style="display: none;">
-          <label for="profilePhoto" class="btn btn-secondary">
-            <i class="fas fa-camera"></i> Changer
-          </label>
-          <button *ngIf="managerProfile.photoUrl" 
-                  (click)="removeProfilePhoto()" 
-                  class="btn btn-danger">
-            <i class="fas fa-trash"></i> Supprimer
-          </button>
-        </div>
-        <div *ngIf="uploadProgress !== null" class="upload-progress">
-          <div class="progress-bar">
-            <div class="progress" [style.width]="uploadProgress + '%'"></div>
-          </div>
-          <span>{{ uploadProgress }}%</span>
-        </div>
+        <!-- Remplacement par une image fixe -->
+        <img src="assets/images/res.png"
+             alt="Photo de profil responsable"
+             class="fixed-profile-image">
+
+        <!-- Suppression des boutons de modification -->
       </div>
 
       <button class="btn btn-export" (click)="exportUserData()">
@@ -62,6 +44,7 @@
       </button>
     </div>
 
+    <!-- Le reste du code reste inchangé -->
     <div class="profile-info">
       <div class="profile-item">
         <strong>Nom :</strong>
@@ -78,7 +61,7 @@
       </div>
       <div class="profile-info">
         <!-- ... autres champs ... -->
-        
+
         <div class="profile-item">
           <strong>Entrepôt assigné :</strong>
           <span *ngIf="!editing">{{ managerProfile.warehouse }}</span>
@@ -88,19 +71,19 @@
             </option>
           </select>
         </div>
-        
+
         <div class="profile-item">
           <strong>Date d'embauche :</strong>
           <span *ngIf="!editing">{{ managerProfile.hireDate | date:'dd/MM/yyyy' }}</span>
           <input *ngIf="editing" type="date" [(ngModel)]="managerProfile.hireDate" class="form-control">
         </div>
-        
+
         <div class="profile-item">
           <strong>Téléphone :</strong>
           <span *ngIf="!editing">{{ managerProfile.phone }}</span>
           <input *ngIf="editing" [(ngModel)]="managerProfile.phone" class="form-control" type="tel">
         </div>
-        
+
         <div class="profile-item">
           <strong>Adresse :</strong>
           <span *ngIf="!editing">{{ managerProfile.address }}</span>
@@ -127,20 +110,20 @@
   <!-- Onglet Sécurité -->
   <div *ngIf="activeTab === 'security'" class="tab-content">
     <h3><i class="fas fa-lock"></i> Modification du mot de passe</h3>
-    
+
     <form (ngSubmit)="changePassword()" class="password-form">
       <div class="form-group">
         <label for="oldPassword">Ancien mot de passe :</label>
-        <input type="password" id="oldPassword" [(ngModel)]="oldPassword" name="oldPassword" 
+        <input type="password" id="oldPassword" [(ngModel)]="oldPassword" name="oldPassword"
                required class="form-control" placeholder="Ancien mot de passe">
       </div>
-      
+
       <div class="form-group">
         <label for="newPassword">Nouveau mot de passe :</label>
-        <input type="password" id="newPassword" [(ngModel)]="newPassword" name="newPassword" 
+        <input type="password" id="newPassword" [(ngModel)]="newPassword" name="newPassword"
                required class="form-control" placeholder="Nouveau mot de passe"
                (input)="checkPasswordStrength(newPassword)">
-        
+
         <div class="password-strength">
           <h5>Exigences de sécurité :</h5>
           <ul>
@@ -152,7 +135,7 @@
           </ul>
         </div>
       </div>
-      
+
       <button type="submit" class="btn btn-primary" [disabled]="isLoading || !isPasswordStrong()">
         <i class="fas fa-key"></i> {{ isLoading ? 'Chargement...' : 'Modifier le mot de passe' }}
       </button>
@@ -162,13 +145,13 @@
   <!-- Onglet Activité -->
   <div *ngIf="activeTab === 'activity'" class="tab-content">
     <h3><i class="fas fa-history"></i> Journal des activités</h3>
-    
+
     <div class="activity-actions">
       <button class="btn btn-danger" (click)="confirmClearAllActivities()" [disabled]="activityLog.length === 0">
         <i class="fas fa-trash-alt"></i> Tout supprimer
       </button>
     </div>
-    
+
     <div class="activity-log">
       <div *ngFor="let log of activityLog; let i = index" class="log-entry">
         <div class="log-icon">
@@ -183,12 +166,12 @@
           <i class="fas fa-times"></i>
         </button>
       </div>
-      
+
       <div *ngIf="activityLog.length === 0" class="no-activity">
         Aucune activité récente à afficher
       </div>
     </div>
-    
+
     <!-- Modal de confirmation -->
     <div *ngIf="showClearConfirmation" class="confirmation-modal">
       <div class="modal-content">
@@ -201,24 +184,25 @@
       </div>
     </div>
   </div>
+
 <!-- Partie Messagerie Seulement -->
 <div *ngIf="activeTab === 'messages'" class="messaging-container">
   <!-- Liste des conversations -->
   <div class="conversation-list">
     <!-- Formulaire nouvelle conversation -->
     <div class="new-conversation">
-      <input [(ngModel)]="newConversationEmail" 
+      <input [(ngModel)]="newConversationEmail"
              placeholder="Email du destinataire"
              type="email"
              class="form-control">
-      <button (click)="createNewConversation()" 
+      <button (click)="createNewConversation()"
               class="btn btn-primary">
         <i class="fas fa-plus"></i> Nouvelle conversation
       </button>
     </div>
 
     <!-- Liste des conversations existantes -->
-    <div *ngFor="let conv of conversations" 
+    <div *ngFor="let conv of conversations"
          class="conversation-item"
          (click)="selectConversation(conv.id)"
          [class.active]="activeConversation?.id === conv.id">
@@ -239,7 +223,7 @@
        [class.sent]="msg.senderEmail === currentUserEmail"
        [class.received]="msg.senderEmail !== currentUserEmail"
        [class.email-reply]="msg.isEmailReply">
-    
+
     <div class="message-header">
       <span class="sender">
         {{msg.senderEmail === currentUserEmail ? 'Vous' : msg.senderEmail}}
@@ -247,25 +231,24 @@
       </span>
       <span class="time">{{msg.timestamp | date:'shortTime'}}</span>
     </div>
-    
+
     <div class="message-content">{{msg.content}}</div>
   </div>
 </div>
 
     <!-- Zone d'écriture -->
     <div class="message-input">
-      <textarea [(ngModel)]="newMessage" 
+      <textarea [(ngModel)]="newMessage"
                 placeholder="Écrivez votre message..."
                 (keyup.enter)="sendMessage()"
                 class="form-control"></textarea>
-      <button (click)="sendMessage()" 
+      <button (click)="sendMessage()"
               class="btn btn-primary"
               [disabled]="!newMessage.trim() || !activeConversation">
         <i class="fas fa-paper-plane"></i> Envoyer
       </button>
     </div>
   </div>
-
 
   <!-- Aucune conversation sélectionnée -->
   <ng-template #noConversation>
@@ -280,35 +263,35 @@
 <div *ngIf="activeTab === 'tasks'" class="tab-content">
   <div class="task-manager">
     <h3><i class="fas fa-tasks"></i> Gestion des Tâches</h3>
-    
+
     <div class="task-form">
-      <input [(ngModel)]="newTask" 
-             placeholder="Ajouter une nouvelle tâche..." 
+      <input [(ngModel)]="newTask"
+             placeholder="Ajouter une nouvelle tâche..."
              (keyup.enter)="addTask()"
              #taskInput
              class="form-control">
-      <button (click)="addTask()" 
+      <button (click)="addTask()"
               class="btn btn-primary"
               [disabled]="!newTask.trim()">
         <i class="fas fa-plus"></i> Ajouter
       </button>
     </div>
-    
+
     <div class="task-filters">
-      <button (click)="filterTasks('all')" 
+      <button (click)="filterTasks('all')"
               [class.active]="currentFilter === 'all'">
         Toutes
       </button>
-      <button (click)="filterTasks('active')" 
+      <button (click)="filterTasks('active')"
               [class.active]="currentFilter === 'active'">
         Actives
       </button>
-      <button (click)="filterTasks('completed')" 
+      <button (click)="filterTasks('completed')"
               [class.active]="currentFilter === 'completed'">
         Terminées
       </button>
     </div>
-    
+
     <div class="task-list">
       <div *ngFor="let task of filteredTasks" class="task-item">
         <div class="task-content">
@@ -327,22 +310,22 @@
           </button>
         </div>
       </div>
-      
+
       <div *ngIf="tasks.length === 0" class="no-tasks">
         <i class="fas fa-check-circle"></i>
         <p>Aucune tâche pour le moment</p>
       </div>
-      
+
       <div *ngIf="tasks.length > 0" class="task-stats">
         {{completedTasksCount}} sur {{tasks.length}} tâches terminées
       </div>
     </div>
-    
+
     <!-- Modal d'édition -->
     <div *ngIf="editingTask" class="task-edit-modal">
       <div class="modal-content">
         <h4>Modifier la tâche</h4>
-        <input [(ngModel)]="editingTask.title" 
+        <input [(ngModel)]="editingTask.title"
                class="form-control"
                (keyup.enter)="saveTaskEdit()">
         <div class="modal-actions">
@@ -374,4 +357,5 @@
       </button>
     </div>
   </div>
+</div>
 </div>

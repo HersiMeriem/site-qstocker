@@ -319,3 +319,28 @@ body {
 .qstock-navbar .notification-badge {
   border-color: #0d6efd;
 }
+
+
+/* Style pour l'image fixe du responsable */
+.fixed-profile-image {
+  width: 40px; /* Ajustez selon vos besoins */
+  height: 40px; /* Ajustez selon vos besoins */
+  object-fit: cover;
+  border-radius: 4px; /* Optionnel - pour des coins légèrement arrondis */
+  border: 2px solid #ffffff; /* Optionnel - bordure blanche */
+}
+
+/* Style au survol */
+.fixed-profile-image:hover {
+  opacity: 0.9;
+  transform: scale(1.05);
+  transition: all 0.2s ease;
+}
+
+/* Style pour mobile */
+@media (max-width: 768px) {
+  .fixed-profile-image {
+    width: 35px;
+    height: 35px;
+  }
+}

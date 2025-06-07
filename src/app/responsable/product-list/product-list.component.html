@@ -3,9 +3,9 @@
     <div class="header-top">
       <h1 class="title">📦 Liste des Produits</h1>
       <div class="scanner-controls">
-        <button mat-flat-button (click)="toggleScanner()" class="scan-btn">
-          <i class="fas fa-qrcode"></i>
-          {{ scannerActive ? 'Arrêter le scan' : 'Scanner un produit' }}
+        <button mat-flat-button color="primary" class="scan-btn" (click)="toggleScanner()">
+          <mat-icon>qr_code_scanner</mat-icon>
+          {{ scannerActive ? 'Arrêter le scan' : 'Scanner' }}
         </button>
       </div>
     </div>
@@ -47,21 +47,104 @@
       <p class="scan-instructions">Scannez le QR code du produit</p>
     </div>
 
-    <div class="scan-actions">
-      <button class="scan-action-btn scan-edit" (click)="scanMode = 'edit'; scannerActive = true">
-        <i class="fas fa-edit"></i> Modifier
-      </button>
-      <button class="scan-action-btn scan-delete" (click)="scanMode = 'delete'; scannerActive = true">
-        <i class="fas fa-trash"></i> Supprimer
-      </button>
-      <button class="scan-action-btn scan-view" (click)="scanMode = 'view'; scannerActive = true">
-        <i class="fas fa-eye"></i> Consulter
-      </button>
-    </div>
-
-    <button mat-flat-button (click)="scannerActive = false; scanMode = null" class="close-scanner-btn">
-      <i class="fas fa-times"></i> Fermer
+    <button mat-flat-button (click)="toggleScanner()" class="close-scanner-btn">
+      <mat-icon>close</mat-icon> Fermer
     </button>
+  </div>
+
+  <!-- Vue du produit scanné - Version améliorée -->
+  <div class="scanned-product-overlay" *ngIf="showScannedProduct && scannedProduct" (click)="closeScannedProductView()">
+    <div class="scanned-product-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Détails du Produit</h2>
+        <button mat-icon-button class="close-btn" (click)="closeScannedProductView()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="product-display">
+          <div class="product-visual">
+            <div class="product-image-container">
+              <img [src]="scannedProduct.imageUrl || 'assets/default-product.png'"
+                   alt="Image produit"
+                   class="product-image">
+              <div class="product-badges">
+                <span class="badge stock-badge" [class.low-stock]="scannedProduct.stockQuantity <= 5">
+                  Stock: {{ scannedProduct.stockQuantity }}
+                </span>
+                <span *ngIf="isPromotionActive(scannedProduct)" class="badge promo-badge">
+                  PROMO -{{ scannedProduct.promotion?.discountPercentage }}%
+                </span>
+              </div>
+            </div>
+
+            <div class="qr-code-container">
+              <img [src]="scannedProduct.qrCodeImage" alt="QR Code" *ngIf="scannedProduct.qrCodeImage">
+              <div class="product-id">ID: {{ scannedProduct.id }}</div>
+            </div>
+          </div>
+
+          <div class="product-info">
+            <h3 class="product-title">{{ scannedProduct.name }}</h3>
+            <div class="product-meta">
+              <span class="brand">{{ scannedProduct.brand }}</span>
+              <span class="category">{{ scannedProduct.category }}</span>
+            </div>
+
+            <div class="product-specs">
+              <div class="spec-row">
+                <span class="spec-label">Type:</span>
+                <span class="spec-value">{{ scannedProduct.perfumeType }}</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-label">Famille olfactive:</span>
+                <span class="spec-value">{{ scannedProduct.olfactiveFamily }}</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-label">Origine:</span>
+                <span class="spec-value">{{ scannedProduct.origin }}</span>
+              </div>
+            </div>
+
+            <div class="price-section">
+              <div class="price-display">
+                <span class="current-price">
+                  {{ isPromotionActive(scannedProduct) ?
+                     (calculateDiscountedPrice(scannedProduct) | number:'1.3-3') :
+                     (scannedProduct.unitPrice | number:'1.3-3') }} DT
+                </span>
+                <span *ngIf="isPromotionActive(scannedProduct)" class="original-price">
+                  {{ scannedProduct.unitPrice | number:'1.3-3' }} DT
+                </span>
+              </div>
+              <div *ngIf="isPromotionActive(scannedProduct)" class="promo-period">
+                Promotion valable jusqu'au {{ scannedProduct.promotion?.endDate | date:'dd/MM/yyyy' }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="action-panel">
+          <button mat-flat-button color="accent" class="action-btn" (click)="viewDetails(scannedProduct.id)">
+            <mat-icon>visibility</mat-icon>
+            Détails complets
+          </button>
+          <button mat-flat-button color="primary" class="action-btn" (click)="editProduct(scannedProduct.id)">
+            <mat-icon>edit</mat-icon>
+            Modifier
+          </button>
+          <button mat-stroked-button color="warn" class="action-btn" (click)="deleteProduct(scannedProduct.id)">
+            <mat-icon>delete</mat-icon>
+            Supprimer
+          </button>
+          <button mat-button class="action-btn cancel-btn" (click)="closeScannedProductView()">
+            <mat-icon>close</mat-icon>
+            Fermer
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Contrôles de sélection -->
@@ -81,7 +164,7 @@
       [disabled]="selection.selected.length === 0 || isPromotionDialogOpen"
       [class.promo-active]="selection.selected.length > 0"
     >
-      <i class="fas fa-tag"></i>
+      <mat-icon>local_offer</mat-icon>
       <span class="promo-badge">{{ selection.selected.length }}</span>
       <span class="promo-label">Gérer les promotions</span>
     </button>
@@ -94,23 +177,15 @@
     </div>
 
     <div *ngFor="let product of filteredProducts" class="product-card">
-      <!-- Checkbox de sélection -->
       <mat-checkbox
         [checked]="selection.isSelected(product)"
         (change)="selection.toggle(product)"
         class="product-checkbox"
-      >
-      </mat-checkbox>
+      ></mat-checkbox>
 
       <div class="card-content">
         <div class="image-section">
-          <img
-            [src]="product.imageUrl || 'assets/default-product.png'"
-            alt="Image produit"
-            class="product-image"
-          />
-
-          <!-- le QR code -->
+          <img [src]="product.imageUrl || 'assets/default-product.png'" alt="Image produit" class="product-image">
           <div class="qr-code-section" *ngIf="product.qrCodeImage">
             <img [src]="product.qrCodeImage" alt="QR Code" class="qr-code-img">
             <div class="qr-code-details">
@@ -121,24 +196,18 @@
 
         <div class="product-details">
           <div *ngIf="product.status === 'promotion'" class="promotion-badge">
-            <i class="fas fa-tag"></i> PROMO -{{ product.promotion?.discountPercentage }}%
+            <mat-icon>local_offer</mat-icon> PROMO -{{ product.promotion?.discountPercentage }}%
             <span *ngIf="!isPromotionActive(product)" class="expired-text">(Expirée)</span>
           </div>
           <div class="badge-group">
             <span class="category-badge">{{ product.category }}</span>
-            <span class="authenticity-badge" [ngClass]="{
-              'authentic': product.isAuthentic,
-              'counterfeit': !product.isAuthentic
-            }">
-              <i class="fas" [class.fa-check-circle]="product.isAuthentic" [class.fa-exclamation-triangle]="!product.isAuthentic"></i>
+            <span class="authenticity-badge" [ngClass]="{'authentic': product.isAuthentic, 'counterfeit': !product.isAuthentic}">
+              <mat-icon>{{ product.isAuthentic ? 'check_circle' : 'warning' }}</mat-icon>
               {{ product.isAuthentic ? 'Authentique' : 'Contrefaçon' }}
             </span>
-            <span class="olfactive-family-badge">
-              {{ product.olfactiveFamily }}
-            </span>
-            <!-- Ajoutez le badge de statut -->
+            <span class="olfactive-family-badge">{{ product.olfactiveFamily }}</span>
             <span class="status-badge" [ngClass]="'status-' + product.status">
-              <i [class]="getStatusIcon(product.status)"></i>
+              <mat-icon>{{ getStatusIcon(product.status) }}</mat-icon>
               {{ getStatusLabel(product.status) }}
               <span *ngIf="product.status === 'promotion' && !isPromotionActive(product)" class="expired-text">
                 (Expirée)
@@ -147,8 +216,6 @@
           </div>
 
           <h3 class="product-name">{{ product.name }}</h3>
-
-          <!-- Ajoutez les nouveaux champs ici -->
           <p class="product-brand"><strong>Marque:</strong> {{ product.brand }}</p>
           <p class="product-perfume-type"><strong>Type de parfum:</strong> {{ product.perfumeType }}</p>
           <p class="product-origin"><strong>Origine:</strong> {{ product.origin }}</p>
@@ -163,28 +230,14 @@
           </p>
 
           <div class="action-buttons">
-            <button
-              class="action-btn info"
-              (click)="viewDetails(product.id)"
-              matTooltip="Voir plus de détails"
-            >
-              <i class="fas fa-eye"></i>
+            <button class="action-btn info" (click)="viewDetails(product.id)" matTooltip="Voir plus de détails">
+              <mat-icon>visibility</mat-icon>
             </button>
-
-            <button
-              class="action-btn warning"
-              (click)="editProduct(product.id)"
-              matTooltip="Modifier"
-            >
-              <i class="fas fa-pencil-alt"></i>
+            <button class="action-btn warning" (click)="editProduct(product.id)" matTooltip="Modifier">
+              <mat-icon>edit</mat-icon>
             </button>
-
-            <button
-              class="action-btn danger"
-              (click)="deleteProduct(product.id)"
-              matTooltip="Supprimer"
-            >
-              <i class="fas fa-trash"></i>
+            <button class="action-btn danger" (click)="deleteProduct(product.id)" matTooltip="Supprimer">
+              <mat-icon>delete</mat-icon>
             </button>
           </div>
         </div>
@@ -192,15 +245,17 @@
     </div>
 
     <div *ngIf="!loading && filteredProducts.length === 0" class="empty-state">
-      <i class="fas fa-box-open"></i>
+      <mat-icon>inventory_2</mat-icon>
       <p>Aucun produit trouvé</p>
       <a routerLink="/responsable/product-add" class="add-button">
-        <i class="fas fa-plus"></i> Ajouter un produit
+        <mat-icon>add_circle</mat-icon> Ajouter un produit
       </a>
     </div>
   </div>
 </div>
 
 <div class="add-product-container">
-  <a routerLink="/responsable/product-add" class="add-product-btn">➕ Ajouter un produit</a>
+  <a routerLink="/responsable/product-add" class="add-product-btn">
+    <mat-icon>add</mat-icon> Ajouter un produit
+  </a>
 </div>

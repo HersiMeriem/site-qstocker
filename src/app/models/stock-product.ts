@@ -1,4 +1,3 @@
-// models/stock-product.model.ts
 export interface StockProduct {
     idProduit: string;
     nomProduit: string;

@@ -1,47 +1,35 @@
 .confirm-dialog-container {
-  padding: 16px;
-  min-width: 350px;
-  max-width: 500px;
-}
+  padding: 20px;
 
-.dialog-title {
-  color: #333;
-  font-weight: 500;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 12px;
-  margin-bottom: 16px;
-}
+  h2 {
+    display: flex;
+    align-items: center;
+    font-size: 22px;
+    margin-bottom: 16px;
 
-.message-container {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
+    .dialog-icon {
+      font-size: 28px;
+      color: #1976d2;
+      margin-right: 10px;
+    }
+  }
 
-.warning-icon {
-  color: #ff9800;
-  font-size: 28px;
-  width: 28px;
-  height: 28px;
-}
+  .message-container p {
+    font-size: 16px;
+    color: #444;
+    margin: 0;
+  }
 
-.message-text {
-  margin: 0;
-  color: #555;
-  font-size: 16px;
-  line-height: 1.5;
-}
+  mat-dialog-actions {
+    margin-top: 20px;
 
-.dialog-actions {
-  padding: 16px 0 0 0;
-  margin-top: 16px;
-  border-top: 1px solid #eee;
-}
+    button {
+      margin-left: 10px;
+      min-width: 100px;
+    }
+  }
 
-.cancel-btn {
-  margin-right: 8px;
-}
-
-.confirm-btn {
-  min-width: 80px;
+  .mr-1 {
+    margin-right: 6px;
+  }
 }

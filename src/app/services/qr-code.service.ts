@@ -23,7 +23,6 @@ export class QrCodeService {
     }
   }
 
-  // Ajoutez cette méthode pour la compatibilité
   async generateQRCode(data: string): Promise<string> {
     return this.generateQRCodeImage(data);
   }

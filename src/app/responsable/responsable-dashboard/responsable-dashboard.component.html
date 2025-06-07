@@ -14,7 +14,7 @@
         </button>
         <button mat-stroked-button color="accent" (click)="toggleScanner()" matTooltip="Scanner un produit QR Code">
           <mat-icon>qr_code_scanner</mat-icon>
-          {{ showScanner ? 'Arrêter le scan' : 'Scanner' }}
+          {{ scannerActive ? 'Arrêter le scan' : 'Scanner' }}
         </button>
         <button mat-stroked-button color="accent" (click)="exportDashboardData()" matTooltip="Exporter les données" [disabled]="loading">
           <mat-icon>download</mat-icon>
@@ -27,42 +27,117 @@
       </div>
     </div>
   </div>
-<div class="scanner-container" *ngIf="showScanner">
-  <div class="scanner-header">
-    <button class="close-scanner-btn" (click)="showScanner = false">
-      <i class="fas fa-times"></i>
-    </button>
-  </div>
 
-  <div class="scanner-viewport">
+  <!-- Zone de scan QR Code -->
+  <div class="scanner-container" *ngIf="scannerActive">
     <zxing-scanner
-      [enable]="showScanner"
+      [enable]="scannerActive"
       [formats]="supportedFormats"
       (scanSuccess)="onScanSuccess($event)"
       (scanError)="onScanError($event)"
-      class="scanner-camera">
+      class="scanner-viewport">
     </zxing-scanner>
-  </div>
 
-  <div class="scanner-overlay">
-    <div class="scan-frame"></div>
-    <p class="scan-instructions">Scannez le QR code du produit</p>
-  </div>
+    <div class="scanner-overlay">
+      <div class="scan-frame"></div>
+      <p class="scan-instructions">Scannez le QR code du produit</p>
+    </div>
 
-  <div class="scan-actions">
-    <button class="scan-action-btn scan-edit" (click)="scanMode = 'edit'; showScanner = true">
-      <i class="fas fa-edit"></i> Modifier
-    </button>
-    <button class="scan-action-btn scan-delete" (click)="scanMode = 'delete'; showScanner = true">
-      <i class="fas fa-trash"></i> Supprimer
-    </button>
-    <button class="scan-action-btn scan-view" (click)="scanMode = 'view'; showScanner = true">
-      <i class="fas fa-eye"></i> Consulter
+    <button mat-flat-button (click)="toggleScanner()" class="close-scanner-btn">
+      <mat-icon>close</mat-icon> Fermer
     </button>
   </div>
-</div>
 
+  <!-- Affichage du produit scanné -->
+  <div class="scanned-product-overlay" *ngIf="showScannedProduct && scannedProduct" (click)="closeScannedProductView()">
+    <div class="scanned-product-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Détails du Produit</h2>
+        <button mat-icon-button class="close-btn" (click)="closeScannedProductView()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
 
+      <div class="modal-body">
+        <div class="product-display">
+          <div class="product-visual">
+            <div class="product-image-container">
+              <img [src]="scannedProduct.imageUrl || 'assets/default-product.png'" alt="Image produit" class="product-image">
+              <div class="product-badges">
+                <span class="badge stock-badge" [class.low-stock]="scannedProduct.stockQuantity <= 5">
+                  Stock: {{ scannedProduct.stockQuantity }}
+                </span>
+                <span *ngIf="isPromotionActive(scannedProduct)" class="badge promo-badge">
+                  PROMO -{{ scannedProduct.promotion?.discountPercentage }}%
+                </span>
+              </div>
+            </div>
+
+            <div class="qr-code-container">
+              <img [src]="scannedProduct.qrCodeImage" alt="QR Code" *ngIf="scannedProduct.qrCodeImage">
+              <div class="product-id">ID: {{ scannedProduct.id }}</div>
+            </div>
+          </div>
+
+          <div class="product-info">
+            <h3 class="product-title">{{ scannedProduct.name }}</h3>
+            <div class="product-meta">
+              <span class="brand">{{ scannedProduct.brand }}</span>
+              <span class="category">{{ scannedProduct.category }}</span>
+            </div>
+
+            <div class="product-specs">
+              <div class="spec-row">
+                <span class="spec-label">Type:</span>
+                <span class="spec-value">{{ scannedProduct.perfumeType }}</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-label">Famille olfactive:</span>
+                <span class="spec-value">{{ scannedProduct.olfactiveFamily }}</span>
+              </div>
+              <div class="spec-row">
+                <span class="spec-label">Origine:</span>
+                <span class="spec-value">{{ scannedProduct.origin }}</span>
+              </div>
+            </div>
+
+            <div class="price-section">
+              <div class="price-display">
+                <span class="current-price">
+                  {{ isPromotionActive(scannedProduct) ? (calculateDiscountedPrice(scannedProduct) | number:'1.3-3') : (scannedProduct.unitPrice | number:'1.3-3') }} DT
+                </span>
+                <span *ngIf="isPromotionActive(scannedProduct)" class="original-price">
+                  {{ scannedProduct.unitPrice | number:'1.3-3' }} DT
+                </span>
+              </div>
+              <div *ngIf="isPromotionActive(scannedProduct)" class="promo-period">
+                Promotion valable jusqu'au {{ scannedProduct.promotion?.endDate | date:'dd/MM/yyyy' }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="action-panel">
+          <button mat-flat-button color="accent" class="action-btn" (click)="viewDetails(scannedProduct.id)">
+            <mat-icon>visibility</mat-icon>
+            Détails complets
+          </button>
+          <button mat-flat-button color="primary" class="action-btn" (click)="editProduct(scannedProduct.id)">
+            <mat-icon>edit</mat-icon>
+            Modifier
+          </button>
+          <button mat-stroked-button color="warn" class="action-btn" (click)="deleteProduct(scannedProduct.id)">
+            <mat-icon>delete</mat-icon>
+            Supprimer
+          </button>
+          <button mat-button class="action-btn cancel-btn" (click)="closeScannedProductView()">
+            <mat-icon>close</mat-icon>
+            Fermer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Indicateurs Clés -->
   <div class="kpi-section mat-elevation-z1">
@@ -167,7 +242,8 @@
           </mat-card-content>
         </mat-card>
       </mat-grid-tile>
-      <!-- Dans la section des indicateurs clés -->
+
+      <!-- Nouvelle carte Produits Totaux -->
       <mat-grid-tile>
         <mat-card class="kpi-card primary" (click)="onKpiClick('Produits Totaux')">
           <mat-card-header>
@@ -187,166 +263,230 @@
 
     <mat-progress-bar mode="indeterminate" *ngIf="loading"></mat-progress-bar>
   </div>
-<!-- Section des graphiques -->
-<div class="charts-section">
-  <div class="chart-container">
-    <canvas id="salesChart"></canvas>
+
+  <!-- Section des graphiques -->
+  <div class="charts-section">
+    <div class="chart-container">
+      <canvas id="salesChart"></canvas>
+    </div>
+    <div class="chart-container">
+      <canvas id="productChart"></canvas>
+    </div>
   </div>
-  <div class="chart-container">
-    <canvas id="productChart"></canvas>
+
+  <!-- Section Prédictions ML -->
+<div class="prediction-section mat-elevation-z1">
+  <div class="section-header">
+    <h2><mat-icon>trending_up</mat-icon> Prédictions de Demande</h2>
+    <button mat-raised-button color="primary" (click)="runManualPrediction()" [disabled]="predictionsLoading">
+      <mat-icon>autorenew</mat-icon>
+      Générer les prédictions
+    </button>
+  </div>
+
+  <div *ngIf="predictionsLoading">
+    <mat-spinner></mat-spinner>
+    <p class="loading-text">Chargement des prédictions...</p>
+  </div>
+
+  <div *ngIf="!predictionsLoading">
+    <div class="prediction-controls">
+      <mat-form-field appearance="outline">
+        <mat-label>Produit</mat-label>
+        <mat-select [(value)]="selectedProductId" (selectionChange)="updateFilteredPredictions()">
+          <mat-option *ngFor="let product of uniqueProducts" [value]="product.id">
+            {{product.name}} ({{product.id}})
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <button mat-stroked-button (click)="refreshPredictions()" class="refresh-btn">
+        <mat-icon>refresh</mat-icon>
+        Actualiser
+      </button>
+    </div>
+
+    <div *ngIf="filteredPredictions.length > 0" class="predictions-table">
+      <table mat-table [dataSource]="filteredPredictions">
+        <ng-container matColumnDef="date">
+          <th mat-header-cell *matHeaderCellDef>Date</th>
+          <td mat-cell *matCellDef="let pred">{{pred.date | date:'dd/MM/yyyy'}}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="quantity">
+          <th mat-header-cell *matHeaderCellDef>Quantité Prédite</th>
+          <td mat-cell *matCellDef="let pred">{{pred.predicted_quantity}}</td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="['date', 'quantity']"></tr>
+        <tr mat-row *matRowDef="let row; columns: ['date', 'quantity']"></tr>
+      </table>
+    </div>
+
+    <div *ngIf="filteredPredictions.length === 0 && predictions.length > 0" class="no-data">
+      Aucune prédiction disponible pour ce produit
+    </div>
+
+    <div *ngIf="predictions.length === 0" class="no-data">
+      Aucune prédiction disponible. Cliquez sur "Générer les prédictions".
+    </div>
+
+    <div *ngIf="modelMetrics" class="metrics-section">
+      <h3>Performance du Modèle</h3>
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-value">{{modelMetrics.r2 | percent:'1.2-2'}}</div>
+          <div class="metric-label">Précision (R²)</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value">{{modelMetrics.mae | number:'1.1-1'}}</div>
+          <div class="metric-label">Erreur Moyenne (MAE)</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value">{{modelMetrics.mape | percent:'1.2-2'}}</div>
+          <div class="metric-label">Erreur Relative (MAPE)</div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
-  
-  <!-- meriem-->
+
   <!-- Stock et Activités -->
   <div class="row-section side-by-side">
     <!-- Produits en Rupture -->
-<div class="stock-section mat-elevation-z1">
-  <div class="section-header">
-    <h2>
-      <mat-icon>warning</mat-icon>
-      Produits en Rupture Imminente
-    </h2>
-    <button mat-raised-button
-            color="primary"
-            (click)="goToSupplierOrder()">
-      <mat-icon>add_shopping_cart</mat-icon>
-      Commander les manquants
-    </button>
-  </div>
+    <div class="stock-section mat-elevation-z1">
+      <div class="section-header">
+        <h2>
+          <mat-icon>warning</mat-icon>
+          Produits en Rupture Imminente
+        </h2>
+        <button mat-raised-button color="primary" (click)="goToSupplierOrder()">
+          <mat-icon>add_shopping_cart</mat-icon>
+          Commander les manquants
+        </button>
+      </div>
 
-  <mat-table [dataSource]="lowStockProducts" class="stock-table">
-    <!-- Colonne Produit -->
-    <ng-container matColumnDef="product">
-      <mat-header-cell *matHeaderCellDef>Produit</mat-header-cell>
-      <mat-cell *matCellDef="let product">
-        <div class="product-info">
-          <img [src]="product.imageUrl || 'assets/default-product.png'"
-               class="product-image"
-               alt="Image produit"
-               (error)="handleImageError(product)">
-          <div class="product-details">
-            <div class="product-name">{{product.nomProduit || product.name}}</div>
-            <div class="product-reference">Réf. {{product.idProduit}}</div>
-            <div class="product-category">{{product.category || 'Non classé'}}</div>
-          </div>
-        </div>
-      </mat-cell>
-    </ng-container>
-
-    <!-- Colonne Caractéristiques -->
-    <ng-container matColumnDef="characteristics">
-      <mat-header-cell *matHeaderCellDef>Caractéristiques</mat-header-cell>
-      <mat-cell *matCellDef="let product">
-        <div class="product-characteristics">
-          <div><strong>Marque:</strong> {{ product.brand }}</div>
-          <div><strong>Type:</strong> {{ product.perfumeType }}</div>
-          <div><strong>Origine:</strong> {{ product.origin }}</div>
-        </div>
-      </mat-cell>
-    </ng-container>
-
-    <!-- Colonne Stock -->
-    <ng-container matColumnDef="stock">
-      <mat-header-cell *matHeaderCellDef>Niveau de Stock</mat-header-cell>
-      <mat-cell *matCellDef="let product">
-        <div class="stock-progress">
-          <div class="stock-numbers">
-            {{product.quantite}} / {{product.seuil || 5}}
-            <span class="stock-alert" *ngIf="product.quantite === 0">RUPTURE!</span>
-          </div>
-          <mat-progress-bar mode="determinate"
-                            [value]="(product.quantite / (product.seuil || 5)) * 100"
-                            [color]="getStockProgressColor(product)">
-          </mat-progress-bar>
-          <div class="stock-days">
-            <mat-icon>schedule</mat-icon>
-            J-{{product.daysUntilStockout || 0}} ({{product.lastSaleDate | date:'dd/MM'}})
-          </div>
-        </div>
-      </mat-cell>
-    </ng-container>
-
-<!-- Colonne Détails -->
-<ng-container matColumnDef="details">
-  <mat-header-cell *matHeaderCellDef>Détails</mat-header-cell>
-  <mat-cell *matCellDef="let product">
-    <button mat-icon-button color="primary" (click)="viewProductDetails(product.id)">
-      <mat-icon>visibility</mat-icon>
-    </button>
-  </mat-cell>
-</ng-container>
-
-    <mat-header-row *matHeaderRowDef="['product', 'characteristics', 'stock', 'details']"></mat-header-row>
-    <mat-row *matRowDef="let row; columns: ['product', 'characteristics', 'stock', 'details'];"></mat-row>
-  </mat-table>
-</div>
-<!-- meriem-->
-
-       <!-- Journal des Événements -->
-        <div class="activity-section mat-elevation-z1">
-          <div class="section-header">
-            <h2>
-              <mat-icon>timeline</mat-icon>
-              Journal des Événements
-            </h2>
-            <div class="header-actions">
-              <button mat-icon-button (click)="filterActivities('all')" matTooltip="Tout voir">
-                <mat-icon>list</mat-icon>
-              </button>
-              <button mat-icon-button (click)="refreshActivities()" matTooltip="Actualiser">
-                <mat-icon>refresh</mat-icon>
-              </button>
-            </div>
-          </div>
-
-          <div class="activity-filters">
-            <mat-button-toggle-group #filters="matButtonToggleGroup"
-                                    (change)="filterActivities(filters.value)"
-                                    value="all">
-              <mat-button-toggle value="all">Tout</mat-button-toggle>
-              <mat-button-toggle value="sales">Ventes</mat-button-toggle>
-              <mat-button-toggle value="stock">Stock</mat-button-toggle>
-              <mat-button-toggle value="alerts">Alertes</mat-button-toggle>
-            </mat-button-toggle-group>
-          </div>
-
-          <div class="activity-list">
-            <div class="activity-item"
-                 *ngFor="let activity of filteredActivities"
-                 [class]="activity.type"
-                 (click)="onActivityClick(activity)">
-              <div class="activity-icon-container">
-                <mat-icon class="activity-icon">{{activity.icon}}</mat-icon>
-                <div class="activity-type-badge">{{activity.type | titlecase}}</div>
-              </div>
-
-              <div class="activity-content">
-                <div class="activity-message">
-                  <span *ngIf="activity.user" class="highlight-text">{{activity.user}}</span>
-                  {{activity.message}}
-                  <span *ngIf="activity.product" class="product-link">
-                    {{activity.product.nomProduit}} ({{activity.product.idProduit}})
-                  </span>
-                  <span *ngIf="activity.amount" class="amount">
-                    {{activity.amount | currency:'TND':'symbol':'1.2-2'}}
-                  </span>
-                </div>
-
-                <div class="activity-details">
-  <div class="activity-time">
-  <mat-icon>schedule</mat-icon>
-  {{activity.time | date:'short'}}
-</div>
-                </div>
+      <mat-table [dataSource]="lowStockProducts" class="stock-table">
+        <!-- Colonne Produit -->
+        <ng-container matColumnDef="product">
+          <mat-header-cell *matHeaderCellDef>Produit</mat-header-cell>
+          <mat-cell *matCellDef="let product">
+            <div class="product-info">
+              <img [src]="product.imageUrl || 'assets/default-product.png'" class="product-image" alt="Image produit" (error)="handleImageError(product)">
+              <div class="product-details">
+                <div class="product-name">{{product.nomProduit || product.name}}</div>
+                <div class="product-reference">Réf. {{product.idProduit}}</div>
+                <div class="product-category">{{product.category || 'Non classé'}}</div>
               </div>
             </div>
+          </mat-cell>
+        </ng-container>
 
-            <div class="no-activities" *ngIf="filteredActivities.length === 0">
-              <mat-icon>info</mat-icon>
-              <p>Aucun événement à afficher</p>
+        <!-- Colonne Caractéristiques -->
+        <ng-container matColumnDef="characteristics">
+          <mat-header-cell *matHeaderCellDef>Caractéristiques</mat-header-cell>
+          <mat-cell *matCellDef="let product">
+            <div class="product-characteristics">
+              <div><strong>Marque:</strong> {{ product.brand }}</div>
+              <div><strong>Type:</strong> {{ product.perfumeType }}</div>
+              <div><strong>Origine:</strong> {{ product.origin }}</div>
+            </div>
+          </mat-cell>
+        </ng-container>
+
+        <!-- Colonne Stock -->
+        <ng-container matColumnDef="stock">
+          <mat-header-cell *matHeaderCellDef>Niveau de Stock</mat-header-cell>
+          <mat-cell *matCellDef="let product">
+            <div class="stock-progress">
+              <div class="stock-numbers">
+                {{product.quantite}} / {{product.seuil || 5}}
+                <span class="stock-alert" *ngIf="product.quantite === 0">RUPTURE!</span>
+              </div>
+              <mat-progress-bar mode="determinate" [value]="(product.quantite / (product.seuil || 5)) * 100" [color]="getStockProgressColor(product)">
+              </mat-progress-bar>
+              <div class="stock-days">
+                <mat-icon>schedule</mat-icon>
+                J-{{product.daysUntilStockout || 0}} ({{product.lastSaleDate | date:'dd/MM'}})
+              </div>
+            </div>
+          </mat-cell>
+        </ng-container>
+
+        <!-- Colonne Détails -->
+        <ng-container matColumnDef="details">
+          <mat-header-cell *matHeaderCellDef>Détails</mat-header-cell>
+          <mat-cell *matCellDef="let product">
+            <button mat-icon-button color="primary" (click)="viewProductDetails(product.id)">
+              <mat-icon>visibility</mat-icon>
+            </button>
+          </mat-cell>
+        </ng-container>
+
+        <mat-header-row *matHeaderRowDef="['product', 'characteristics', 'stock', 'details']"></mat-header-row>
+        <mat-row *matRowDef="let row; columns: ['product', 'characteristics', 'stock', 'details'];"></mat-row>
+      </mat-table>
+    </div>
+
+    <!-- Journal des Événements -->
+    <div class="activity-section mat-elevation-z1">
+      <div class="section-header">
+        <h2>
+          <mat-icon>timeline</mat-icon>
+          Journal des Événements
+        </h2>
+        <div class="header-actions">
+          <button mat-icon-button (click)="filterActivities('all')" matTooltip="Tout voir">
+            <mat-icon>list</mat-icon>
+          </button>
+          <button mat-icon-button (click)="refreshActivities()" matTooltip="Actualiser">
+            <mat-icon>refresh</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <div class="activity-filters">
+        <mat-button-toggle-group #filters="matButtonToggleGroup" (change)="filterActivities(filters.value)" value="all">
+          <mat-button-toggle value="all">Tout</mat-button-toggle>
+          <mat-button-toggle value="sales">Ventes</mat-button-toggle>
+          <mat-button-toggle value="stock">Stock</mat-button-toggle>
+          <mat-button-toggle value="alerts">Alertes</mat-button-toggle>
+        </mat-button-toggle-group>
+      </div>
+
+      <div class="activity-list">
+        <div class="activity-item" *ngFor="let activity of filteredActivities" [class]="activity.type" (click)="onActivityClick(activity)">
+          <div class="activity-icon-container">
+            <mat-icon class="activity-icon">{{activity.icon}}</mat-icon>
+            <div class="activity-type-badge">{{activity.type | titlecase}}</div>
+          </div>
+
+          <div class="activity-content">
+            <div class="activity-message">
+              <span *ngIf="activity.user" class="highlight-text">{{activity.user}}</span>
+              {{activity.message}}
+              <span *ngIf="activity.product" class="product-link">
+                {{activity.product.nomProduit}} ({{activity.product.idProduit}})
+              </span>
+              <span *ngIf="activity.amount" class="amount">
+                {{activity.amount | currency:'TND':'symbol':'1.2-2'}}
+              </span>
+            </div>
+
+            <div class="activity-details">
+              <div class="activity-time">
+                <mat-icon>schedule</mat-icon>
+                {{activity.time | date:'short'}}
+              </div>
             </div>
           </div>
         </div>
+
+        <div class="no-activities" *ngIf="filteredActivities.length === 0">
+          <mat-icon>info</mat-icon>
+          <p>Aucun événement à afficher</p>
+        </div>
+      </div>
+    </div>
   </div>
 </div>

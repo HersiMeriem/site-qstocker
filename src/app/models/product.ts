@@ -8,7 +8,7 @@ export interface Product {
   category: string;
   description: string;
   qrCode: string;       // Stocke l'ID texte (ex: "PRD-123")
-  qrCodeImage?: string; // Optionnel: stocke l'image base64 si nécessaire
+  qrCodeImage?: string; //  stocke l'image base64 si nécessaire
   imageUrl?: string;
   unitPrice: number;
   costPrice: number;

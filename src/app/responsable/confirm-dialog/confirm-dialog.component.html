@@ -1,20 +1,35 @@
-<br> <br> 
 <div class="confirm-dialog-container">
-    <h2 mat-dialog-title>{{ data.title || 'Confirmation' }}</h2>
-    
-    <mat-dialog-content>
-      <div class="message-container">
-        <mat-icon class="warning-icon">warning</mat-icon>
-        <span>{{ data.message || 'Voulez-vous vraiment effectuer cette action ?' }}</span>
-      </div>
-    </mat-dialog-content>
-  
-    <mat-dialog-actions align="end">
-      <button mat-button [mat-dialog-close]="false">
-        {{ data.cancelText || 'Non' }}
+  <h2 mat-dialog-title>
+    <mat-icon class="dialog-icon">help_outline</mat-icon>
+    {{ data.title || 'Confirmation' }}
+  </h2>
+
+  <mat-dialog-content>
+    <div class="message-container">
+      <p>{{ data.message || 'Voulez-vous vraiment effectuer cette action ?' }}</p>
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <ng-container *ngIf="!data.showCustomActions">
+      <button mat-stroked-button color="warn" [mat-dialog-close]="false">
+        {{ data.cancelText || 'Annuler' }}
       </button>
-      <button mat-raised-button color="warn" [mat-dialog-close]="true" cdkFocusInitial>
-        {{ data.confirmText || 'Oui' }}
+      <button mat-flat-button color="primary" [mat-dialog-close]="true">
+        {{ data.confirmText || 'Confirmer' }}
       </button>
-    </mat-dialog-actions>
-  </div>
+    </ng-container>
+
+    <ng-container *ngIf="data.showCustomActions">
+      <button mat-stroked-button color="warn" [mat-dialog-close]="false">
+        {{ data.cancelText || 'Annuler' }}
+      </button>
+      <button *ngFor="let action of data.customActions"
+              mat-flat-button
+              [mat-dialog-close]="action.text"
+              [color]="action.color">
+        <mat-icon class="mr-1">{{ action.icon }}</mat-icon> {{ action.text }}
+      </button>
+    </ng-container>
+  </mat-dialog-actions>
+</div>

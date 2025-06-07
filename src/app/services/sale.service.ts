@@ -13,6 +13,8 @@ export class SaleService {
   private lastInvoiceNumber = 0;
   selectedProduct: any;
   selectedQuantity!: number;
+  private apiUrl = 'https://votre-api.com/sales';
+
   
   constructor(
     private db: AngularFireDatabase,
@@ -22,7 +24,13 @@ export class SaleService {
   ) {}
 
 
-
+  getActualSales(productId: string, date: string): Observable<{quantity: number}[]> {
+    return this.http.get<{items: any[]}>(`${this.apiUrl}?productId=${productId}&date=${date}`).pipe(
+      map(response => response.items.map(item => ({
+        quantity: item.quantity
+      })))
+    );
+  }
 
 
   getSalesHistory(filter: string = 'today'): Observable<Sale[]> {

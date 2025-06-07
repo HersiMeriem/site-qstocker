@@ -125,6 +125,8 @@ import { NotificationsComponent } from './admin/notifications/notifications.comp
 import { ProductDetailsDialogComponent } from './product-details-dialog/product-details-dialog.component';
 import { LivraisonComponent } from './responsable/livraison/livraison.component';
 import { LivraisonViewComponent } from './admin/livraison-view/livraison-view.component';
+import { PredectionsComponent } from './responsable/predections/predections.component';
+import { PredictionService } from './services/prediction.service';
 
 const config: SocketIoConfig = { 
   url: 'http://localhost:3000', // Remplacez par votre URL de serveur
@@ -209,6 +211,7 @@ export function HttpLoaderFactory(http: HttpClient) {
     ProductDetailsDialogComponent,
     LivraisonComponent,
     LivraisonViewComponent,
+    PredectionsComponent,
     
   
   ],
@@ -303,6 +306,7 @@ export function HttpLoaderFactory(http: HttpClient) {
    EmailService,
    SupplierService ,
    ReportService,
+   PredictionService,
 
   ],
   

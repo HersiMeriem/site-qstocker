@@ -39,6 +39,8 @@ export class ProductListComponent implements OnInit, OnDestroy {
   scanMode: 'add' | 'edit' | 'delete' | 'view' | null = null;
   availableDevices: MediaDeviceInfo[] = [];
 
+  scannedProduct: Product | null = null;
+ showScannedProduct = false;
 
   
   private destroy$ = new Subject<void>();
@@ -360,13 +362,6 @@ export class ProductListComponent implements OnInit, OnDestroy {
     }
   }
 
-  toggleScanner(): void {
-    this.scannerActive = !this.scannerActive;
-    if (this.scannerActive) {
-      this.checkCameraPermissions();
-    }
-  }
-
   onCamerasFound(devices: MediaDeviceInfo[]): void {
     this.availableDevices = devices;
     this.hasPermission = true;
@@ -397,33 +392,6 @@ export class ProductListComponent implements OnInit, OnDestroy {
     }
   }
 
-  onScanSuccess(result: string): void {
-    this.scannerActive = false;
-
-    try {
-      const productId = this.extractProductId(result);
-      if (!productId) {
-        throw new Error('ID produit non trouvé');
-      }
-
-      switch (this.scanMode) {
-        case 'edit':
-          this.editProduct(productId);
-          break;
-        case 'delete':
-          this.confirmDeleteScannedProduct(productId);
-          break;
-        case 'view':
-          this.viewDetails(productId);
-          break;
-        default:
-          this.lookupProduct(productId);
-          break;
-      }
-    } catch (err) {
-      this.snackBar.open('QR code non reconnu', 'Fermer', { duration: 3000 });
-    }
-  }
 
   private parseScannedData(data: string): { id: string; [key: string]: any } {
     try {
@@ -516,5 +484,72 @@ private loadProducts(): void {
 }
 
 
+//scan 
+
+onScanSuccess(result: string): void {
+  try {
+    const productId = this.extractProductId(result);
+    if (!productId) {
+      throw new Error('ID produit non trouvé');
+    }
+
+    // Trouver le produit scanné dans la liste
+    this.scannedProduct = this.products.find(p => p.id === productId) || null;
+    
+    if (!this.scannedProduct) {
+      this.snackBar.open('Produit non trouvé dans la liste', 'Fermer', { duration: 3000 });
+      return;
+    }
+
+    this.showScannedProduct = true;
+    this.scannerActive = false;
+    
+  } catch (err) {
+    this.snackBar.open('QR code non reconnu', 'Fermer', { duration: 3000 });
+    this.scannerActive = false;
+  }
+}
+openActionDialog(product: Product): void {
+  const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+    width: '450px',
+    data: {
+      title: 'Produit scanné: ' + product.name,
+      message: 'Que souhaitez-vous faire avec ce produit?',
+      showCustomActions: true,
+      customActions: [
+        { text: 'Voir détails', icon: 'fa-eye', color: 'primary' },
+        { text: 'Modifier', icon: 'fa-edit', color: 'accent' },
+        { text: 'Supprimer', icon: 'fa-trash', color: 'warn' }
+      ],
+      cancelText: 'Annuler'
+    }
+  });
+
+  dialogRef.afterClosed().subscribe(result => {
+    if (result === 'Voir détails') {
+      this.viewDetails(product.id);
+    } else if (result === 'Modifier') {
+      this.editProduct(product.id);
+    } else if (result === 'Supprimer') {
+      this.confirmDeleteScannedProduct(product.id);
+    }
+    
+    // Réinitialiser le filtre après l'action
+    this.filterProducts();
+  });
+}
+  
+toggleScanner(): void {
+  this.scannerActive = !this.scannerActive;
+  this.scanMode = null; // Réinitialiser le mode de scan
+  if (this.scannerActive) {
+    this.checkCameraPermissions();
+  }
+}
+
+closeScannedProductView(): void {
+  this.showScannedProduct = false;
+  this.scannedProduct = null;
+}
 
 }

@@ -1,5 +1,7 @@
 export const environment = {
   production: false,
+    functionsUrl: 'https://your-region-your-project.cloudfunctions.net',
+  functionsKey: 'YOUR_SECRET_KEY' ,
   firebaseConfig: {
   apiKey: "AIzaSyCeyTJuQZLjD-kU_Dd3U00sfIJFS0uHEVY",
   authDomain: "qstockerpfe.firebaseapp.com",

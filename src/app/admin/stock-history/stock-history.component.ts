@@ -14,7 +14,6 @@ import { Supplier } from '../../models/supplier';
   styleUrls: ['./stock-history.component.css']
 })
 export class StockHistoryComponent implements OnInit {
-  // Variables pour le stock
   stockHistory: any[] = [];
   currentStock: any[] = [];
   combinedData: any[] = [];
@@ -24,7 +23,6 @@ export class StockHistoryComponent implements OnInit {
   searchTerm = '';
   products: Product[] = [];
 
-  // Variables pour les fournisseurs
   showSuppliers = false;
   suppliers: Supplier[] = [];
   filteredSuppliers: Supplier[] = [];
@@ -50,6 +48,7 @@ export class StockHistoryComponent implements OnInit {
       this.loadSuppliers();
     }
   }
+
   loadProducts(): void {
     this.productService.getProducts().subscribe({
       next: (products) => {
@@ -67,7 +66,7 @@ export class StockHistoryComponent implements OnInit {
       const product = this.products.find(p => p.id === item.idProduit);
       return {
         ...item,
-        qrCode: product?.qrCode || null,
+        qrCodeImage: product?.qrCodeImage || null,
         imageUrl: product?.imageUrl || null
       };
     });
@@ -76,7 +75,7 @@ export class StockHistoryComponent implements OnInit {
 
   loadStockAndHistory(): void {
     this.loading = true;
-    
+
     this.stockService.getStockMovements().subscribe({
       next: (history) => {
         this.stockHistory = history.map(item => ({
@@ -88,7 +87,7 @@ export class StockHistoryComponent implements OnInit {
           valeurTotale: null,
           dateMiseAJour: item.date,
           type: 'history',
-          qrCode: null,
+          qrCodeImage: null,
           imageUrl: null
         }));
         this.combineData();
@@ -111,7 +110,7 @@ export class StockHistoryComponent implements OnInit {
           valeurTotale: item.prixUnitaireHT * item.quantite,
           dateMiseAJour: item.dateMiseAJour,
           type: 'stock',
-          qrCode: item.qrCode || null,
+          qrCodeImage: null,
           imageUrl: item.imageUrl || null
         }));
         this.combineData();
@@ -125,47 +124,45 @@ export class StockHistoryComponent implements OnInit {
   }
 
   private combineData(): void {
-  if (this.stockHistory && this.currentStock) {
-    const combinedMap = new Map<string, any>();
-    
-    // D'abord ajouter le stock actuel
-    this.currentStock.forEach(record => {
-      const product = this.products.find(p => p.id === record.idProduit);
-      combinedMap.set(record.idProduit, {
-        ...record,
-        nomProduit: product?.name || record.nomProduit,
-        qrCode: product?.qrCode || record.qrCode,
-        imageUrl: product?.imageUrl || record.imageUrl,
-        description: product?.description,
-        status: record.status || 'active',
-        promotion: product?.promotion,
-        isAuthentic: product?.isAuthentic
-      });
-    });
+    if (this.stockHistory && this.currentStock) {
+      const combinedMap = new Map<string, any>();
 
-    // Ensuite ajouter l'historique
-    this.stockHistory.forEach(record => {
-      if (!combinedMap.has(record.idProduit)) {
+      this.currentStock.forEach(record => {
         const product = this.products.find(p => p.id === record.idProduit);
         combinedMap.set(record.idProduit, {
           ...record,
           nomProduit: product?.name || record.nomProduit,
-          qrCode: product?.qrCode,
-          imageUrl: product?.imageUrl,
+          qrCodeImage: product?.qrCodeImage || record.qrCodeImage,
+          imageUrl: product?.imageUrl || record.imageUrl,
           description: product?.description,
-          status: 'historic', // Marquer comme historique
+          status: record.status || 'active',
+          promotion: product?.promotion,
           isAuthentic: product?.isAuthentic
         });
-      }
-    });
+      });
 
-    this.combinedData = Array.from(combinedMap.values())
-      .sort((a, b) => new Date(b.dateMiseAJour).getTime() - new Date(a.dateMiseAJour).getTime());
-    
-    this.filteredData = [...this.combinedData];
-    this.loading = false;
+      this.stockHistory.forEach(record => {
+        if (!combinedMap.has(record.idProduit)) {
+          const product = this.products.find(p => p.id === record.idProduit);
+          combinedMap.set(record.idProduit, {
+            ...record,
+            nomProduit: product?.name || record.nomProduit,
+            qrCodeImage: product?.qrCodeImage,
+            imageUrl: product?.imageUrl,
+            description: product?.description,
+            status: 'historic',
+            isAuthentic: product?.isAuthentic
+          });
+        }
+      });
+
+      this.combinedData = Array.from(combinedMap.values())
+        .sort((a, b) => new Date(b.dateMiseAJour).getTime() - new Date(a.dateMiseAJour).getTime());
+
+      this.filteredData = [...this.combinedData];
+      this.loading = false;
+    }
   }
-}
 
   filterStock(): void {
     if (!this.searchTerm) {
@@ -181,8 +178,6 @@ export class StockHistoryComponent implements OnInit {
       );
     });
   }
-  // Méthodes existantes pour le stock...
-  // (garder toutes les méthodes existantes comme loadProducts, mergeProductInfo, etc.)
 
   // Méthodes pour les fournisseurs
   loadSuppliers(): void {
@@ -210,12 +205,12 @@ export class StockHistoryComponent implements OnInit {
     const searchTermLower = this.supplierSearchTerm.toLowerCase().trim();
     this.filteredSuppliers = this.suppliers.filter(supplier => {
       return (
-        (supplier.name?.toLowerCase().includes(searchTermLower) ||
-        (supplier.email?.toLowerCase().includes(searchTermLower) ||
-        (supplier.phone?.toLowerCase().includes(searchTermLower) ||
-        (supplier.address?.toLowerCase().includes(searchTermLower) ||
-        (supplier.info?.toLowerCase().includes(searchTermLower))
-        )))));
+        supplier.name?.toLowerCase().includes(searchTermLower) ||
+        supplier.email?.toLowerCase().includes(searchTermLower) ||
+        supplier.phone?.toLowerCase().includes(searchTermLower) ||
+        supplier.address?.toLowerCase().includes(searchTermLower) ||
+        supplier.info?.toLowerCase().includes(searchTermLower)
+      );
     });
   }
 

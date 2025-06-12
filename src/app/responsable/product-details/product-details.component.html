@@ -34,22 +34,21 @@
           </div>
 
           <!-- Section QR Code -->
-         <div class="qr-section p-3 bg-light rounded">
-  <h5 class="text-center mb-3">
-    <i class="fas fa-qrcode me-2"></i>QR Code du produit
-  </h5>
-  <div *ngIf="qrCodeUrl" class="text-center">
-    <img [src]="qrCodeUrl" alt="QR Code" class="img-thumbnail qr-image" />
-    <p class="text-muted small mt-2">
-      Scannez ce code pour plus d'informations
-    </p>
-  </div>
-  <div *ngIf="!qrCodeUrl" class="alert alert-warning text-center">
-    <i class="fas fa-exclamation-triangle me-2"></i>
-    QR Code non disponible
-  </div>
-</div>
-
+          <div class="qr-section p-3 bg-light rounded">
+            <h5 class="text-center mb-3">
+              <i class="fas fa-qrcode me-2"></i>QR Code du produit
+            </h5>
+            <div *ngIf="qrCodeUrl" class="text-center">
+              <img [src]="qrCodeUrl" alt="QR Code" class="img-thumbnail qr-image" />
+              <p class="text-muted small mt-2">
+                Scannez ce code pour plus d'informations
+              </p>
+            </div>
+            <div *ngIf="!qrCodeUrl" class="alert alert-warning text-center">
+              <i class="fas fa-exclamation-triangle me-2"></i>
+              QR Code non disponible
+            </div>
+          </div>
         </div>
 
         <!-- Colonne droite (Détails) -->
@@ -58,11 +57,10 @@
 
           <!-- Badges principaux -->
           <div class="d-flex flex-wrap gap-2 mb-3">
-  <!--  le badge pour la famille olfactive -->
-      <span class="badge olfactive-family-badge">
-  {{ product.olfactiveFamily }}
-</span>      
-      <span class="badge bg-secondary">{{ product.category }}</span>
+            <span class="badge olfactive-family-badge">
+              {{ product.olfactiveFamily }}
+            </span>
+            <span class="badge bg-secondary">{{ product.category }}</span>
 
             <!-- Badge de statut -->
             <span class="badge" [ngClass]="{
@@ -120,30 +118,30 @@
 
           <!-- Section des Prix -->
           <div class="product-prices mb-4">
-            <!-- Prix d'achat (Prix Unitaire HT) -->
-            <div class="purchase-price mb-3">
+            <!-- Prix de vente -->
+            <div class="sale-price mb-3">
               <h5 class="text-secondary">
                 <i class="fas fa-money-bill-wave me-2"></i>Prix d'achat (HT)
               </h5>
               <div class="price-value">
-                <span class="fw-bold">{{ stockItem?.prixUnitaireHT | number:'1.3-3' }} DT</span>
+                <span class="fw-bold">{{ stockItem?.prixDeVente | number:'1.3-3' }} DT</span>
                 <small class="text-muted ms-2">(Prix Unitaire HT)</small>
               </div>
               <small class="text-muted">Moyenne pondérée (PMP)</small>
             </div>
 
-            <!-- Prix de vente -->
-            <div class="sale-price">
+            <!-- Prix d'achat -->
+            <div class="purchase-price">
               <h5 class="text-primary">
                 <i class="fas fa-tag me-2"></i>Prix de vente
               </h5>
               <div *ngIf="product.status !== 'promotion' || !isPromotionActive()" class="price-value">
-                <span class="fw-bold">{{ stockItem?.prixDeVente | number:'1.3-3' }} DT</span>
+                <span class="fw-bold">{{ stockItem?.prixUnitaireHT | number:'1.3-3' }} DT</span>
                 <small class="text-muted ms-2">(TTC)</small>
               </div>
               <div *ngIf="product.status === 'promotion' && isPromotionActive()" class="price-value">
                 <span class="original-price text-muted me-2">
-                  <del>{{ stockItem?.prixDeVente | number:'1.3-3' }} DT</del>
+                  <del>{{ stockItem?.prixUnitaireHT | number:'1.3-3' }} DT</del>
                 </span>
                 <span class="discounted-price fw-bold text-success">
                   {{ calculateDiscountedPrice() | number:'1.3-3' }} DT
@@ -195,7 +193,7 @@
             <div class="row">
               <div class="col-md-6">
                 <p><strong>Remise:</strong> {{ product.promotion.discountPercentage }}%</p>
-                <p><strong>Prix original:</strong> {{ stockItem?.prixDeVente | number:'1.2-2' }} DT</p>
+                <p><strong>Prix original:</strong> {{ stockItem?.prixUnitaireHT | number:'1.2-2' }} DT</p>
                 <p><strong>Prix promotionnel:</strong>
                   <span class="text-success fw-bold">
                     {{ calculateDiscountedPrice() | number:'1.2-2' }} DT

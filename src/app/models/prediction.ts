@@ -1,6 +1,6 @@
 export interface Prediction {
   productId: string;
   productName: string;
-  date: string; // ou Date selon votre besoin
+  date: string; 
   predicted_quantity: number;
 }

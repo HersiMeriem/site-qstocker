@@ -24,7 +24,6 @@ import { Sale } from 'src/app/models/sale';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
-import { TimeAgoPipe } from 'src/app/pipes/time-ago.pipe';
 import { Router } from '@angular/router';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ZXingScannerModule } from '@zxing/ngx-scanner';
@@ -36,10 +35,10 @@ import { BehaviorSubject, combineLatest, Subscription, interval } from 'rxjs';
 import { ZXingScannerComponent } from '@zxing/ngx-scanner';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';
-import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
 import { PredictionService } from 'src/app/services/prediction.service';
 import { Prediction } from 'src/app/models/prediction';
 import { Product } from 'src/app/models/product';
+import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
 
 Chart.register(...registerables);
 
@@ -154,12 +153,6 @@ interface OrderStats {
 
 export class ResponsableDashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild(ZXingScannerComponent, { static: false }) scanner!: ZXingScannerComponent;
-  scannerActive = false;
-  showScanner = false;
-  supportedFormats = [BarcodeFormat.QR_CODE];
-  scannedProduct: Product | null = null;
-  showScannedProduct = false;
-  scanMode: 'edit' | 'delete' | 'view' | null = null;
   public caTrendChart?: Chart<'line'>;
   public expensesChart?: Chart<'doughnut'>;
   currentDate = new Date();
@@ -170,6 +163,18 @@ export class ResponsableDashboardComponent implements OnInit, AfterViewInit, OnD
     lastCheck: new Date(),
     verificationDetails: null
   };
+  products: Product[] = [];
+    filteredProducts: Product[] = [];
+    searchTerm: string = '';
+    selectedCategory: string = '';
+    selectedType: string = '';
+    categories: string[] = [];
+    types: string[] = [];
+    isPromotionDialogOpen = false;
+    scannerActive = false;
+    supportedFormats = [BarcodeFormat.QR_CODE];
+  
+  
 
   selectedDevice: MediaDeviceInfo | null = null;
   allowedFormats = [BarcodeFormat.QR_CODE];
@@ -445,35 +450,8 @@ export class ResponsableDashboardComponent implements OnInit, AfterViewInit, OnD
     this.loadPredictions();
   }
 
-  toggleScanner(): void {
-    this.scannerActive = !this.scannerActive;
-    if (this.scannerActive) {
-      this.requestCameraPermissions();
-    }
-  }
 
-  onScanSuccess(result: string): void {
-    this.scannerActive = false;
-    const productId = this.extractProductId(result);
-    if (!productId) {
-      this.snackBar.open('QR Code non valide', 'Fermer', { duration: 3000 });
-      return;
-    }
-
-    this.productService.getProductById(productId).subscribe({
-      next: (product) => {
-        if (product) {
-          this.scannedProduct = product;
-          this.showScannedProduct = true;
-        } else {
-          this.snackBar.open('Produit non trouvé', 'Fermer', { duration: 3000 });
-        }
-      },
-      error: () => {
-        this.snackBar.open('Erreur lors de la récupération du produit', 'Fermer', { duration: 3000 });
-      }
-    });
-  }
+ 
 
   extractProductId(data: string): string | null {
     try {
@@ -482,11 +460,6 @@ export class ResponsableDashboardComponent implements OnInit, AfterViewInit, OnD
     } catch {
       return data.startsWith('PRD-') ? data : null;
     }
-  }
-
-  closeScannedProductView(): void {
-    this.scannedProduct = null;
-    this.showScannedProduct = false;
   }
 
   async requestCameraPermissions() {
@@ -1166,15 +1139,12 @@ export class ResponsableDashboardComponent implements OnInit, AfterViewInit, OnD
   }
 
   contactSupplier(supplier: any) {
-    // Logique de contact
   }
 
   quickReplenish(product: any) {
-    // Réapprovisionnement rapide
   }
 
   adjustSafetyStock(product: any) {
-    // Ajustement du seuil
   }
 
   navigateToSupplierOrder() {
@@ -1275,26 +1245,6 @@ export class ResponsableDashboardComponent implements OnInit, AfterViewInit, OnD
     }
   }
 
-  openScanner() {
-    this.showScanner = true;
-    this.requestCameraPermissions();
-  }
-
-  handleQrCodeResult(resultString: string) {
-    this.closeScanner();
-    const productId = this.extractProductId(resultString);
-
-    if (productId) {
-      this.router.navigate(['/responsable/product-details', productId]);
-    } else {
-      alert('QR Code non reconnu');
-    }
-  }
-
-  closeScanner(): void {
-    this.scannerActive = false;
-    this.showScanner = false;
-  }
 
   goToSupplierOrder() {
     this.router.navigate(['/responsable/commande-fournisseur']);
@@ -1773,5 +1723,5 @@ export class ResponsableDashboardComponent implements OnInit, AfterViewInit, OnD
         });
     }
   }
-  
+    
 }

@@ -2,32 +2,25 @@
   <header class="list-header">
     <div class="header-top">
       <h1 class="title">📋 Gestion des Produits</h1>
-             <div class="header-actions">
-          <button class="btn btn-secondary" (click)="goToStock()">
-            <i class="fas fa-boxes"></i> Stock
-          </button>
-          
-          <button class="btn btn-primary" (click)="goToSales()">
-            <i class="fas fa-chart-line"></i> Ventes
-          </button>
-        </div>
+      <div class="header-actions">
+        <button class="btn btn-secondary" (click)="goToStock()">
+          <i class="fas fa-boxes"></i> Stock
+        </button>
+        <button class="btn btn-primary" (click)="goToSales()">
+          <i class="fas fa-chart-line"></i> Ventes
+        </button>
+      </div>
     </div>
     <div class="controls">
       <div class="search-box">
-        <input type="text"
-               [(ngModel)]="searchQuery"
-               (input)="applySearch()"
-               placeholder="Rechercher par nom, ID, type ou catégorie..."
-               class="search-input">
+        <input type="text" [(ngModel)]="searchQuery" (input)="applySearch()" placeholder="Rechercher par nom, ID, type ou catégorie..." class="search-input">
         <i class="fas fa-search search-icon"></i>
       </div>
-
       <div class="filters">
         <select [(ngModel)]="selectedCategory" (change)="filterProducts()" class="form-select">
           <option value="">Toutes catégories</option>
           <option *ngFor="let cat of categories" [value]="cat">{{cat}}</option>
         </select>
-
         <select [(ngModel)]="selectedStatus" (change)="filterProducts()" class="form-select">
           <option value="">Tous statuts</option>
           <option value="active">Actif</option>
@@ -47,46 +40,31 @@
     <div *ngFor="let product of filteredProducts" class="product-card">
       <div class="card-content">
         <div class="image-section">
-          <img
-            [src]="product.imageUrl || 'assets/default-product.png'"
-            alt="Image produit"
-            class="product-image"
-          />
-
+          <img [src]="product.imageUrl || 'assets/default-product.png'" alt="Image produit" class="product-image" />
           <div class="product-identifier">
             <div class="qr-wrapper">
-              <img [src]="product.qrCode" alt="QR Code" class="qr-code" *ngIf="product.qrCode" />
+              <img [src]="product.qrCodeImage" alt="QR Code" class="qr-code" *ngIf="product.qrCodeImage" />
             </div>
             <span class="product-id">REF-{{ product.id | slice:0:8 }}</span>
           </div>
         </div>
-
         <div class="product-details">
           <div *ngIf="product.status === 'promotion'" class="promotion-badge">
             <i class="fas fa-tag"></i> PROMO -{{ product.promotion?.discountPercentage }}%
             <span *ngIf="!isPromotionActive(product)" class="expired-text">(Expirée)</span>
           </div>
-
           <div class="badge-group">
             <span class="category-badge">{{ product.category }}</span>
-            <span class="authenticity-badge" [ngClass]="{
-              'authentic': product.isAuthentic,
-              'counterfeit': !product.isAuthentic
-            }">
+            <span class="authenticity-badge" [ngClass]="{'authentic': product.isAuthentic, 'counterfeit': !product.isAuthentic}">
               <i class="fas" [class.fa-check-circle]="product.isAuthentic" [class.fa-exclamation-triangle]="!product.isAuthentic"></i>
               {{ product.isAuthentic ? 'Authentique' : 'Contrefaçon' }}
             </span>
-            <span class="olfactive-family-badge">
-              {{ product.olfactiveFamily }}
-            </span>
+            <span class="olfactive-family-badge">{{ product.olfactiveFamily }}</span>
           </div>
-
           <h3 class="product-name">{{ product.name }}</h3>
-
           <p class="product-brand"><strong>Marque:</strong> {{ product.brand }}</p>
           <p class="product-perfume-type"><strong>Type de parfum:</strong> {{ product.perfumeType }}</p>
           <p class="product-origin"><strong>Origine:</strong> {{ product.origin }}</p>
-          
           <div class="price-section">
             <p class="product-price">
               <strong>Prix: </strong>
@@ -100,23 +78,16 @@
               </span>
             </p>
           </div>
-
           <div class="promotion-details" *ngIf="product.status === 'promotion' && product.promotion">
             <p><strong>Période promotionnelle:</strong></p>
             <p>{{ product.promotion.startDate | date:'dd/MM/yyyy' }} - {{ product.promotion.endDate | date:'dd/MM/yyyy' }}</p>
           </div>
-
-          <button
-            class="action-btn info"
-            (click)="viewDetails(product.id)"
-            matTooltip="Voir plus de détails"
-          >
+          <button class="action-btn info" (click)="viewDetails(product.id)" matTooltip="Voir plus de détails">
             <i class="fas fa-eye"></i> Détails
           </button>
         </div>
       </div>
     </div>
-
     <div *ngIf="!loading && filteredProducts.length === 0" class="empty-state">
       <i class="fas fa-box-open"></i>
       <p>Aucun produit trouvé</p>

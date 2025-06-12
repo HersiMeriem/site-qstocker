@@ -11,15 +11,8 @@
     </h2>
 
     <div *ngIf="!showSuppliers">
-      <!-- Contenu original du stock -->
       <div class="mb-4">
-        <input 
-          type="text" 
-          [(ngModel)]="searchTerm" 
-          (input)="filterStock()" 
-          placeholder="🔍 Rechercher par nom ou ID produit..." 
-          class="form-control"
-        >
+        <input type="text" [(ngModel)]="searchTerm" (input)="filterStock()" placeholder="🔍 Rechercher par nom ou ID produit..." class="form-control">
       </div>
 
       <div *ngIf="errorMessage" class="alert alert-danger alert-dismissible fade show">
@@ -34,58 +27,52 @@
         <p class="mt-2">Chargement du stock...</p>
       </div>
 
-<div class="table-responsive" *ngIf="!loading && combinedData.length > 0">
-      <table class="stock-table">
-        <thead>
-          <tr>
-            <th>QR Code</th>
-            <th>Image</th>
-            <th>ID Produit</th>
-            <th>Nom</th>
-            <th>Quantité</th>
-            <th>Prix Unitaire HT</th>
-            <th>Prix de Vente</th>
-            <th>Valeur Totale</th>
-            <th>Dernière Mise à Jour</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let record of filteredData" class="c1">
-            <td>
-              <img *ngIf="record.qrCode" [src]="record.qrCode" alt="QR Code" style="width: 50px;">
-            </td>
-            <td>
-              <img *ngIf="record.imageUrl" [src]="record.imageUrl" alt="Produit" style="width: 50px; height: 50px; object-fit: cover;">
-            </td>
-            <td>{{ record.idProduit }}</td>
-            <td>{{ record.nomProduit }}</td>
-            <td>
-              <span class="badge bg-primary rounded-pill">
-                {{ record.quantite }}
-              </span>
-            </td>
-            <td>{{ record.prixUnitaireHT !== null ? (record.prixUnitaireHT | number:'1.3-3') : '-' }} DT</td>
-            <td>{{ record.prixDeVente !== null ? (record.prixDeVente | number:'1.3-3') : '-' }} DT</td>
-            <td>{{ record.valeurTotale !== null ? (record.valeurTotale | number:'1.3-3') : '-' }} DT</td>
-            <td>{{ record.dateMiseAJour | date:'dd/MM/yyyy HH:mm' }}</td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="table-responsive" *ngIf="!loading && combinedData.length > 0">
+        <table class="stock-table">
+          <thead>
+            <tr>
+              <th>QR Code</th>
+              <th>Image</th>
+              <th>ID Produit</th>
+              <th>Nom</th>
+              <th>Quantité</th>
+              <th>Prix Unitaire HT</th>
+              <th>Prix de Vente</th>
+              <th>Valeur Totale</th>
+              <th>Dernière Mise à Jour</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let record of filteredData" class="c1">
+              <td>
+                <img *ngIf="record.qrCodeImage" [src]="record.qrCodeImage" alt="QR Code" style="width: 50px;">
+              </td>
+              <td>
+                <img *ngIf="record.imageUrl" [src]="record.imageUrl" alt="Produit" style="width: 50px; height: 50px; object-fit: cover;">
+              </td>
+              <td>{{ record.idProduit }}</td>
+              <td>{{ record.nomProduit }}</td>
+              <td>
+                <span class="badge bg-primary rounded-pill">
+                  {{ record.quantite }}
+                </span>
+              </td>
+              <td>{{ record.prixUnitaireHT !== null ? (record.prixUnitaireHT | number:'1.3-3') : '-' }} DT</td>
+              <td>{{ record.prixDeVente !== null ? (record.prixDeVente | number:'1.3-3') : '-' }} DT</td>
+              <td>{{ record.valeurTotale !== null ? (record.valeurTotale | number:'1.3-3') : '-' }} DT</td>
+              <td>{{ record.dateMiseAJour | date:'dd/MM/yyyy HH:mm' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
-  </div>
 
     <!-- Section des fournisseurs -->
     <div *ngIf="showSuppliers" class="suppliers-section">
       <h3>Liste des fournisseurs</h3>
-      
+
       <div class="mb-4">
-        <input 
-          type="text" 
-          [(ngModel)]="supplierSearchTerm" 
-          (input)="filterSuppliers()" 
-          placeholder="🔍 Rechercher un fournisseur..." 
-          class="form-control"
-        >
+        <input type="text" [(ngModel)]="supplierSearchTerm" (input)="filterSuppliers()" placeholder="🔍 Rechercher un fournisseur..." class="form-control">
       </div>
 
       <button mat-raised-button color="primary" class="add-button" (click)="openSupplierDialog()">

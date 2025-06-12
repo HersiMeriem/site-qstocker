@@ -77,24 +77,22 @@ export class ProductDetailsComponent implements OnInit {
     });
   }
 
- private loadQrCode(productId: string): void {
-  if (this.product?.qrCodeImage) {
-    this.qrCodeUrl = this.product.qrCodeImage;
-    return;
-  }
-
-  this.qrCodeService.generateQRCodeImage(productId).subscribe({
-    next: (qrCodeImage) => {
-      this.qrCodeUrl = qrCodeImage;
-    },
-    error: (err) => {
-      console.error('Erreur lors du chargement du QR code:', err);
-      this.qrCodeUrl = null;
+  private loadQrCode(productId: string): void {
+    if (this.product?.qrCodeImage) {
+      this.qrCodeUrl = this.product.qrCodeImage;
+      return;
     }
-  });
-}
 
-
+    this.qrCodeService.generateQRCodeImage(productId).subscribe({
+      next: (qrCodeImage) => {
+        this.qrCodeUrl = qrCodeImage;
+      },
+      error: (err) => {
+        console.error('Erreur lors du chargement du QR code:', err);
+        this.qrCodeUrl = null;
+      }
+    });
+  }
 
   deleteProduct(productId: string): void {
     if (confirm('Êtes-vous sûr de vouloir supprimer ce produit ?')) {
@@ -140,14 +138,14 @@ export class ProductDetailsComponent implements OnInit {
 
   calculateDiscountedPrice(): number {
     if (!this.stockItem || !this.product || !this.isPromotionActive()) {
-      return this.stockItem?.prixDeVente || 0;
+      return this.stockItem?.prixUnitaireHT || 0;
     }
     const discount = this.product.promotion?.discountPercentage || 0;
-    return this.stockItem.prixDeVente * (1 - discount / 100);
+    return this.stockItem.prixUnitaireHT * (1 - discount / 100);
   }
 
   calculateSavings(): number {
-    if (!this.stockItem?.prixDeVente) return 0;
-    return this.stockItem.prixDeVente - this.calculateDiscountedPrice();
+    if (!this.stockItem?.prixUnitaireHT) return 0;
+    return this.stockItem.prixUnitaireHT - this.calculateDiscountedPrice();
   }
 }

@@ -1,330 +1,227 @@
 <div class="dashboard-wrapper">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <h2><i class="fas fa-chart-line"></i> Tableau Financier</h2>
-      <button class="btn btn-primary" (click)="openExpenseModal()">
-        <i class="fas fa-plus"></i> Ajouter une dépense
-      </button>
-      <button class="btn btn-primary" (click)="toggleExpensesSection()">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-chart-line"></i> Tableau Financier</h2>
+    <div class="d-flex">
+      <button class="btn btn-primary btn-sm me-2" (click)="toggleExpensesSection()">
         <i class="fas fa-file-invoice-dollar"></i> {{ showExpensesSection ? 'Masquer' : 'Afficher' }} les dépenses
       </button>
-      <button class="btn btn-primary" (click)="toggleCommandInvoicesSection()">
+      <button class="btn btn-primary btn-sm" (click)="toggleCommandInvoicesSection()">
         <i class="fas fa-file-invoice"></i> {{ showCommandInvoices ? 'Masquer' : 'Afficher' }} les factures fournisseurs
       </button>
     </div>
-  
-    <div class="filters">
-      <select [(ngModel)]="period" (change)="applyPeriodFilter()" class="form-select">
-        <option value="today">Aujourd'hui</option>
-        <option value="week">Cette semaine</option>
-        <option value="month">Ce mois</option>
-        <option value="year">Cette année</option>
-        <option value="all">Toutes les données</option>
-        <option value="custom">Personnalisé</option>
-      </select>
-  
-      <div *ngIf="period === 'custom'" class="date-picker mt-2">
-        <div class="row g-2">
-          <div class="col">
-            <input type="date" [(ngModel)]="customStart" class="form-control">
-          </div>
-          <div class="col">
-            <input type="date" [(ngModel)]="customEnd" class="form-control">
-          </div>
-          <div class="col-auto">
-            <button (click)="applyPeriodFilter()" class="btn btn-primary">Valider</button>
-          </div>
+  </div>
+
+  <div class="filters">
+    <select [(ngModel)]="period" (change)="applyPeriodFilter()" class="form-select">
+      <option value="today">Aujourd'hui</option>
+      <option value="week">Cette semaine</option>
+      <option value="month">Ce mois</option>
+      <option value="year">Cette année</option>
+      <option value="all">Toutes les données</option>
+      <option value="custom">Personnalisé</option>
+    </select>
+
+    <div *ngIf="period === 'custom'" class="date-picker mt-2">
+      <div class="row g-2">
+        <div class="col">
+          <input type="date" [(ngModel)]="customStart" class="form-control">
+        </div>
+        <div class="col">
+          <input type="date" [(ngModel)]="customEnd" class="form-control">
+        </div>
+        <div class="col-auto">
+          <button (click)="applyPeriodFilter()" class="btn btn-primary">Valider</button>
         </div>
       </div>
     </div>
-  
-    <div *ngIf="errorMessage" class="error-message alert alert-danger mt-3">
-      <div class="d-flex justify-content-between align-items-center">
-        <div>
-          <i class="fas fa-exclamation-triangle me-2"></i> {{ errorMessage }}
-        </div>
-        <button (click)="retryLoading()" class="btn btn-sm btn-outline-danger">
-          <i class="fas fa-sync-alt"></i> Réessayer
-        </button>
-      </div>
-    </div>
-  
-    <div class="dashboard-content mt-4">
-      <div class="metrics-grid row g-4">
-        <!-- First row - Key metrics -->
-        <div class="col-md-12">
-          <div class="row g-4">
-            <!-- Revenue card -->
-            <div class="col-md-3">
-              <div class="metric-box highlight card h-100">
-                <div class="card-body">
-                  <h4 class="card-title">Chiffre d'affaires</h4>
-                  <p class="card-text display-6">{{ totalCA | number:'1.2-2' }} DT</p>
-                  <div class="trend" [class.positive]="caTrend >= 0">
-                    <i [class]="'fas fa-arrow-' + (caTrend >= 0 ? 'up' : 'down')"></i>
-                    {{ caTrend | number:'1.1-1' }}%
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Gross profit card -->
-            <div class="col-md-3">
-              <div class="metric-box card h-100">
-                <div class="card-body">
-                  <h4 class="card-title">Bénéfice brut</h4>
-                  <p class="card-text display-6">{{ benefice | number:'1.2-2' }} DT</p>
-                  <div class="subtext">Marge: {{ margeBrute | number:'1.1-1' }}%</div>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Transactions card -->
-            <div class="col-md-3">
-              <div class="metric-box card h-100">
-                <div class="card-body">
-                  <h4 class="card-title">Transactions</h4>
-                  <p class="card-text display-6">{{ transactions }}</p>
-                  <div class="subtext">Panier moyen: {{ panierMoyen | number:'1.2-2' }} DT</div>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Average costs card -->
-            <div class="col-md-3">
-              <div class="metric-box card h-100">
-                <div class="card-body">
-                  <h4 class="card-title">Coûts moyens</h4>
-                  <p class="card-text display-6">{{ costPerTransaction | number:'1.2-2' }} DT</p>
-                  <div class="subtext">Par transaction</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-  
-        <!-- Second row - Expenses and net profit -->
-        <div class="col-md-12 mt-3">
-          <div class="row g-4">
-            <!-- Expenses card -->
-            <div class="col-md-6">
-              <div class="metric-box card h-100">
-                <div class="card-body">
-                  <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                      <h4 class="card-title">Dépenses totales</h4>
-                      <p class="card-text display-6">{{ totalExpenses | number:'1.2-2' }} DT</p>
-                    </div>
-                    <div class="text-end">
-                      <span class="badge bg-light text-dark">
-                        {{ filteredExpenses.length }} transactions
-                      </span>
-                    </div>
-                  </div>
-                  <div class="progress mt-2" style="height: 8px;">
-                    <div class="progress-bar bg-warning" 
-                         [style.width]="(totalExpenses / totalCA * 100) + '%'"
-                         role="progressbar">
-                    </div>
-                  </div>
-                  <small class="text-muted">
-                    {{ (totalExpenses / totalCA * 100) | number:'1.1-1' }}% du chiffre d'affaires
-                  </small>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Net profit card -->
-            <div class="col-md-6">
-              <div class="metric-box highlight-secondary card h-100">
-                <div class="card-body">
-                  <h4 class="card-title">Bénéfice net</h4>
-                  <p class="card-text display-6">{{ (benefice - totalExpenses) | number:'1.2-2' }} DT</p>
-                  <div class="d-flex justify-content-between">
-                    <small class="text-muted">Après dépenses</small>
-                    <span class="badge" 
-                          [ngClass]="(benefice - totalExpenses) >= 0 ? 'bg-success' : 'bg-danger'">
-                      {{ ((benefice - totalExpenses) / totalCA * 100) | number:'1.1-1' }}% de marge nette
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-  
-      <div class="charts row mt-4 g-4">
-        <div class="col-lg-6">
-          <div class="chart-container card h-100">
-            <div class="card-body">
-              <h4 class="card-title">Évolution du CA</h4>
-              <div class="chart-wrapper">
-                <canvas id="lineChart"></canvas>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="col-lg-6">
-          <div class="chart-container card h-100">
-            <div class="card-body">
-              <h4 class="card-title">Répartition des dépenses</h4>
-              <div class="chart-wrapper">
-                <canvas id="doughnutChart"></canvas>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  
-    <!-- Expenses Section -->
-    <div class="expenses-section mt-5" *ngIf="showExpensesSection">
-      <div class="d-flex justify-content-between align-items-center mb-3">
-        <h3><i class="fas fa-file-invoice-dollar"></i> Gestion des Dépenses</h3>
-      </div>
-  
-      <div class="card">
-        <div class="card-body">
-          <h4 class="card-title mb-4">Dépenses récentes</h4>
-          
-          <div *ngIf="expensesLoading" class="text-center py-3">
-            <div class="spinner-border text-secondary" role="status"></div>
-          </div>
-  
-          <div *ngIf="!expensesLoading && filteredExpenses.length === 0" class="text-center py-3">
-            Aucune dépense enregistrée pour cette période
-          </div>
-  
-          <div class="table-responsive" *ngIf="!expensesLoading && filteredExpenses.length > 0">
-            <table class="table table-hover">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Montant</th>
-                  <th>Catégorie</th>
-                  <th>Description</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let exp of filteredExpenses">
-                  <td>{{ exp.date | date:'dd/MM/yyyy' }}</td>
-                  <td>{{ exp.amount | number:'1.2-2' }} DT</td>
-                  <td>
-                    <span class="badge" [ngClass]="'bg-' + getCategoryColor(exp.category)">
-                      {{ exp.category }}
-                    </span>
-                  </td>
-                  <td>{{ exp.description }}</td>
-                  <td>
-                    <button class="btn btn-sm btn-outline-danger" (click)="deleteExpense(exp.id)">
-                      <i class="fas fa-trash"></i>
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-  
-    <!-- Command Invoices Section -->
-    <!-- Command Invoices Section -->
-<div class="command-invoices-section mt-5" *ngIf="showCommandInvoices">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h3><i class="fas fa-truck-moving"></i> Factures Fournisseurs</h3>
+  </div>
+
+  <div *ngIf="errorMessage" class="error-message alert alert-danger mt-3">
+    <div class="d-flex justify-content-between align-items-center">
       <div>
-        <input 
-          type="text" 
-          class="form-control" 
-          [(ngModel)]="searchTerm" 
-          (input)="applyFilter()" 
-          placeholder="Rechercher..."
-          style="width: 250px; display: inline-block; margin-right: 10px;"
-        >
+        <i class="fas fa-exclamation-triangle me-2"></i> {{ errorMessage }}
+      </div>
+      <button (click)="retryLoading()" class="btn btn-sm btn-outline-danger">
+        <i class="fas fa-sync-alt"></i> Réessayer
+      </button>
+    </div>
+  </div>
+
+  <div class="dashboard-content mt-4">
+    <div class="metrics-grid row g-4">
+      <!-- First row - Key metrics -->
+      <div class="col-md-12">
+        <div class="row g-4">
+
+<!-- CA Total -->
+<div class="col-md-3">
+  <div class="metric-box highlight card h-100">
+    <div class="card-body">
+      <h4 class="card-title">CA Total</h4>
+      <p class="card-text display-6">{{ totalCA + deliveredOrdersRevenue | number:'1.2-2' }} DT</p>
+      <div class="subtext">Transactions ({{ totalCA | number:'1.2-2' }} DT) + Commandes ({{ deliveredOrdersRevenue | number:'1.2-2' }} DT)</div>
+    </div>
+  </div>
+</div>
+
+   <!-- Transactions card -->
+<div class="col-md-3">
+  <div class="metric-box card h-100">
+    <div class="card-body">
+      <h4 class="card-title">Transactions</h4>
+      <p class="card-text display-6">{{ transactions }}</p>
+      <div class="subtext">Panier moyen par transaction : {{ panierMoyen | number:'1.2-2' }} DT</div>
+      <div class="subtext">CA: {{ totalCA | number:'1.2-2' }} DT</div>
+    </div>
+  </div>
+</div>
+
+<!-- Dans la section metrics-grid, première row -->
+<div class="col-md-3">
+  <div class="metric-box card h-100">
+    <div class="card-body">
+      <h4 class="card-title">Commandes Livrées</h4>
+      <p class="card-text display-6">{{ deliveredOrdersCount }}</p>
+      <div class="subtext">CA: {{ deliveredOrdersRevenue | number:'1.2-2' }} DT</div>
+    </div>
+  </div>
+</div>
+
+<!-- Bénéfice brut -->
+<div class="col-md-3">
+  <div class="metric-box card h-100">
+    <div class="card-body">
+      <h4 class="card-title">Bénéfice brut</h4>
+      <p class="card-text display-6">{{ benefice | number:'1.2-2' }} DT</p>
+      <div class="subtext">
+        <span class="badge bg-primary">Marge: {{ margeBrute | number:'1.1-1' }}%</span>
       </div>
     </div>
-  
-    <!-- Statistiques -->
-    <div class="card bg-light mb-4">
-      <div class="card-body">
-        <h5 class="card-title text-center">Statistiques de Paiement</h5>
-        <div class="d-flex justify-content-between">
-          <div class="text-center">
-            <div class="fs-4 text-success">{{ paidCount }}</div>
-            <small>Payées</small>
-          </div>
-          <div class="text-center">
-            <div class="fs-4 text-warning">{{ pendingCount }}</div>
-            <small>En attente</small>
-          </div>
-          <div class="text-center">
-            <div class="fs-4 text-danger">{{ overdueCount }}</div>
-            <small>En retard</small>
-          </div>
+  </div>
+</div>
+
+
+      <!-- Second row - Expenses and net profit -->
+      <div class="col-md-12 mt-3">
+        <div class="row g-4">
+       <!-- Expenses card -->
+<div class="col-md-6">
+  <div class="metric-box card h-100">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <h4 class="card-title">Dépenses totales</h4>
+          <p class="card-text display-6">{{ totalExpenses | number:'1.2-2' }} DT</p>
+        </div>
+        <div class="text-end">
+          <button class="btn btn-primary btn-sm mb-2" (click)="openExpenseModal()">
+            <i class="fas fa-plus"></i> Ajouter
+          </button>
+          <span class="badge bg-light text-dark">
+            {{ filteredExpenses.length }} transactions
+          </span>
         </div>
       </div>
+      <div class="progress mt-2" style="height: 8px;">
+        <div class="progress-bar bg-warning"
+             [style.width]="(totalExpenses / totalCA * 100) + '%'"
+             role="progressbar">
+        </div>
+      </div>
+      <small class="text-muted">
+        {{ (totalExpenses / totalCA * 100) | number:'1.1-1' }}% du chiffre d'affaires
+      </small>
     </div>
-  
+  </div>
+</div>
+        <!-- Bénéfice net -->
+<div class="col-md-3">
+  <div class="metric-box highlight-secondary card h-100">
+    <div class="card-body">
+      <h4 class="card-title">Bénéfice net</h4>
+      <p class="card-text display-6">{{ (benefice - totalExpenses) | number:'1.2-2' }} DT</p>
+      <div class="d-flex justify-content-between">
+        <small class="text-muted">Après dépenses</small>
+        <span class="badge" [ngClass]="(benefice - totalExpenses) >= 0 ? 'bg-success' : 'bg-danger'">
+          {{ ((benefice - totalExpenses) / totalRevenue * 100) | number:'1.1-1' }}% de marge nette
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+      </div>
+    </div>
+
+<br>
+<!--courbe -->
+    <div class="col-lg-12">
+  <div class="chart-container card h-100">
+    <div class="card-body">
+      <h4 class="card-title">Évolution du Chiffre d'Affaires</h4>
+      <div class="chart-wrapper">
+        <canvas id="combinedCAChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Nouveau graphique des bénéfices -->
+<div class="col-lg-12 mt-4">
+  <div class="chart-container card h-100">
+    <div class="card-body">
+      <h4 class="card-title">Bénéfices par Type de Vente</h4>
+      <div class="chart-wrapper">
+        <canvas id="profitChart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+  <!-- Expenses Section -->
+  <div class="expenses-section mt-5" *ngIf="showExpensesSection">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h3><i class="fas fa-file-invoice-dollar"></i> Gestion des Dépenses</h3>
+    </div>
+
     <div class="card">
       <div class="card-body">
-        <div class="table-responsive">
+        <h4 class="card-title mb-4">Dépenses récentes</h4>
+
+        <div *ngIf="expensesLoading" class="text-center py-3">
+          <div class="spinner-border text-secondary" role="status"></div>
+        </div>
+
+        <div *ngIf="!expensesLoading && filteredExpenses.length === 0" class="text-center py-3">
+          Aucune dépense enregistrée pour cette période
+        </div>
+
+        <div class="table-responsive" *ngIf="!expensesLoading && filteredExpenses.length > 0">
           <table class="table table-hover">
-            <thead class="table-light">
+            <thead>
               <tr>
-                <th>ID Commande</th>
-                <th>N° Facture</th>
-                <th>Produit</th>
-                <th>Fournisseur</th>
-                <th>Total TTC</th>
-                <th>Date Commande</th>
-                <th>Statut Paiement</th>
-                <th class="text-end">Actions</th>
+                <th>Date</th>
+                <th>Montant</th>
+                <th>Catégorie</th>
+                <th>Description</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let cmd of filteredCommandInvoices" 
-                  [class.table-danger]="cmd.paymentStatus === 'En retard'">
-                <td class="fw-bold">{{ cmd.id || 'N/A' }}</td>
-                <td class="fw-bold">{{ cmd.invoiceNumber || 'N/A' }}</td>
-                <td>{{ getProductName(cmd) }}</td>
-                <td>{{ cmd.supplierName }}</td>
-                <td>{{ getTotalTTC(cmd) | number:'1.3-3' }} DT</td>
-                <td>{{ cmd.dateCommande | date:'dd/MM/yy' }}</td>
+              <tr *ngFor="let exp of filteredExpenses">
+                <td>{{ exp.date | date:'dd/MM/yyyy' }}</td>
+                <td>{{ exp.amount | number:'1.2-2' }} DT</td>
                 <td>
-                  <span class="badge" [ngClass]="{
-                    'bg-success': cmd.paymentStatus === 'Payé',
-                    'bg-warning': cmd.paymentStatus === 'En attente',
-                    'bg-danger': cmd.paymentStatus === 'En retard'
-                  }">
-                    {{ cmd.paymentStatus }}
-                    <span *ngIf="cmd.paymentStatus === 'En retard'" class="ms-2 small">
-                      ({{ calculateDaysLate(cmd.dueDate) }} jours)
-                    </span>
+                  <span class="badge" [ngClass]="'bg-' + getCategoryColor(exp.category)">
+                    {{ exp.category }}
                   </span>
                 </td>
-                <td class="text-end">
-                  <div class="btn-group" role="group">
-                    <button *ngIf="cmd.paymentStatus !== 'Payé'"
-                            class="btn btn-sm btn-success"
-                            (click)="markAsPaid(cmd)"
-                            title="Marquer comme payé">
-                      <i class="fas fa-check-circle"></i>
-                    </button>
-                    
-                    <button class="btn btn-sm btn-info"
-                            (click)="generateInvoice(cmd)"
-                            title="Générer facture">
-                      <i class="fas fa-file-invoice"></i>
-                    </button>
-                    
-                    <button class="btn btn-sm btn-primary"
-                            (click)="sendReminder(cmd)"
-                            title="Envoyer rappel">
-                      <i class="fas fa-envelope"></i>
-                    </button>
-                  </div>
+                <td>{{ exp.description }}</td>
+                <td>
+                  <button class="btn btn-sm btn-outline-danger" (click)="deleteExpense(exp.id)">
+                    <i class="fas fa-trash"></i>
+                  </button>
                 </td>
               </tr>
             </tbody>
@@ -333,135 +230,234 @@
       </div>
     </div>
   </div>
-  
-  <!-- Invoice Modal -->
-  <div class="modal fade show" *ngIf="showInvoiceModal" style="display: block; background-color: rgba(0,0,0,0.5);">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Détails de la Facture</h5>
-          <button type="button" class="close" (click)="closeInvoiceModal()">
-            <span>&times;</span>
-          </button>
+
+  <!-- Command Invoices Section -->
+<div class="command-invoices-section mt-5" *ngIf="showCommandInvoices">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3><i class="fas fa-truck-moving"></i> Factures Fournisseurs</h3>
+    <div>
+      <input
+      type="text"
+      class="form-control"
+      [(ngModel)]="searchTerm"
+      (input)="applyFilter()"
+      placeholder="Rechercher ..."
+      style="width: 250px; display: inline-block; margin-right: 10px;"
+    >
+    </div>
+  </div>
+
+  <!-- Statistiques -->
+  <div class="card bg-light mb-4">
+    <div class="card-body">
+      <h5 class="card-title text-center">Statistiques de Paiement</h5>
+      <div class="d-flex justify-content-between">
+        <div class="text-center">
+          <div class="fs-4 text-success">{{ paidCount }}</div>
+          <small>Payées</small>
         </div>
-        <div class="modal-body" *ngIf="selectedInvoice">
-          <div class="row mb-3">
-            <div class="col-md-6">
-              <p><strong>N° Facture:</strong> {{ selectedInvoice.invoiceNumber || 'N/A' }}</p>
-              <p><strong>ID Commande:</strong> {{ selectedInvoice.id }}</p>
-            </div>
-            <div class="col-md-6 text-end">
-              <p><strong>Date:</strong> {{ selectedInvoice.dateCommande | date:'dd/MM/yyyy' }}</p>
-              <p>
-                <strong>Statut:</strong> 
+        <div class="text-center">
+          <div class="fs-4 text-warning">{{ pendingCount }}</div>
+          <small>En attente</small>
+        </div>
+        <div class="text-center">
+          <div class="fs-4 text-danger">{{ overdueCount }}</div>
+          <small>En retard</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead class="table-light">
+            <tr>
+              <th>ID Commande</th>
+              <th>N° Facture</th>
+              <th>Produit</th>
+              <th>Fournisseur</th>
+              <th>Total TTC</th>
+              <th>Date Commande</th>
+              <th>Statut Paiement</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let cmd of filteredCommandInvoices"
+                [class.table-danger]="cmd.paymentStatus === 'En retard'">
+              <td class="fw-bold">{{ cmd.id || 'N/A' }}</td>
+              <td class="fw-bold">{{ cmd.invoiceNumber || 'N/A' }}</td>
+              <td>{{ getProductName(cmd) }}</td>
+              <td>{{ cmd.supplierName }}</td>
+              <td>{{ getTotalTTC(cmd) | number:'1.3-3' }} DT</td>
+              <td>{{ cmd.dateCommande | date:'dd/MM/yy' }}</td>
+              <td>
                 <span class="badge" [ngClass]="{
-                  'bg-success': selectedInvoice.paymentStatus === 'Payé',
-                  'bg-warning': selectedInvoice.paymentStatus === 'En attente',
-                  'bg-danger': selectedInvoice.paymentStatus === 'En retard'
+                  'bg-success': cmd.paymentStatus === 'Payé',
+                  'bg-warning': cmd.paymentStatus === 'En attente',
+                  'bg-danger': cmd.paymentStatus === 'En retard'
                 }">
-                  {{ selectedInvoice.paymentStatus }}
+                  {{ cmd.paymentStatus }}
+                  <span *ngIf="cmd.paymentStatus === 'En retard'" class="ms-2 small">
+                    ({{ calculateDaysLate(cmd.dueDate) }} jours)
+                  </span>
                 </span>
-              </p>
-            </div>
+              </td>
+              <td class="text-end">
+                <div class="btn-group" role="group">
+                  <button *ngIf="cmd.paymentStatus !== 'Payé'"
+                          class="btn btn-sm btn-success"
+                          (click)="markAsPaid(cmd)"
+                          title="Marquer comme payé">
+                    <i class="fas fa-check-circle"></i>
+                  </button>
+
+                  <button class="btn btn-sm btn-info"
+                          (click)="generateInvoice(cmd)"
+                          title="Générer facture">
+                    <i class="fas fa-file-invoice"></i>
+                  </button>
+
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Invoice Modal -->
+<div class="modal fade show" *ngIf="showInvoiceModal" style="display: block; background-color: rgba(0,0,0,0.5);">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Détails de la Facture</h5>
+        <button type="button" class="close" (click)="closeInvoiceModal()">
+          <span>&times;</span>
+        </button>
+      </div>
+      <div class="modal-body" *ngIf="selectedInvoice">
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <p><strong>N° Facture:</strong> {{ selectedInvoice.invoiceNumber || 'N/A' }}</p>
+            <p><strong>ID Commande:</strong> {{ selectedInvoice.id }}</p>
           </div>
-          
-          <div class="row mb-3">
-            <div class="col-md-12">
-              <h6>Fournisseur</h6>
-              <p>{{ selectedInvoice.supplierName }}</p>
-            </div>
+          <div class="col-md-6 text-end">
+            <p><strong>Date:</strong> {{ selectedInvoice.dateCommande | date:'dd/MM/yyyy' }}</p>
+            <p>
+              <strong>Statut:</strong>
+              <span class="badge" [ngClass]="{
+                'bg-success': selectedInvoice.paymentStatus === 'Payé',
+                'bg-warning': selectedInvoice.paymentStatus === 'En attente',
+                'bg-danger': selectedInvoice.paymentStatus === 'En retard'
+              }">
+                {{ selectedInvoice.paymentStatus }}
+              </span>
+            </p>
           </div>
-          
-          <div class="row mb-3">
-            <div class="col-md-4">
-              <h6>Produit</h6>
-              <p>{{ getProductName(selectedInvoice) }}</p>
-            </div>
-            <div class="col-md-2">
-              <h6>Quantité</h6>
-              <p>{{ getQuantity(selectedInvoice) }}</p>
-            </div>
-            <div class="col-md-3">
-              <h6>Prix Unitaire HT</h6>
-              <p>{{ getUnitPrice(selectedInvoice) | number:'1.3-3' }} DT</p>
-            </div>
-            <div class="col-md-3">
-              <h6>Total HT</h6>
-              <p>{{ getTotalHT(selectedInvoice) | number:'1.3-3' }} DT</p>
-            </div>
+        </div>
+
+        <div class="row mb-3">
+          <div class="col-md-12">
+            <h6>Fournisseur</h6>
+            <p>{{ selectedInvoice.supplierName }}</p>
           </div>
-          
-          <div class="row">
-            <div class="col-md-12">
-              <h6>Total TTC</h6>
-              <p class="display-6">{{ getTotalTTC(selectedInvoice) | number:'1.3-3' }} DT</p>
-            </div>
+        </div>
+
+        <div class="row mb-3">
+          <div class="col-md-4">
+            <h6>Produit</h6>
+            <p>{{ getProductName(selectedInvoice) }}</p>
           </div>
+          <div class="col-md-2">
+            <h6>Quantité</h6>
+            <p>{{ getQuantity(selectedInvoice) }}</p>
+          </div>
+          <div class="col-md-3">
+            <h6>Prix Unitaire HT</h6>
+            <p>{{ getUnitPrice(selectedInvoice) | number:'1.3-3' }} DT</p>
+          </div>
+          <div class="col-md-3">
+            <h6>Total HT</h6>
+            <p>{{ getTotalHT(selectedInvoice) | number:'1.3-3' }} DT</p>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-12">
+            <h6>Total TTC</h6>
+            <p class="display-6">{{ getTotalTTC(selectedInvoice) | number:'1.3-3' }} DT</p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeInvoiceModal()">Fermer</button>
+        <button type="button" class="btn btn-primary" (click)="generateInvoice(selectedInvoice!)">
+          <i class="fas fa-print"></i> Imprimer
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Expense Modal -->
+<div class="custom-modal" *ngIf="showExpenseModal">
+  <div class="modal-overlay" (click)="closeExpenseModal()"></div>
+  <div class="modal-container">
+    <div class="modal-header">
+      <h4>Nouvelle Dépense</h4>
+      <button class="close-btn" (click)="closeExpenseModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form #expenseForm="ngForm" (ngSubmit)="submitExpense()">
+        <div class="mb-3">
+          <label class="form-label">Méthode de paiement</label>
+          <select class="form-control"
+                  [(ngModel)]="newExpense.paymentMethod" name="paymentMethod" required>
+            <option value="Carte">Carte</option>
+            <option value="Espèces">Espèces</option>
+            <option value="Virement">Virement</option>
+            <option value="Chèque">Chèque</option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Date</label>
+          <input type="date" class="form-control"
+                 [(ngModel)]="newExpense.date" name="date" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Montant (DT)</label>
+          <input type="number" step="0.01" class="form-control"
+                 [(ngModel)]="newExpense.amount" name="amount" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Catégorie</label>
+          <select class="form-control"
+                  [(ngModel)]="newExpense.category" name="category" required>
+            <option value="">Sélectionnez une catégorie</option>
+            <option *ngFor="let cat of expenseCategories" [value]="cat">
+              {{ cat }}
+            </option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Description</label>
+          <textarea class="form-control"
+                   [(ngModel)]="newExpense.description" name="description"></textarea>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" (click)="closeInvoiceModal()">Fermer</button>
-          <button type="button" class="btn btn-primary" (click)="generateInvoice(selectedInvoice!)">
-            <i class="fas fa-print"></i> Imprimer
+          <button type="button" class="btn btn-secondary"
+                  (click)="closeExpenseModal()">Annuler</button>
+          <button type="submit" class="btn btn-primary"
+                  [disabled]="expenseForm.invalid || addingExpense">
+            {{ addingExpense ? 'Enregistrement...' : 'Enregistrer' }}
           </button>
         </div>
-      </div>
+      </form>
     </div>
   </div>
-  
-  <!-- Expense Modal -->
-  <div class="custom-modal" *ngIf="showExpenseModal">
-    <div class="modal-overlay" (click)="closeExpenseModal()"></div>
-    <div class="modal-container">
-      <div class="modal-header">
-        <h4>Nouvelle Dépense</h4>
-        <button class="close-btn" (click)="closeExpenseModal()">&times;</button>
-      </div>
-      <div class="modal-body">
-        <form #expenseForm="ngForm" (ngSubmit)="submitExpense()">
-          <div class="mb-3">
-            <label class="form-label">Méthode de paiement</label>
-            <select class="form-control" 
-                    [(ngModel)]="newExpense.paymentMethod" name="paymentMethod" required>
-              <option value="Carte">Carte</option>
-              <option value="Espèces">Espèces</option>
-              <option value="Virement">Virement</option>
-              <option value="Chèque">Chèque</option>
-            </select>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Date</label>
-            <input type="date" class="form-control" 
-                   [(ngModel)]="newExpense.date" name="date" required>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Montant (DT)</label>
-            <input type="number" step="0.01" class="form-control"
-                   [(ngModel)]="newExpense.amount" name="amount" required>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Catégorie</label>
-            <select class="form-control" 
-                    [(ngModel)]="newExpense.category" name="category" required>
-              <option value="">Sélectionnez une catégorie</option>
-              <option *ngFor="let cat of expenseCategories" [value]="cat">
-                {{ cat }}
-              </option>
-            </select>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Description</label>
-            <textarea class="form-control"
-                     [(ngModel)]="newExpense.description" name="description"></textarea>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" 
-                    (click)="closeExpenseModal()">Annuler</button>
-            <button type="submit" class="btn btn-primary"
-                    [disabled]="expenseForm.invalid || addingExpense">
-              {{ addingExpense ? 'Enregistrement...' : 'Enregistrer' }}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
+</div>

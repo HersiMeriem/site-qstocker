@@ -71,19 +71,19 @@ export class ProductManagementComponent implements OnInit, OnDestroy {
 
   applySearch(): void {
     const query = this.searchQuery.toLowerCase().trim();
-    
+
     this.filteredProducts = this.products.filter(product => {
-      const matchesSearch = 
+      const matchesSearch =
         product.name?.toLowerCase().includes(query) ||
         product.id?.toLowerCase().includes(query) ||
         product.category?.toLowerCase().includes(query);
-      
-      const matchesCategory = !this.selectedCategory || 
+
+      const matchesCategory = !this.selectedCategory ||
         product.category === this.selectedCategory;
-      
-      const matchesStatus = !this.selectedStatus || 
+
+      const matchesStatus = !this.selectedStatus ||
         product.status === this.selectedStatus;
-      
+
       return matchesSearch && matchesCategory && matchesStatus;
     });
   }
@@ -110,13 +110,11 @@ export class ProductManagementComponent implements OnInit, OnDestroy {
     return product.unitPrice * (1 - discount / 100);
   }
 
-      // Nouvelle méthode pour naviguer vers la gestion du stock
-    goToStock() {
-      this.router.navigate(['/admin/stock-history']);
-    }
-  
-    // Nouvelle méthode pour naviguer vers la gestion des ventes
-    goToSales() {
-      this.router.navigate(['/admin/ventes']);
-    }
+  goToStock() {
+    this.router.navigate(['/admin/stock-history']);
+  }
+
+  goToSales() {
+    this.router.navigate(['/admin/ventes']);
+  }
 }
